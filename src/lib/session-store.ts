@@ -11,12 +11,14 @@ interface SessionState {
   unit: 'km' | 'mi'
   uploaded: boolean
   lastUpload: CorosActivity | null
+  lastUploadGpx: string | null
 }
 
 let state: SessionState = {
   unit: 'km',
   uploaded: false,
   lastUpload: null,
+  lastUploadGpx: null,
 }
 
 const listeners = new Set<() => void>()
@@ -39,8 +41,8 @@ export function setUnit(unit: 'km' | 'mi') {
   emit()
 }
 
-export function confirmUpload(activity: CorosActivity) {
-  state = { ...state, uploaded: true, lastUpload: activity }
+export function confirmUpload(activity: CorosActivity, gpxData: string | null = null) {
+  state = { ...state, uploaded: true, lastUpload: activity, lastUploadGpx: gpxData }
   emit()
 }
 

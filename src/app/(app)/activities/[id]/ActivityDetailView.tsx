@@ -3,6 +3,7 @@
 import { notFound } from 'next/navigation'
 import { Badge } from '@/components/ui/Badge'
 import { BackLink } from '@/components/ui/BackLink'
+import { RouteMap } from '@/components/ui/RouteMap'
 import { Stat } from '@/components/ui/Stat'
 import { thClass, tdClass } from '@/components/ui/table'
 import { getWorkout, tagVariant, labelFor } from '@/lib/mock-data'
@@ -13,8 +14,10 @@ export function ActivityDetailView({ id }: { id: string }) {
   const workout = getWorkout(id)
   if (!workout) notFound()
 
+  const wasUploaded = workout.status === 'today' && session.uploaded
+
   const actual =
-    workout.status === 'today' && session.uploaded && session.lastUpload
+    wasUploaded && session.lastUpload
       ? {
           distance: session.lastUpload.distance,
           duration: session.lastUpload.duration,
@@ -46,6 +49,13 @@ export function ActivityDetailView({ id }: { id: string }) {
         <Stat label="Duration" value={workout.duration} />
         <Stat label="Target zone" value={workout.targetZone} />
       </div>
+
+      {wasUploaded && session.lastUploadGpx && (
+        <>
+          <h4 className="mb-3">Route</h4>
+          <RouteMap gpxData={session.lastUploadGpx} className="w-full h-[280px] rounded-md mb-6" />
+        </>
+      )}
 
       {workout.segments.length > 0 && (
         <>
