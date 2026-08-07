@@ -10,6 +10,26 @@ export interface User {
   role: Role
 }
 
+// Réponse de GET/PATCH /users/me — surperset de User avec les champs
+// réellement exposés par cet endpoint.
+export interface UserProfile extends User {
+  firstName: string | null
+  lastName: string | null
+  createdAt: string
+}
+
+// Réponse de GET /users/me/coach — 404 si aucun coach n'est encore assigné.
+export interface CoachAssignment {
+  id: string
+  createdAt: string
+  user: {
+    id: string
+    email: string
+    firstName: string | null
+    lastName: string | null
+  }
+}
+
 export interface AthleteProfile {
   id: string
   userId: string
