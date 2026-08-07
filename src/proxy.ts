@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export function proxy(request: NextRequest) {
   const token = request.cookies.get('sessionized_token')
-  if (!token) return NextResponse.redirect(new URL('/login', request.url))
+  if (!token) {
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('redirect', request.nextUrl.pathname)
+    return NextResponse.redirect(loginUrl)
+  }
   return NextResponse.next()
 }
 
