@@ -3,6 +3,7 @@
 import { Badge } from '@/components/ui/Badge'
 import { RowLink } from '@/components/ui/RowLink'
 import { thClass, tdClass } from '@/components/ui/table'
+import { formatUploadedActivity } from '@/lib/activity-format'
 import { WEEK, PAST, getTodayWorkout, tagVariant, labelFor } from '@/lib/mock-data'
 import { useSessionState } from '@/lib/session-store'
 
@@ -30,14 +31,20 @@ export default function ActivitiesPage() {
     href: undefined,
   }))
 
-  const rows = session.uploaded && session.lastUpload
+  const uploadedActual = session.lastRealUpload
+    ? formatUploadedActivity(session.lastRealUpload)
+    : session.lastUpload
+      ? { distance: session.lastUpload.distance, duration: session.lastUpload.duration }
+      : null
+
+  const rows = session.uploaded && uploadedActual
     ? [
         {
           id: 'uploaded-today',
           date: todayWorkout.date,
           title: todayWorkout.title,
           planned: `${todayWorkout.distance} · ${todayWorkout.duration}`,
-          actual: `${session.lastUpload.distance} · ${session.lastUpload.duration}`,
+          actual: `${uploadedActual.distance} · ${uploadedActual.duration}`,
           status: 'completed' as const,
           href: `/activities/${todayWorkout.id}`,
         },

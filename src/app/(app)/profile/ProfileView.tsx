@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
+import { ContactCoachButton } from '@/components/chat/ContactCoachButton'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Field, Input } from '@/components/ui/Field'
@@ -67,11 +69,19 @@ export function ProfileView({ user, coach }: { user: UserProfile | null; coach: 
         <section>
           <h4 className="mb-3">Coach</h4>
           {coach ? (
-            <p className="m-0">
-              <strong>{coachName(coach)}</strong> · assigned since {assignedSince(coach.createdAt)}
-            </p>
+            <div>
+              <p className="m-0">
+                <strong>{coachName(coach)}</strong> · assigned since {assignedSince(coach.createdAt)}
+              </p>
+              <ContactCoachButton coachId={coach.id} coachName={coachName(coach)} label="Message" />
+            </div>
           ) : (
-            <p className="m-0 text-text/60">Aucun coach assigné.</p>
+            <div>
+              <p className="m-0 text-text/60 mb-2">Aucun coach assigné.</p>
+              <Link href="/coaches" className="text-sm text-accent hover:text-accent-700">
+                Trouver un coach →
+              </Link>
+            </div>
           )}
         </section>
 

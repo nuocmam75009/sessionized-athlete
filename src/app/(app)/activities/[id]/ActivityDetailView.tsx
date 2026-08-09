@@ -1,11 +1,13 @@
 'use client'
 
 import { notFound } from 'next/navigation'
+import { ActivityNoteEditor } from '@/components/activities/ActivityNoteEditor'
 import { Badge } from '@/components/ui/Badge'
 import { BackLink } from '@/components/ui/BackLink'
 import { RouteMap } from '@/components/ui/RouteMap'
 import { Stat } from '@/components/ui/Stat'
 import { thClass, tdClass } from '@/components/ui/table'
+import { formatUploadedActivity } from '@/lib/activity-format'
 import { getWorkout, tagVariant, labelFor } from '@/lib/mock-data'
 import { useSessionState } from '@/lib/session-store'
 
@@ -17,14 +19,16 @@ export function ActivityDetailView({ id }: { id: string }) {
   const wasUploaded = workout.status === 'today' && session.uploaded
 
   const actual =
-    wasUploaded && session.lastUpload
-      ? {
-          distance: session.lastUpload.distance,
-          duration: session.lastUpload.duration,
-          pace: session.lastUpload.pace,
-          note: 'Synced from COROS.',
-        }
-      : workout.actual
+    wasUploaded && session.lastRealUpload
+      ? { ...formatUploadedActivity(session.lastRealUpload), note: 'Envoyé depuis un fichier .fit/.gpx.' }
+      : wasUploaded && session.lastUpload
+        ? {
+            distance: session.lastUpload.distance,
+            duration: session.lastUpload.duration,
+            pace: session.lastUpload.pace,
+            note: 'Synced from COROS.',
+          }
+        : workout.actual
 
   const comparisonRows = actual
     ? [
@@ -111,6 +115,8 @@ export function ActivityDetailView({ id }: { id: string }) {
           <p className="italic opacity-75 mt-3 max-w-[56ch]">{actual.note}</p>
         </>
       )}
+
+      {wasUploaded && session.lastRealUpload && <ActivityNoteEditor activity={session.lastRealUpload} />}
     </div>
   )
 }

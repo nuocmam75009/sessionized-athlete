@@ -10,6 +10,14 @@ export interface User {
   role: Role
 }
 
+// Shape réelle du `user` renvoyé par POST /auth/login et /auth/register —
+// dérivé du JWT (sub, pas id).
+export interface AuthUser {
+  sub: string
+  email: string
+  role: Role
+}
+
 // Réponse de GET/PATCH /users/me — surperset de User avec les champs
 // réellement exposés par cet endpoint.
 export interface UserProfile extends User {
@@ -67,6 +75,54 @@ export interface Lap {
   source: ActivitySource
 }
 
+export interface UploadedActivityLap {
+  index: number
+  distanceM: number
+  durationSec: number
+  avgPaceSecPerKm: number
+  avgHeartRate?: number
+  maxHeartRate?: number
+  avgCadence?: number
+  avgPower?: number
+  avgStanceTimeMs?: number
+  avgVerticalOscillationMm?: number
+  avgVerticalRatio?: number
+  avgStepLengthMm?: number
+}
+
+// Réponse de POST /activities/upload — shape réel de l'endpoint, distinct de
+// Activity/Lap ci-dessus qui restent la spec cible partagée avec le coach.
+export interface UploadedActivity {
+  id: string
+  athleteId: string
+  source: ActivitySource
+  sport: string
+  subSport: string
+  startedAt: string
+  totalDistanceM: number
+  totalDurationSec: number
+  avgHeartRate?: number
+  maxHeartRate?: number
+  avgCadence?: number
+  avgPower?: number
+  totalCalories?: number
+  elevationGainM: number
+  elevationLossM: number
+  plannedSessionId: string | null
+  laps: UploadedActivityLap[]
+  trackPointsCount: number
+  coachNote: string | null
+  athleteNote: string | null
+  difficultyNote: number | null
+}
+
+// Corps accepté par PATCH /activities/:id — les deux champs sont
+// indépendants, n'envoyer que celui qu'on modifie.
+export interface ActivityNoteUpdate {
+  athleteNote?: string
+  difficultyNote?: number
+}
+
 export interface PlannedLap {
   id: string
   sessionId: string
@@ -112,4 +168,35 @@ export interface TrainingLoad {
   atl: number
   tsb: number
   weeklyTss: number
+}
+
+// --- Chat (namespace WebSocket /chat + REST /chat/conversations) ---
+// `id` sur ChatUserSummary n'est pas listé explicitement dans le contrat
+// fourni (seulement firstName/lastName/email) mais est nécessaire pour
+// `recipientUserId` côté `typing` — supposé présent comme tout autre objet
+// user renvoyé par l'API. À corriger si le champ réel diffère.
+export interface ChatUserSummary {
+  id: string
+  firstName: string | null
+  lastName: string | null
+  email: string
+}
+
+export interface ChatMessage {
+  id: string
+  conversationId: string
+  senderId: string
+  content: string
+  createdAt: string
+  readAt: string | null
+}
+
+export interface ChatConversation {
+  id: string
+  coach: {
+    id: string // coachProfileId — c'est le targetId attendu par POST /chat/conversations
+    user: ChatUserSummary
+  }
+  messages: ChatMessage[] // messages[0] = dernier message (aperçu liste)
+  updatedAt: string
 }

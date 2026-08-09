@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
+import { setSessionCookie } from '@/lib/auth-cookie'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -19,12 +20,7 @@ export async function POST(request: NextRequest) {
   const { accessToken, user } = await backendRes.json()
 
   const cookieStore = await cookies()
-  cookieStore.set('sessionized_token', accessToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-  })
+  setSessionCookie(cookieStore, accessToken)
 
   return NextResponse.json({ user })
 }
