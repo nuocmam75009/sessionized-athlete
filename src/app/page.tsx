@@ -1,8 +1,9 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { SESSION_COOKIE_NAME } from '@/lib/auth-cookie'
 
 export default async function Home() {
   const cookieStore = await cookies()
-  const token = cookieStore.get('sessionized_token')
+  const token = cookieStore.get(SESSION_COOKIE_NAME)
   redirect(token ? '/dashboard' : '/login')
 }

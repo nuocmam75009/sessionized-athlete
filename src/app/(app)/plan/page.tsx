@@ -1,38 +1,54 @@
 import { Badge } from '@/components/ui/Badge'
 import { RowLink } from '@/components/ui/RowLink'
 import { thClass, tdClass } from '@/components/ui/table'
-import { WEEK, tagVariant, labelFor } from '@/lib/mock-data'
+import { findLinkedActivityId, summarizePlannedLaps } from '@/lib/plan-format'
+import { serverApiFetchStatus } from '@/lib/server-api'
+import { formatDateLabel } from '@/lib/utils'
+import type { Activity, PlannedSession } from '@/lib/types'
 
-export default function PlanPage() {
+export default async function PlanPage() {
+  const [{ data: plans }, { data: activities }] = await Promise.all([
+    serverApiFetchStatus<PlannedSession[]>('/plans'),
+    serverApiFetchStatus<Activity[]>('/activities'),
+  ])
+
+  const sessions = plans ?? []
+  const now = new Date()
+
   return (
     <div>
-      <h1>This week</h1>
-      <p className="opacity-70 mb-5">Aug 3 – Aug 9, 2026</p>
-      <table className="w-full border-collapse text-sm">
-        <thead>
-          <tr>
-            <th className={thClass}>Day</th>
-            <th className={thClass}>Session</th>
-            <th className={thClass}>Target</th>
-            <th className={thClass}>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {WEEK.map((row) => (
-            <RowLink key={row.id} href={row.type === 'rest' ? undefined : `/activities/${row.id}`}>
-              <td className={tdClass}>
-                <div className="font-semibold">{row.day}</div>
-                <div className="text-text/60 text-xs">{row.date}</div>
-              </td>
-              <td className={tdClass}>{row.title}</td>
-              <td className={`${tdClass} text-text/60`}>{row.type === 'rest' ? '—' : row.targetZone}</td>
-              <td className={tdClass}>
-                <Badge variant={tagVariant(row.status)}>{labelFor(row.status)}</Badge>
-              </td>
-            </RowLink>
-          ))}
-        </tbody>
-      </table>
+      <h1>Planned sessions</h1>
+      <p className="opacity-70 mb-5">Everything your coach has scheduled, in order.</p>
+      {sessions.length === 0 ? (
+        <p className="text-text/60">No planned sessions yet.</p>
+      ) : (
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr>
+              <th className={thClass}>Date</th>
+              <th className={thClass}>Session</th>
+              <th className={thClass}>Target</th>
+              <th className={thClass}>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sessions.map((session) => {
+              const activityId = findLinkedActivityId(session.id, activities ?? [])
+              const isPast = new Date(session.scheduledDate) < now
+              return (
+                <RowLink key={session.id} href={activityId ? `/activities/${activityId}` : undefined}>
+                  <td className={tdClass}>{formatDateLabel(session.scheduledDate)}</td>
+                  <td className={tdClass}>{session.title}</td>
+                  <td className={`${tdClass} text-text/60`}>{summarizePlannedLaps(session.plannedLaps)}</td>
+                  <td className={tdClass}>
+                    <Badge variant={isPast ? 'neutral' : 'accent'}>{isPast ? 'Past' : 'Upcoming'}</Badge>
+                  </td>
+                </RowLink>
+              )
+            })}
+          </tbody>
+        </table>
+      )}
     </div>
   )
 }

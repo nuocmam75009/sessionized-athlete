@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { Field, Input } from '@/components/ui/Field'
@@ -82,9 +81,6 @@ export default function LoginView() {
           See the session your coach set for today, follow the week ahead, and upload your .fit file the moment
           you&apos;re done.
         </p>
-        <Link href="/coaches" className="text-sm text-accent hover:text-accent-700 mt-5 w-fit">
-          Not coached yet? Browse our coaches →
-        </Link>
       </div>
       <div className="px-8 md:px-16 py-16 flex flex-col justify-center border-t md:border-t-0 md:border-l border-divider">
         <div className="max-w-[360px] w-full">

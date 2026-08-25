@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers'
+import { SESSION_COOKIE_NAME } from './auth-cookie'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -14,7 +15,7 @@ interface ServerApiResult<T> {
 // d'un 404 attendu (ex: pas de coach assigné).
 export async function serverApiFetchStatus<T>(path: string, options?: RequestInit): Promise<ServerApiResult<T>> {
   const cookieStore = await cookies()
-  const token = cookieStore.get('sessionized_token')?.value
+  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value
   if (!token) return { status: 401, data: null }
 
   try {

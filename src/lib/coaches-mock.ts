@@ -1,5 +1,6 @@
-// Données de démonstration — à remplacer par un GET /coaches (ou
-// équivalent) une fois l'endpoint marketplace disponible côté backend.
+// Données de démonstration, non utilisées par la page /coaches (qui fetch
+// désormais GET /users/coaches côté backend) — gardées pour peupler la DB
+// de seed data via un futur script.
 
 export interface CoachListing {
   id: string

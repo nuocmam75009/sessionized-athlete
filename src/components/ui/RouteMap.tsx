@@ -18,13 +18,21 @@ interface GpxLayer extends FeatureGroup {
   get_total_time(): number
 }
 
+export interface RoutePoint {
+  latitude: number | null
+  longitude: number | null
+}
+
 interface RouteMapProps {
-  gpxData: string
+  // Fournir soit gpxData (aperçu client d'un fichier .gpx avant envoi), soit
+  // points (trace GPS persistée, rechargée depuis GET /activities/:id/track).
+  gpxData?: string
+  points?: RoutePoint[]
   onStats?: (stats: GpxStats) => void
   className?: string
 }
 
-export function RouteMap({ gpxData, onStats, className }: RouteMapProps) {
+export function RouteMap({ gpxData, points, onStats, className }: RouteMapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -35,25 +43,39 @@ export function RouteMap({ gpxData, onStats, className }: RouteMapProps) {
       const leaflet = await import('leaflet')
       const L = leaflet.default
 
-      // leaflet-gpx est un vieux plugin sans wrapper CJS/ESM : il s'attend à
-      // trouver `L` en global (référence nue non déclarée, résolue via
-      // window en mode strict) avant de s'exécuter.
-      ;(window as unknown as { L: typeof L }).L = L
-      await import('leaflet-gpx')
-
       if (cancelled || !containerRef.current) return
-
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: '/leaflet/marker-icon-2x.png',
-        iconUrl: '/leaflet/marker-icon.png',
-        shadowUrl: '/leaflet/marker-shadow.png',
-      })
 
       map = L.map(containerRef.current)
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors',
         maxZoom: 19,
       }).addTo(map)
+
+      if (points) {
+        const latLngs = points
+          .filter((p): p is { latitude: number; longitude: number } => p.latitude != null && p.longitude != null)
+          .map((p) => [p.latitude, p.longitude] as [number, number])
+        if (latLngs.length === 0) return
+
+        const polyline = L.polyline(latLngs, { color: '#0088b0', weight: 4 }).addTo(map)
+        map.fitBounds(polyline.getBounds())
+        return
+      }
+
+      if (!gpxData) return
+
+      // leaflet-gpx est un vieux plugin sans wrapper CJS/ESM : il s'attend à
+      // trouver `L` en global (référence nue non déclarée, résolue via
+      // window en mode strict) avant de s'exécuter.
+      ;(window as unknown as { L: typeof L }).L = L
+      await import('leaflet-gpx')
+      if (cancelled) return
+
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl: '/leaflet/marker-icon-2x.png',
+        iconUrl: '/leaflet/marker-icon.png',
+        shadowUrl: '/leaflet/marker-shadow.png',
+      })
 
       const GPX = (L as unknown as { GPX: new (data: string, options?: object) => GpxLayer }).GPX
       const gpxLayer = new GPX(gpxData, {
@@ -79,7 +101,7 @@ export function RouteMap({ gpxData, onStats, className }: RouteMapProps) {
       cancelled = true
       map?.remove()
     }
-  }, [gpxData, onStats])
+  }, [gpxData, points, onStats])
 
   return <div ref={containerRef} className={className ?? 'w-full h-[220px] rounded-md'} />
 }

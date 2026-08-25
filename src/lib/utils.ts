@@ -32,3 +32,13 @@ export function tsbColor(tsb: number): string {
   if (tsb < 0) return 'text-orange-500'
   return 'text-green-600'
 }
+
+// Convertit un ISO datetime en "Tue, Aug 4"
+export function formatDateLabel(iso: string): string {
+  return new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(iso))
+}
+
+// Deux dates tombent le même jour calendaire (comparaison locale)
+export function isSameCalendarDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+}

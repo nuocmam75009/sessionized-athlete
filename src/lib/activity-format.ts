@@ -1,7 +1,9 @@
 import { formatDistance, formatDuration, formatPace } from './utils'
-import type { UploadedActivity } from './types'
+import type { Activity } from './types'
 
-export function formatUploadedActivity(activity: UploadedActivity) {
+// UploadedActivity = Activity & { trackPointsCount } — un seul formatteur
+// suffit pour la réponse d'upload comme pour GET /activities/:id.
+export function formatActivity(activity: Activity) {
   const paceSecPerKm =
     activity.totalDistanceM > 0 ? Math.round(activity.totalDurationSec / (activity.totalDistanceM / 1000)) : 0
 

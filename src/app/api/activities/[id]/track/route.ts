@@ -4,19 +4,15 @@ import { SESSION_COOKIE_NAME } from '@/lib/auth-cookie'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL
 
-export async function PATCH(request: NextRequest) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const cookieStore = await cookies()
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value
   if (!token) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
 
-  const body = await request.json()
-  const backendRes = await fetch(`${BASE_URL}/users/me`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(body),
+  const { id } = await params
+
+  const backendRes = await fetch(`${BASE_URL}/activities/${id}/track`, {
+    headers: { Authorization: `Bearer ${token}` },
   })
 
   const data = await backendRes.json().catch(() => null)

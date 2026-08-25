@@ -1,78 +1,114 @@
 'use client'
 
-import { useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/Badge'
 import { Field, Select, Textarea } from '@/components/ui/Field'
 import { RouteMap } from '@/components/ui/RouteMap'
-import { Stat } from '@/components/ui/Stat'
-import { thClass, tdClass } from '@/components/ui/table'
-import { COROS_ACTIVITIES, type CorosActivity } from '@/lib/mock-data'
-import { confirmUpload, confirmRealUpload } from '@/lib/session-store'
-import type { UploadedActivity } from '@/lib/types'
+import { formatDateLabel } from '@/lib/utils'
+import type { PlannedSession, UploadedActivity } from '@/lib/types'
 
-type Stage = 'idle' | 'syncing' | 'synced' | 'parsed'
+type Stage = 'idle' | 'parsed'
 
 export default function UploadPage() {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [stage, setStage] = useState<Stage>('idle')
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [parsed, setParsed] = useState<CorosActivity>(COROS_ACTIVITIES[0])
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [selectedFitFile, setSelectedFitFile] = useState<File | null>(null)
+  const [selectedGpxFile, setSelectedGpxFile] = useState<File | null>(null)
   const [gpxData, setGpxData] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [athleteNote, setAthleteNote] = useState('')
   const [difficultyNote, setDifficultyNote] = useState('')
+  const [plans, setPlans] = useState<PlannedSession[]>([])
+  const [plannedSessionId, setPlannedSessionId] = useState('none')
+
+  useEffect(() => {
+    fetch('/api/plans')
+      .then((res) => (res.ok ? res.json() : []))
+      .then(setPlans)
+      .catch(() => setPlans([]))
+  }, [])
 
   function resetSelection() {
-    setSelectedId(null)
-    setSelectedFile(null)
+    setSelectedFitFile(null)
+    setSelectedGpxFile(null)
     setGpxData(null)
     setUploadError(null)
     setAthleteNote('')
     setDifficultyNote('')
-  }
-
-  function simulateDrop() {
-    resetSelection()
-    setParsed(COROS_ACTIVITIES[0])
-    setStage('parsed')
+    setPlannedSessionId('none')
   }
 
   function pickFile() {
     fileInputRef.current?.click()
   }
 
-  function onFileSelected(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    e.target.value = '' // permet de reprendre le même fichier ensuite
-    if (!file) return
-
+  // Accepte un .fit seul, un .gpx seul (pour compléter une activité déjà
+  // uploadée depuis /activities/:id), ou les deux ensemble en une seule
+  // dépose : le .fit crée l'activité, le .gpx lui attache son tracé carte.
+  function handleFiles(files: FileList | File[]) {
+    const list = Array.from(files)
     resetSelection()
-    setSelectedFile(file)
 
-    if (file.name.toLowerCase().endsWith('.gpx')) {
+    if (list.length > 2) {
+      setUploadError('Dépose au maximum deux fichiers : un .fit et un .gpx.')
+      return
+    }
+
+    let fitFile: File | null = null
+    let gpxFile: File | null = null
+    for (const file of list) {
+      const name = file.name.toLowerCase()
+      if (name.endsWith('.fit')) {
+        if (fitFile) {
+          setUploadError('Un seul fichier .fit à la fois.')
+          return
+        }
+        fitFile = file
+      } else if (name.endsWith('.gpx')) {
+        if (gpxFile) {
+          setUploadError('Un seul fichier .gpx à la fois.')
+          return
+        }
+        gpxFile = file
+      } else {
+        setUploadError('Formats acceptés : .fit et .gpx.')
+        return
+      }
+    }
+
+    if (!fitFile && gpxFile) {
+      setUploadError('Un fichier .fit est nécessaire pour créer l’activité — le .gpx seul ne suffit pas ici.')
+      return
+    }
+
+    setSelectedFitFile(fitFile)
+    setSelectedGpxFile(gpxFile)
+
+    if (gpxFile) {
       const reader = new FileReader()
       reader.onload = () => setGpxData(String(reader.result))
-      reader.readAsText(file)
+      reader.readAsText(gpxFile)
     }
     setStage('parsed')
   }
 
-  function syncCoros() {
-    setStage('syncing')
-    setTimeout(() => setStage('synced'), 900)
+  function onFileSelected(e: ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files
+    e.target.value = '' // permet de reprendre les mêmes fichiers ensuite
+    if (!files || files.length === 0) return
+    handleFiles(files)
   }
 
-  function attachSelected() {
-    const activity = COROS_ACTIVITIES.find((a) => a.id === selectedId)
-    if (activity) setParsed(activity)
-    setSelectedFile(null)
-    setGpxData(null)
-    setStage('parsed')
+  function onDrop(e: DragEvent<HTMLDivElement>) {
+    e.preventDefault()
+    if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files)
+  }
+
+  function onDragOver(e: DragEvent<HTMLDivElement>) {
+    e.preventDefault()
   }
 
   function discard() {
@@ -81,51 +117,64 @@ export default function UploadPage() {
   }
 
   async function confirm() {
-    if (selectedFile) {
-      const trimmedNote = athleteNote.trim()
-      const difficultyValue = difficultyNote.trim() ? Number(difficultyNote) : null
-      if (difficultyValue !== null && (!Number.isInteger(difficultyValue) || difficultyValue < 1 || difficultyValue > 10)) {
-        setUploadError('La difficulté doit être un entier entre 1 et 10.')
-        return
-      }
+    if (!selectedFitFile) return
 
-      setUploading(true)
-      setUploadError(null)
-      try {
-        const formData = new FormData()
-        formData.append('file', selectedFile)
-        // plannedSessionId volontairement omis : /plan tourne encore sur des
-        // identifiants mock, pas de vrai id de séance planifiée à envoyer.
-        if (trimmedNote) formData.append('athleteNote', trimmedNote)
-        if (difficultyValue !== null) formData.append('difficultyNote', String(difficultyValue))
-        const res = await fetch('/api/activities/upload', { method: 'POST', body: formData })
-        if (!res.ok) throw new Error('upload failed')
-        const activity: UploadedActivity = await res.json()
-        confirmRealUpload(activity, gpxData)
-        router.push('/activities')
-      } catch {
-        setUploadError("Échec de l'envoi. Réessaie.")
-      } finally {
-        setUploading(false)
-      }
+    const trimmedNote = athleteNote.trim()
+    const difficultyValue = difficultyNote.trim() ? Number(difficultyNote) : null
+    if (difficultyValue !== null && (!Number.isInteger(difficultyValue) || difficultyValue < 1 || difficultyValue > 10)) {
+      setUploadError('La difficulté doit être un entier entre 1 et 10.')
       return
     }
 
-    confirmUpload(parsed)
-    router.push('/activities')
+    setUploading(true)
+    setUploadError(null)
+    try {
+      const formData = new FormData()
+      formData.append('file', selectedFitFile)
+      if (plannedSessionId !== 'none') formData.append('plannedSessionId', plannedSessionId)
+      if (trimmedNote) formData.append('athleteNote', trimmedNote)
+      if (difficultyValue !== null) formData.append('difficultyNote', String(difficultyValue))
+      const res = await fetch('/api/activities/upload', { method: 'POST', body: formData })
+      if (!res.ok) throw new Error('upload failed')
+      const activity: UploadedActivity = await res.json()
+
+      if (selectedGpxFile) {
+        const gpxFormData = new FormData()
+        gpxFormData.append('file', selectedGpxFile)
+        const gpxRes = await fetch(`/api/activities/${activity.id}/gpx`, { method: 'POST', body: gpxFormData })
+        if (!gpxRes.ok) throw new Error('gpx upload failed')
+      }
+
+      router.push('/activities')
+    } catch {
+      setUploadError("Échec de l'envoi. Réessaie.")
+    } finally {
+      setUploading(false)
+    }
   }
 
   return (
     <div>
       <h1>Upload activity</h1>
-      <p className="opacity-70 mb-6">Attach the .fit or .gpx file from your watch or bike computer.</p>
+      <p className="opacity-70 mb-6">
+        Attach the .fit file from your watch, and optionally a .gpx for the route — drop both at once.
+      </p>
 
-      <input ref={fileInputRef} type="file" accept=".fit,.gpx" className="hidden" onChange={onFileSelected} />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".fit,.gpx"
+        multiple
+        className="hidden"
+        onChange={onFileSelected}
+      />
 
       {stage === 'idle' && (
         <>
           <div
             onClick={pickFile}
+            onDrop={onDrop}
+            onDragOver={onDragOver}
             className="border border-dashed border-divider rounded-md py-16 px-6 text-center cursor-pointer bg-surface max-w-[600px] transition-colors hover:border-accent"
           >
             <svg width="28" height="28" viewBox="0 0 256 256" fill="currentColor" className="mx-auto mb-3">
@@ -135,65 +184,16 @@ export default function UploadPage() {
               />
               <path d="M92.69,84.69,120,57.37V152a8,8,0,0,0,16,0V57.37l27.31,27.32a8,8,0,0,0,11.32-11.32l-40-40a8,8,0,0,0-11.32,0l-40,40A8,8,0,0,0,92.69,84.69ZM224,144v64a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V144a16,16,0,0,1,32,0v56H208V144a16,16,0,0,1,16,0Z" />
             </svg>
-            <div className="font-semibold">Drag your .fit or .gpx file here, or click to browse</div>
-            <div className="text-text/60 text-[13px] mt-1">Le parcours s&apos;affichera sur la carte pour les fichiers .gpx.</div>
+            <div className="font-semibold">Drag your .fit and .gpx files here, or click to browse</div>
+            <div className="text-text/60 text-[13px] mt-1">
+              Dépose le .fit et le .gpx ensemble pour associer le tracé, ou un seul fichier à la fois.
+            </div>
           </div>
-          <div className="flex items-center gap-3 my-5 max-w-[600px]">
-            <div className="flex-1 h-px bg-divider" />
-            <span className="text-text/60 text-xs">or</span>
-            <div className="flex-1 h-px bg-divider" />
-          </div>
-          <div className="flex gap-3">
-            <Button variant="secondary" onClick={syncCoros}>
-              Synchroniser
-            </Button>
-            <Button variant="ghost" onClick={simulateDrop}>
-              Preview a sample upload (demo)
-            </Button>
-          </div>
+          {uploadError && <p className="text-sm text-red-600 mt-3 max-w-[600px]">{uploadError}</p>}
         </>
       )}
 
-      {stage === 'syncing' && <p className="text-text/60">Synchronisation avec COROS…</p>}
-
-      {stage === 'synced' && (
-        <div className="max-w-[680px]">
-          <h4 className="mb-3">Activités COROS</h4>
-          <table className="w-full border-collapse text-sm mb-5">
-            <thead>
-              <tr>
-                <th className={thClass}>Date</th>
-                <th className={thClass}>Activité</th>
-                <th className={thClass}>Distance</th>
-                <th className={thClass}>Durée</th>
-                <th className={thClass}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {COROS_ACTIVITIES.map((a) => (
-                <tr
-                  key={a.id}
-                  onClick={() => setSelectedId(a.id)}
-                  className={`cursor-pointer ${a.id === selectedId ? 'bg-accent-100' : 'hover:bg-text/[0.04]'}`}
-                >
-                  <td className={`${tdClass} text-text/60`}>{a.date}</td>
-                  <td className={tdClass}>{a.title}</td>
-                  <td className={`${tdClass} text-text/60`}>{a.distance}</td>
-                  <td className={`${tdClass} text-text/60`}>{a.duration}</td>
-                  <td className={tdClass}>
-                    <Badge variant="outline">Sélectionner</Badge>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <Button disabled={!selectedId} onClick={attachSelected}>
-            Attacher à Threshold intervals
-          </Button>
-        </div>
-      )}
-
-      {stage === 'parsed' && (
+      {stage === 'parsed' && selectedFitFile && (
         <div className="max-w-[680px]">
           <div className="flex gap-2 items-start mb-5">
             {gpxData ? (
@@ -208,58 +208,56 @@ export default function UploadPage() {
                   <path d="M128,8A96.11,96.11,0,0,0,32,104c0,43.13,26.36,74.34,52.29,99.28A280.34,280.34,0,0,0,123.3,235a8,8,0,0,0,9.4,0,280.34,280.34,0,0,0,39-31.72C199.64,178.34,226,147.13,226,104A96.11,96.11,0,0,0,128,8Zm0,208.32C112,203,48,150.72,48,104a80,80,0,0,1,160,0C208,150.72,144,203,128,216.32ZM128,64a40,40,0,1,0,40,40A40,40,0,0,0,128,64Zm0,64a24,24,0,1,1,24-24A24,24,0,0,1,128,128Z" />
                 </svg>
                 <div className="text-text/60 text-[13px]">
-                  {selectedFile ? 'Aperçu du parcours indisponible pour les fichiers .fit' : 'Route preview — connect location data to render the track'}
+                  Ajoute un .gpx pour prévisualiser le tracé — sinon la carte sera calculée après envoi.
                 </div>
               </div>
             )}
           </div>
 
-          {selectedFile ? (
-            <p className="mb-5 text-sm">
-              <span className="font-semibold">{selectedFile.name}</span> prêt à être envoyé. Distance, durée, FC et
-              dénivelé seront calculés par le serveur après l&apos;envoi.
-            </p>
-          ) : (
-            <div className="flex gap-6 mb-5 flex-wrap">
-              <Stat label="Distance" value={parsed.distance} size="sm" />
-              <Stat label="Duration" value={parsed.duration} size="sm" />
-              <Stat label="Avg pace" value={parsed.pace} size="sm" />
-              <Stat label="Avg HR" value={parsed.hr} size="sm" />
-              <Stat label="Elevation" value={parsed.elevation} size="sm" />
-            </div>
-          )}
+          <p className="mb-5 text-sm">
+            <span className="font-semibold">{selectedFitFile.name}</span>
+            {selectedGpxFile && (
+              <>
+                {' '}+ <span className="font-semibold">{selectedGpxFile.name}</span>
+              </>
+            )}{' '}
+            prêt{selectedGpxFile ? 's' : ''} à être envoyé{selectedGpxFile ? 's' : ''}. Distance, durée, FC et
+            dénivelé seront calculés par le serveur après l&apos;envoi.
+          </p>
 
-          {selectedFile && (
-            <div className="grid gap-3 max-w-[420px] mb-5">
-              <Field label="Athlete note (optional)" htmlFor="sn-athlete-note">
-                <Textarea
-                  id="sn-athlete-note"
-                  maxLength={2000}
-                  placeholder="Jambes lourdes mais bonnes sensations…"
-                  value={athleteNote}
-                  onChange={(e) => setAthleteNote(e.target.value)}
-                />
-              </Field>
-              <Field label="Difficulty (1–10, optional)" htmlFor="sn-difficulty-note">
-                <input
-                  id="sn-difficulty-note"
-                  type="number"
-                  min={1}
-                  max={10}
-                  step={1}
-                  className="w-24 min-h-9 px-2.5 py-1.5 text-sm text-text bg-surface border border-divider rounded-md focus-visible:border-accent focus-visible:outline-none"
-                  value={difficultyNote}
-                  onChange={(e) => setDifficultyNote(e.target.value)}
-                />
-              </Field>
-            </div>
-          )}
+          <div className="grid gap-3 max-w-[420px] mb-5">
+            <Field label="Athlete note (optional)" htmlFor="sn-athlete-note">
+              <Textarea
+                id="sn-athlete-note"
+                maxLength={2000}
+                placeholder="Jambes lourdes mais bonnes sensations…"
+                value={athleteNote}
+                onChange={(e) => setAthleteNote(e.target.value)}
+              />
+            </Field>
+            <Field label="Difficulty (1–10, optional)" htmlFor="sn-difficulty-note">
+              <input
+                id="sn-difficulty-note"
+                type="number"
+                min={1}
+                max={10}
+                step={1}
+                className="w-24 min-h-9 px-2.5 py-1.5 text-sm text-text bg-surface border border-divider rounded-md focus-visible:border-accent focus-visible:outline-none"
+                value={difficultyNote}
+                onChange={(e) => setDifficultyNote(e.target.value)}
+              />
+            </Field>
+          </div>
 
           <div className="max-w-[340px] mb-5">
             <Field label="Match to planned workout" htmlFor="sn-match">
-              <Select id="sn-match" defaultValue="fri">
-                <option value="fri">Fri Aug 7 · Threshold intervals</option>
+              <Select id="sn-match" value={plannedSessionId} onChange={(e) => setPlannedSessionId(e.target.value)}>
                 <option value="none">No match — log as unplanned</option>
+                {plans.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {formatDateLabel(p.scheduledDate)} · {p.title}
+                  </option>
+                ))}
               </Select>
             </Field>
           </div>

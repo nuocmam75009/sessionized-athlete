@@ -1,83 +1,125 @@
 'use client'
 
-import { notFound } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { ActivityNoteEditor } from '@/components/activities/ActivityNoteEditor'
+import { GpxRouteUpload } from '@/components/activities/GpxRouteUpload'
 import { Badge } from '@/components/ui/Badge'
 import { BackLink } from '@/components/ui/BackLink'
-import { RouteMap } from '@/components/ui/RouteMap'
+import { RouteMap, type RoutePoint } from '@/components/ui/RouteMap'
 import { Stat } from '@/components/ui/Stat'
 import { thClass, tdClass } from '@/components/ui/table'
-import { formatUploadedActivity } from '@/lib/activity-format'
-import { getWorkout, tagVariant, labelFor } from '@/lib/mock-data'
-import { useSessionState } from '@/lib/session-store'
+import { formatActivity } from '@/lib/activity-format'
+import { plannedTargets } from '@/lib/plan-format'
+import { formatDateLabel, formatDistance, formatDuration, formatPace } from '@/lib/utils'
+import type { Activity, PlannedSession } from '@/lib/types'
 
-export function ActivityDetailView({ id }: { id: string }) {
-  const session = useSessionState()
-  const workout = getWorkout(id)
-  if (!workout) notFound()
+export function ActivityDetailView({
+  activity: initialActivity,
+  plannedSession,
+}: {
+  activity: Activity
+  plannedSession: PlannedSession | null
+}) {
+  const [activity, setActivity] = useState(initialActivity)
 
-  const wasUploaded = workout.status === 'today' && session.uploaded
+  const [trackPoints, setTrackPoints] = useState<RoutePoint[] | null>(null)
+  // Tracé importé séparément via le bouton .gpx (POST /activities/:id/gpx) —
+  // pris en compte seulement si le .fit n'a pas déjà de trace GPS.
+  const [gpxRoutePoints, setGpxRoutePoints] = useState<RoutePoint[] | null>(null)
 
-  const actual =
-    wasUploaded && session.lastRealUpload
-      ? { ...formatUploadedActivity(session.lastRealUpload), note: 'Envoyé depuis un fichier .fit/.gpx.' }
-      : wasUploaded && session.lastUpload
-        ? {
-            distance: session.lastUpload.distance,
-            duration: session.lastUpload.duration,
-            pace: session.lastUpload.pace,
-            note: 'Synced from COROS.',
-          }
-        : workout.actual
+  useEffect(() => {
+    let cancelled = false
+    fetch(`/api/activities/${activity.id}/track`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: RoutePoint[]) => {
+        if (!cancelled) setTrackPoints(data)
+      })
+      .catch(() => {
+        if (!cancelled) setTrackPoints(null)
+      })
 
-  const comparisonRows = actual
-    ? [
-        { metric: 'Distance', planned: workout.distance, actual: actual.distance },
-        { metric: 'Duration', planned: workout.duration, actual: actual.duration },
-        { metric: 'Avg pace / target', planned: workout.targetZone, actual: actual.pace },
-      ]
-    : []
+    return () => {
+      cancelled = true
+    }
+  }, [activity.id])
+
+  useEffect(() => {
+    let cancelled = false
+    fetch(`/api/activities/${activity.id}/route`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: RoutePoint[]) => {
+        if (!cancelled) setGpxRoutePoints(data)
+      })
+      .catch(() => {
+        if (!cancelled) setGpxRoutePoints(null)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [activity.id])
+
+  const hasGpsTrace = Boolean(trackPoints && trackPoints.length > 0)
+  const mapPoints = hasGpsTrace ? trackPoints : gpxRoutePoints
+
+  const actual = formatActivity(activity)
+  const planned = plannedSession ? plannedTargets(plannedSession.plannedLaps) : null
 
   return (
     <div>
       <BackLink fallbackHref="/plan" />
       <div className="font-heading font-semibold text-xs tracking-[0.1em] uppercase text-accent mb-2">
-        {workout.day} · {workout.date}
+        {formatDateLabel(activity.startedAt)}
       </div>
       <div className="flex items-baseline gap-3">
-        <h1 className="mb-0">{workout.title}</h1>
-        <Badge variant={tagVariant(workout.status)}>{labelFor(workout.status)}</Badge>
+        <h1 className="mb-0">{plannedSession?.title ?? activity.sport ?? 'Activity'}</h1>
+        <Badge variant="outline">{activity.source}</Badge>
       </div>
       <div className="flex gap-8 my-6">
-        <Stat label="Distance" value={workout.distance} />
-        <Stat label="Duration" value={workout.duration} />
-        <Stat label="Target zone" value={workout.targetZone} />
+        <Stat label="Distance" value={actual.distance} />
+        <Stat label="Duration" value={actual.duration} />
+        <Stat label="Avg pace" value={actual.pace} />
       </div>
 
-      {wasUploaded && session.lastUploadGpx && (
+      {mapPoints && mapPoints.length > 0 && (
         <>
           <h4 className="mb-3">Route</h4>
-          <RouteMap gpxData={session.lastUploadGpx} className="w-full h-[280px] rounded-md mb-6" />
+          <RouteMap points={mapPoints} className="w-full h-[280px] rounded-md mb-6" />
         </>
       )}
+      {!hasGpsTrace && (
+        <GpxRouteUpload
+          activityId={activity.id}
+          hasRoute={Boolean(gpxRoutePoints && gpxRoutePoints.length > 0)}
+          onUploaded={setGpxRoutePoints}
+        />
+      )}
 
-      {workout.segments.length > 0 && (
+      {activity.laps.length > 0 && (
         <>
-          <h4 className="mb-3">Structure</h4>
+          <h4 className="mb-3">Laps</h4>
           <table className="w-full border-collapse text-sm mb-6">
             <thead>
               <tr>
-                <th className={thClass}>Segment</th>
-                <th className={thClass}>Detail</th>
-                <th className={thClass}>Target</th>
+                <th className={thClass}>Lap</th>
+                <th className={thClass}>Distance</th>
+                <th className={thClass}>Duration</th>
+                <th className={thClass}>Pace</th>
+                <th className={thClass}>Avg HR</th>
               </tr>
             </thead>
             <tbody>
-              {workout.segments.map((seg) => (
-                <tr key={seg.name}>
-                  <td className={`${tdClass} font-semibold`}>{seg.name}</td>
-                  <td className={tdClass}>{seg.detail}</td>
-                  <td className={`${tdClass} text-text/60`}>{seg.target}</td>
+              {activity.laps.map((lap) => (
+                <tr key={lap.id}>
+                  <td className={`${tdClass} font-semibold`}>{lap.index + 1}</td>
+                  <td className={tdClass}>{formatDistance(lap.distanceM)}</td>
+                  <td className={tdClass}>{formatDuration(Math.round(lap.durationSec))}</td>
+                  <td className={`${tdClass} text-text/60`}>
+                    {lap.avgPaceSecPerKm != null ? formatPace(lap.avgPaceSecPerKm) : '—'}
+                  </td>
+                  <td className={`${tdClass} text-text/60`}>
+                    {lap.avgHeartRate != null ? `${lap.avgHeartRate}bpm` : '—'}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -85,13 +127,7 @@ export function ActivityDetailView({ id }: { id: string }) {
         </>
       )}
 
-      {workout.coachNote && (
-        <blockquote className="mb-6 pl-4 border-l-2 border-accent-200 italic text-[17px] max-w-[56ch]">
-          “{workout.coachNote}”
-        </blockquote>
-      )}
-
-      {actual && (
+      {planned && (
         <>
           <h4 className="mb-3">Planned vs. completed</h4>
           <table className="w-full border-collapse text-sm">
@@ -103,20 +139,27 @@ export function ActivityDetailView({ id }: { id: string }) {
               </tr>
             </thead>
             <tbody>
-              {comparisonRows.map((c) => (
-                <tr key={c.metric}>
-                  <td className={`${tdClass} text-text/60`}>{c.metric}</td>
-                  <td className={tdClass}>{c.planned}</td>
-                  <td className={`${tdClass} font-semibold`}>{c.actual}</td>
-                </tr>
-              ))}
+              <tr>
+                <td className={`${tdClass} text-text/60`}>Distance</td>
+                <td className={tdClass}>{planned.distance}</td>
+                <td className={`${tdClass} font-semibold`}>{actual.distance}</td>
+              </tr>
+              <tr>
+                <td className={`${tdClass} text-text/60`}>Duration</td>
+                <td className={tdClass}>{planned.duration}</td>
+                <td className={`${tdClass} font-semibold`}>{actual.duration}</td>
+              </tr>
+              <tr>
+                <td className={`${tdClass} text-text/60`}>Avg pace / target</td>
+                <td className={tdClass}>{planned.pace}</td>
+                <td className={`${tdClass} font-semibold`}>{actual.pace}</td>
+              </tr>
             </tbody>
           </table>
-          <p className="italic opacity-75 mt-3 max-w-[56ch]">{actual.note}</p>
         </>
       )}
 
-      {wasUploaded && session.lastRealUpload && <ActivityNoteEditor activity={session.lastRealUpload} />}
+      <ActivityNoteEditor activity={activity} onSaved={setActivity} />
     </div>
   )
 }

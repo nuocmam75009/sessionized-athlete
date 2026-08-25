@@ -1,8 +1,7 @@
 export type Role = 'ATHLETE' | 'COACH'
 export type ActivitySource = 'FIT' | 'COROS'
 export type WarningSeverity = 'INFO' | 'WARNING' | 'CRITICAL'
-export type WarningType = 'INTENSITY' | 'LOAD' | 'PATTERN' | 'RECOVERY'
-export type SessionType = 'INTERVALS' | 'TEMPO' | 'EASY' | 'LONG' | 'RACE' | 'OTHER'
+export type WarningFamily = 'INTENSITY' | 'LOAD' | 'PATTERN' | 'RECOVERY'
 
 export interface User {
   id: string
@@ -47,74 +46,51 @@ export interface AthleteProfile {
   maxHr?: number
 }
 
+// Fidèle au model Prisma Activity — voir sessionized-api/prisma/schema.prisma.
 export interface Activity {
   id: string
   athleteId: string
-  plannedSessionId?: string
   source: ActivitySource
-  startedAt: string
-  durationS: number
-  distanceM: number
-  avgPaceSecPerKm: number
-  avgHr?: number
-  tss?: number
-  laps: Lap[]
-  warnings: Warning[]
-}
-
-export interface Lap {
-  id: string
-  activityId: string
-  lapIndex: number
-  distanceM: number
-  paceSecPerKm: number
-  avgHr?: number
-  maxHr?: number
-  cadence?: number
-  power?: number
-  source: ActivitySource
-}
-
-export interface UploadedActivityLap {
-  index: number
-  distanceM: number
-  durationSec: number
-  avgPaceSecPerKm: number
-  avgHeartRate?: number
-  maxHeartRate?: number
-  avgCadence?: number
-  avgPower?: number
-  avgStanceTimeMs?: number
-  avgVerticalOscillationMm?: number
-  avgVerticalRatio?: number
-  avgStepLengthMm?: number
-}
-
-// Réponse de POST /activities/upload — shape réel de l'endpoint, distinct de
-// Activity/Lap ci-dessus qui restent la spec cible partagée avec le coach.
-export interface UploadedActivity {
-  id: string
-  athleteId: string
-  source: ActivitySource
-  sport: string
-  subSport: string
+  sport: string | null
+  subSport: string | null
   startedAt: string
   totalDistanceM: number
   totalDurationSec: number
-  avgHeartRate?: number
-  maxHeartRate?: number
-  avgCadence?: number
-  avgPower?: number
-  totalCalories?: number
-  elevationGainM: number
-  elevationLossM: number
-  plannedSessionId: string | null
-  laps: UploadedActivityLap[]
-  trackPointsCount: number
-  coachNote: string | null
+  avgHeartRate: number | null
+  maxHeartRate: number | null
+  avgCadence: number | null
+  avgPower: number | null
+  totalCalories: number | null
+  elevationGainM: number | null
+  elevationLossM: number | null
   athleteNote: string | null
   difficultyNote: number | null
+  plannedSessionId: string | null
+  laps: Lap[]
 }
+
+// Fidèle au model Prisma Lap.
+export interface Lap {
+  id: string
+  activityId: string
+  index: number
+  distanceM: number
+  durationSec: number
+  avgPaceSecPerKm: number | null
+  avgHeartRate: number | null
+  maxHeartRate: number | null
+  avgCadence: number | null
+  avgPower: number | null
+  avgStanceTimeMs: number | null
+  avgVerticalOscillationMm: number | null
+  avgVerticalRatio: number | null
+  avgStepLengthMm: number | null
+}
+
+// Réponse de POST /activities/upload : l'Activity créée + le compteur de
+// points GPS (calculé à l'upload, jamais stocké/renvoyé par les autres
+// endpoints activités).
+export type UploadedActivity = Activity & { trackPointsCount: number }
 
 // Corps accepté par PATCH /activities/:id — les deux champs sont
 // indépendants, n'envoyer que celui qu'on modifie.
@@ -123,40 +99,70 @@ export interface ActivityNoteUpdate {
   difficultyNote?: number
 }
 
+// Réponse de GET /activities/:id/track — un point par seconde, chargé à
+// part de UploadedActivity pour ne pas alourdir la réponse d'upload/detail.
+export interface TrackPoint {
+  id: string
+  activityId: string
+  timestamp: string
+  elapsedSec: number
+  distanceM: number | null
+  latitude: number | null
+  longitude: number | null
+  altitudeM: number | null
+  heartRate: number | null
+  cadence: number | null
+  power: number | null
+  speedMPerSec: number | null
+}
+
+// Réponse de GET /activities/:id/route — tracé importé via POST
+// /activities/:id/gpx, complémentaire au .fit (pas de physio, juste la carte).
+export interface RoutePointRecord {
+  id: string
+  activityId: string
+  timestamp: string | null
+  latitude: number
+  longitude: number
+  altitudeM: number | null
+}
+
+// Réponse de POST /activities/:id/gpx.
+export interface UploadGpxResult {
+  activityId: string
+  routePointsCount: number
+}
+
+// Fidèle au model Prisma PlannedLap.
 export interface PlannedLap {
   id: string
-  sessionId: string
-  lapIndex: number
-  distanceM: number
-  targetPaceMin: number   // sec/km
-  targetPaceMax: number   // sec/km
-  targetHrMin?: number
-  targetHrMax?: number
+  plannedSessionId: string
+  index: number
+  targetDistanceM: number | null
+  targetPaceSecPerKm: number | null
+  targetDurationSec: number | null
 }
 
+// Fidèle au model Prisma PlannedSession.
 export interface PlannedSession {
   id: string
-  athleteId: string
   coachId: string
-  scheduledAt: string
-  type: SessionType
+  athleteId: string
   title: string
-  notes?: string
-  laps: PlannedLap[]
+  scheduledDate: string
+  plannedLaps: PlannedLap[]
+  createdAt: string
+  updatedAt: string
 }
 
+// Fidèle au model Prisma Warning.
 export interface Warning {
   id: string
   activityId: string
-  lapId?: string
-  athleteId: string
-  type: WarningType
+  family: WarningFamily
   severity: WarningSeverity
   message: string
-  detail: string
-  suggestion: string
-  seenByAthlete: boolean
-  seenByCoach: boolean
+  suggestion: string | null
   createdAt: string
 }
 

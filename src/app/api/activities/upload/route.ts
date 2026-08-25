@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
+import { SESSION_COOKIE_NAME } from '@/lib/auth-cookie'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL
 
 export async function POST(request: NextRequest) {
   const cookieStore = await cookies()
-  const token = cookieStore.get('sessionized_token')?.value
+  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value
   if (!token) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
 
   const formData = await request.formData()

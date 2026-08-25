@@ -3,10 +3,9 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Field, Textarea } from '@/components/ui/Field'
-import { patchLastRealUpload } from '@/lib/session-store'
-import type { UploadedActivity } from '@/lib/types'
+import type { Activity } from '@/lib/types'
 
-export function ActivityNoteEditor({ activity }: { activity: UploadedActivity }) {
+export function ActivityNoteEditor({ activity, onSaved }: { activity: Activity; onSaved: (activity: Activity) => void }) {
   const [editing, setEditing] = useState(false)
   const [athleteNote, setAthleteNote] = useState(activity.athleteNote ?? '')
   const [difficultyNote, setDifficultyNote] = useState(
@@ -36,7 +35,8 @@ export function ActivityNoteEditor({ activity }: { activity: UploadedActivity })
       })
       if (!res.ok) throw new Error('patch failed')
 
-      patchLastRealUpload({ athleteNote: trimmedNote || null, difficultyNote: difficultyValue })
+      const updated: Activity = await res.json()
+      onSaved(updated)
       setEditing(false)
     } catch {
       setError("Échec de l'enregistrement.")
@@ -49,12 +49,6 @@ export function ActivityNoteEditor({ activity }: { activity: UploadedActivity })
     return (
       <div className="mb-6">
         <h4 className="mb-3">Ta note</h4>
-        {activity.coachNote && (
-          <p className="text-sm mb-2">
-            <span className="text-text/60">Note du coach : </span>
-            {activity.coachNote}
-          </p>
-        )}
         <p className="text-sm mb-1">
           <span className="text-text/60">Difficulté : </span>
           {activity.difficultyNote != null ? `${activity.difficultyNote}/10` : '—'}
