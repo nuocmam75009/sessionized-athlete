@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { ActivityNoteEditor } from '@/components/activities/ActivityNoteEditor'
 import { GpxRouteUpload } from '@/components/activities/GpxRouteUpload'
+import { PlannedVsActualTable } from '@/components/activities/PlannedVsActualTable'
 import { Badge } from '@/components/ui/Badge'
 import { BackLink } from '@/components/ui/BackLink'
 import { RouteMap, type RoutePoint } from '@/components/ui/RouteMap'
@@ -67,7 +68,7 @@ export function ActivityDetailView({
 
   return (
     <div>
-      <BackLink fallbackHref="/plan" />
+      <BackLink fallbackHref="/dashboard" />
       <div className="font-heading font-semibold text-xs tracking-[0.1em] uppercase text-accent mb-2">
         {formatDateLabel(activity.startedAt)}
       </div>
@@ -136,32 +137,7 @@ export function ActivityDetailView({
       {planned && (
         <>
           <h4 className="mb-3">Planned vs. completed</h4>
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr>
-                <th className={thClass}>Metric</th>
-                <th className={thClass}>Planned</th>
-                <th className={thClass}>Actual</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className={`${tdClass} text-text/60`}>Distance</td>
-                <td className={tdClass}>{planned.distance}</td>
-                <td className={`${tdClass} font-semibold`}>{actual.distance}</td>
-              </tr>
-              <tr>
-                <td className={`${tdClass} text-text/60`}>Duration</td>
-                <td className={tdClass}>{planned.duration}</td>
-                <td className={`${tdClass} font-semibold`}>{actual.duration}</td>
-              </tr>
-              <tr>
-                <td className={`${tdClass} text-text/60`}>Avg pace / target</td>
-                <td className={tdClass}>{planned.pace}</td>
-                <td className={`${tdClass} font-semibold`}>{actual.pace}</td>
-              </tr>
-            </tbody>
-          </table>
+          <PlannedVsActualTable planned={planned} actual={actual} />
         </>
       )}
 

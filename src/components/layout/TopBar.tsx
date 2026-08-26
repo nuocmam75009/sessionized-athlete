@@ -6,9 +6,7 @@ import { Button, buttonClassName } from '@/components/ui/Button'
 import { useAuth } from '@/hooks/useAuth'
 
 const TABS = [
-  { href: '/dashboard', label: 'Today' },
-  { href: '/plan', label: 'Week' },
-  { href: '/activities', label: 'History' },
+  { href: '/dashboard', label: 'Calendar' },
   { href: '/messages', label: 'Messages' },
   { href: '/profile', label: 'Profile' },
 ]

@@ -134,6 +134,26 @@ export interface UploadGpxResult {
   routePointsCount: number
 }
 
+// Réponse de GET /strava/activities — activités Strava récentes de
+// l'athlète, pour choisir laquelle importer (voir POST /strava/activities/:id/import).
+export interface StravaActivitySummary {
+  stravaActivityId: string
+  name: string
+  sportType: string
+  startedAt: string
+  distanceM: number
+  durationSec: number
+  elevationGainM: number
+  alreadyImported: boolean
+}
+
+// Réponse de POST /strava/activities/:id/import.
+export interface StravaImportResult {
+  activityId: string
+  lapsCount: number
+  trackPointsCount: number
+}
+
 // Fidèle au model Prisma WorkoutLap.
 export interface WorkoutLap {
   id: string

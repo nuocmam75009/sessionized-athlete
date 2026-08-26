@@ -1,60 +1,68 @@
 import Link from 'next/link'
-import { buttonClassName } from '@/components/ui/Button'
-import { Stat } from '@/components/ui/Stat'
-import { findLinkedActivityId, summarizeWorkoutLaps } from '@/lib/plan-format'
+import { MonthCalendar } from '@/components/calendar/MonthCalendar'
+import { buildMonthEntries, formatMonthLabel, getMonthStart, toMonthParam } from '@/lib/calendar'
 import { serverApiFetchStatus } from '@/lib/server-api'
-import { formatDateLabel, isSameCalendarDay } from '@/lib/utils'
 import type { Activity, Workout } from '@/lib/types'
 
-export default async function DashboardPage() {
+const MONTH_PARAM_RE = /^\d{4}-\d{2}$/
+
+function parseMonthParam(raw: string | undefined): Date {
+  if (raw && MONTH_PARAM_RE.test(raw)) {
+    const [y, m] = raw.split('-').map(Number)
+    const parsed = new Date(y, m - 1, 1)
+    if (!Number.isNaN(parsed.getTime())) return parsed
+  }
+  return getMonthStart(new Date())
+}
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string }>
+}) {
+  const { month } = await searchParams
+  const monthStart = parseMonthParam(month)
+  const currentMonthStart = getMonthStart(new Date())
+  const isCurrentMonth = monthStart.getTime() === currentMonthStart.getTime()
+
+  const { data: strava } = await serverApiFetchStatus<{ connected: boolean }>('/strava/status')
+  if (strava?.connected) {
+    // Sync avant de charger les activités pour que les runs Strava tout
+    // juste apparus atterrissent sur leur case dès ce chargement — pas de
+    // sélection manuelle, une activité échouée/API Strava down dégrade
+    // silencieusement (serverApiFetchStatus n'throw jamais).
+    await serverApiFetchStatus('/strava/sync', { method: 'POST' })
+  }
+
   const [{ data: workouts }, { data: activities }] = await Promise.all([
     serverApiFetchStatus<Workout[]>('/workouts'),
     serverApiFetchStatus<Activity[]>('/activities'),
   ])
 
-  const now = new Date()
-  const today = (workouts ?? []).find((w) => isSameCalendarDay(new Date(w.scheduledDate), now))
-  const activityId = today ? findLinkedActivityId(today.id, activities ?? []) : undefined
+  const entries = buildMonthEntries(monthStart, workouts ?? [], activities ?? [])
 
-  if (!today) {
-    return (
-      <div>
-        <div className="font-heading font-semibold text-xs tracking-[0.1em] uppercase text-accent mb-2">
-          {formatDateLabel(now.toISOString())} · Today
-        </div>
-        <h1>No session scheduled today</h1>
-        <p className="opacity-70 mb-6">Nothing planned for today — log a run anyway if you went out.</p>
-        <Link href="/activities/upload" className={buttonClassName('primary')}>
-          Upload activity
-        </Link>
-      </div>
-    )
-  }
+  const prevMonth = new Date(monthStart.getFullYear(), monthStart.getMonth() - 1, 1)
+  const nextMonth = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 1)
 
   return (
     <div>
-      <div className="font-heading font-semibold text-xs tracking-[0.1em] uppercase text-accent mb-2">
-        {formatDateLabel(today.scheduledDate)} · Today
-      </div>
-      <h1>{today.title}</h1>
-      <div className="flex gap-8 my-6">
-        <Stat label="Target" value={summarizeWorkoutLaps(today.laps)} />
-      </div>
-      {today.coachNote && (
-        <blockquote className="mb-6 pl-4 border-l-2 border-accent-200 italic text-[17px] max-w-[56ch]">
-          “{today.coachNote}”
-        </blockquote>
-      )}
-      <div className="flex gap-3">
-        {activityId && (
-          <Link href={`/activities/${activityId}`} className={buttonClassName('primary')}>
-            View full breakdown
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <h1 className="mb-0">{formatMonthLabel(monthStart)}</h1>
+        <div className="flex gap-3 items-center text-sm">
+          <Link href={`/dashboard?month=${toMonthParam(prevMonth)}`} className="text-accent hover:text-accent-700">
+            ‹ Previous
           </Link>
-        )}
-        <Link href="/activities/upload" className={buttonClassName(activityId ? 'secondary' : 'primary')}>
-          Upload activity
-        </Link>
+          {!isCurrentMonth && (
+            <Link href="/dashboard" className="text-accent hover:text-accent-700">
+              This month
+            </Link>
+          )}
+          <Link href={`/dashboard?month=${toMonthParam(nextMonth)}`} className="text-accent hover:text-accent-700">
+            Next ›
+          </Link>
+        </div>
       </div>
+      <MonthCalendar entries={entries} />
     </div>
   )
 }
