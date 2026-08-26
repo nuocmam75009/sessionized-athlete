@@ -41,11 +41,22 @@ export default function LoginView() {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ email, password }),
             })
-          : await fetch('/api/auth/register', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ name, email, password, inviteCode: invite }),
-            })
+          : await (() => {
+              const [firstName, ...rest] = name.trim().split(/\s+/)
+              const lastName = rest.join(' ') || undefined
+              return fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  firstName: firstName || undefined,
+                  lastName,
+                  email,
+                  password,
+                  inviteCode: invite,
+                  role: 'ATHLETE',
+                }),
+              })
+            })()
       if (!res.ok) throw new Error('auth failed')
 
       const { user }: { user: AuthUser } = await res.json()
