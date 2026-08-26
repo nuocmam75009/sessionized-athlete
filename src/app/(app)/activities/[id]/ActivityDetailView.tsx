@@ -9,16 +9,16 @@ import { RouteMap, type RoutePoint } from '@/components/ui/RouteMap'
 import { Stat } from '@/components/ui/Stat'
 import { thClass, tdClass } from '@/components/ui/table'
 import { formatActivity } from '@/lib/activity-format'
-import { plannedTargets } from '@/lib/plan-format'
+import { workoutTargets } from '@/lib/plan-format'
 import { formatDateLabel, formatDistance, formatDuration, formatPace } from '@/lib/utils'
-import type { Activity, PlannedSession } from '@/lib/types'
+import type { Activity, Workout } from '@/lib/types'
 
 export function ActivityDetailView({
   activity: initialActivity,
-  plannedSession,
+  workout,
 }: {
   activity: Activity
-  plannedSession: PlannedSession | null
+  workout: Workout | null
 }) {
   const [activity, setActivity] = useState(initialActivity)
 
@@ -63,7 +63,7 @@ export function ActivityDetailView({
   const mapPoints = hasGpsTrace ? trackPoints : gpxRoutePoints
 
   const actual = formatActivity(activity)
-  const planned = plannedSession ? plannedTargets(plannedSession.plannedLaps) : null
+  const planned = workout ? workoutTargets(workout.laps) : null
 
   return (
     <div>
@@ -72,7 +72,7 @@ export function ActivityDetailView({
         {formatDateLabel(activity.startedAt)}
       </div>
       <div className="flex items-baseline gap-3">
-        <h1 className="mb-0">{plannedSession?.title ?? activity.sport ?? 'Activity'}</h1>
+        <h1 className="mb-0">{workout?.title ?? activity.sport ?? 'Activity'}</h1>
         <Badge variant="outline">{activity.source}</Badge>
       </div>
       <div className="flex gap-8 my-6">
@@ -80,6 +80,12 @@ export function ActivityDetailView({
         <Stat label="Duration" value={actual.duration} />
         <Stat label="Avg pace" value={actual.pace} />
       </div>
+
+      {workout?.coachNote && (
+        <blockquote className="mb-6 pl-4 border-l-2 border-accent-200 italic text-[17px] max-w-[56ch]">
+          “{workout.coachNote}”
+        </blockquote>
+      )}
 
       {mapPoints && mapPoints.length > 0 && (
         <>

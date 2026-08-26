@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Field, Select, Textarea } from '@/components/ui/Field'
 import { RouteMap } from '@/components/ui/RouteMap'
 import { formatDateLabel } from '@/lib/utils'
-import type { PlannedSession, UploadedActivity } from '@/lib/types'
+import type { UploadedActivity, Workout } from '@/lib/types'
 
 type Stage = 'idle' | 'parsed'
 
@@ -21,14 +21,14 @@ export default function UploadPage() {
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [athleteNote, setAthleteNote] = useState('')
   const [difficultyNote, setDifficultyNote] = useState('')
-  const [plans, setPlans] = useState<PlannedSession[]>([])
-  const [plannedSessionId, setPlannedSessionId] = useState('none')
+  const [workouts, setWorkouts] = useState<Workout[]>([])
+  const [workoutId, setWorkoutId] = useState('none')
 
   useEffect(() => {
-    fetch('/api/plans')
+    fetch('/api/workouts')
       .then((res) => (res.ok ? res.json() : []))
-      .then(setPlans)
-      .catch(() => setPlans([]))
+      .then(setWorkouts)
+      .catch(() => setWorkouts([]))
   }, [])
 
   function resetSelection() {
@@ -38,7 +38,7 @@ export default function UploadPage() {
     setUploadError(null)
     setAthleteNote('')
     setDifficultyNote('')
-    setPlannedSessionId('none')
+    setWorkoutId('none')
   }
 
   function pickFile() {
@@ -131,7 +131,7 @@ export default function UploadPage() {
     try {
       const formData = new FormData()
       formData.append('file', selectedFitFile)
-      if (plannedSessionId !== 'none') formData.append('plannedSessionId', plannedSessionId)
+      if (workoutId !== 'none') formData.append('workoutId', workoutId)
       if (trimmedNote) formData.append('athleteNote', trimmedNote)
       if (difficultyValue !== null) formData.append('difficultyNote', String(difficultyValue))
       const res = await fetch('/api/activities/upload', { method: 'POST', body: formData })
@@ -251,11 +251,11 @@ export default function UploadPage() {
 
           <div className="max-w-[340px] mb-5">
             <Field label="Match to planned workout" htmlFor="sn-match">
-              <Select id="sn-match" value={plannedSessionId} onChange={(e) => setPlannedSessionId(e.target.value)}>
+              <Select id="sn-match" value={workoutId} onChange={(e) => setWorkoutId(e.target.value)}>
                 <option value="none">No match — log as unplanned</option>
-                {plans.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {formatDateLabel(p.scheduledDate)} · {p.title}
+                {workouts.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {formatDateLabel(w.scheduledDate)} · {w.title}
                   </option>
                 ))}
               </Select>

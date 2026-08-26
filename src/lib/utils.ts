@@ -1,7 +1,10 @@
-// Convertit des secondes/km en "4'05"/km"
+// Convertit des secondes/km en "4'05"/km" — arrondi car les valeurs venant
+// directement du backend (ex: Lap.avgPaceSecPerKm) sont des Float, pas des
+// entiers déjà arrondis comme le fait activity-format.ts avant d'appeler ceci.
 export function formatPace(secPerKm: number): string {
-  const min = Math.floor(secPerKm / 60)
-  const sec = secPerKm % 60
+  const rounded = Math.round(secPerKm)
+  const min = Math.floor(rounded / 60)
+  const sec = rounded % 60
   return `${min}'${String(sec).padStart(2, '0')}"/km`
 }
 

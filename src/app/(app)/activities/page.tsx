@@ -2,19 +2,19 @@ import { Badge } from '@/components/ui/Badge'
 import { RowLink } from '@/components/ui/RowLink'
 import { thClass, tdClass } from '@/components/ui/table'
 import { formatActivity } from '@/lib/activity-format'
-import { findLinkedPlan, summarizePlannedLaps } from '@/lib/plan-format'
+import { findLinkedWorkout, summarizeWorkoutLaps } from '@/lib/plan-format'
 import { serverApiFetchStatus } from '@/lib/server-api'
 import { formatDateLabel } from '@/lib/utils'
-import type { Activity, PlannedSession } from '@/lib/types'
+import type { Activity, Workout } from '@/lib/types'
 
 export default async function ActivitiesPage() {
-  const [{ data: activities }, { data: plans }] = await Promise.all([
+  const [{ data: activities }, { data: workouts }] = await Promise.all([
     serverApiFetchStatus<Activity[]>('/activities'),
-    serverApiFetchStatus<PlannedSession[]>('/plans'),
+    serverApiFetchStatus<Workout[]>('/workouts'),
   ])
 
   const rows = activities ?? []
-  const sessions = plans ?? []
+  const plannedWorkouts = workouts ?? []
 
   return (
     <div>
@@ -35,14 +35,14 @@ export default async function ActivitiesPage() {
           </thead>
           <tbody>
             {rows.map((activity) => {
-              const plan = findLinkedPlan(activity, sessions)
+              const workout = findLinkedWorkout(activity, plannedWorkouts)
               const actual = formatActivity(activity)
               return (
                 <RowLink key={activity.id} href={`/activities/${activity.id}`}>
                   <td className={`${tdClass} text-text/60`}>{formatDateLabel(activity.startedAt)}</td>
-                  <td className={tdClass}>{plan?.title ?? 'Unplanned'}</td>
+                  <td className={tdClass}>{workout?.title ?? 'Unplanned'}</td>
                   <td className={`${tdClass} text-text/60`}>
-                    {plan ? summarizePlannedLaps(plan.plannedLaps) : '—'}
+                    {workout ? summarizeWorkoutLaps(workout.laps) : '—'}
                   </td>
                   <td className={tdClass}>
                     {actual.distance} · {actual.duration}

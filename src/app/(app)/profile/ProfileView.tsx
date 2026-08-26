@@ -24,13 +24,48 @@ function assignedSince(createdAt: string) {
   return new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(new Date(createdAt))
 }
 
-export function ProfileView({ user, coach }: { user: UserProfile | null; coach: CoachAssignment | null }) {
+export function ProfileView({
+  user,
+  coach,
+  stravaConnected: initialStravaConnected,
+  stravaBanner,
+}: {
+  user: UserProfile | null
+  coach: CoachAssignment | null
+  stravaConnected: boolean
+  stravaBanner: 'connected' | 'error' | null
+}) {
   const session = useSessionState()
   const [notify, setNotify] = useState<NotifyPref>('new-plan')
   const [firstName, setFirstName] = useState(user?.firstName ?? '')
   const [lastName, setLastName] = useState(user?.lastName ?? '')
   const [email, setEmail] = useState(user?.email ?? '')
   const [saveState, setSaveState] = useState<SaveState>('idle')
+  const [stravaConnected, setStravaConnected] = useState(initialStravaConnected)
+  const [stravaBusy, setStravaBusy] = useState(false)
+
+  async function connectStrava() {
+    setStravaBusy(true)
+    try {
+      const res = await fetch('/api/strava/authorize')
+      if (!res.ok) throw new Error('authorize failed')
+      const { url } = await res.json()
+      window.location.href = url
+    } catch {
+      setStravaBusy(false)
+    }
+  }
+
+  async function disconnectStrava() {
+    setStravaBusy(true)
+    try {
+      const res = await fetch('/api/strava/disconnect', { method: 'DELETE' })
+      if (!res.ok) throw new Error('disconnect failed')
+      setStravaConnected(false)
+    } finally {
+      setStravaBusy(false)
+    }
+  }
 
   async function save() {
     setSaveState('saving')
@@ -118,9 +153,25 @@ export function ProfileView({ user, coach }: { user: UserProfile | null; coach: 
             <Badge variant="accent">Garmin Connect · Connected</Badge>
           </div>
           <div className="flex gap-2 items-center">
-            <Badge variant="neutral">Strava · Not connected</Badge>
-            <Button variant="ghost">Connect</Button>
+            <Badge variant={stravaConnected ? 'accent' : 'neutral'}>
+              Strava · {stravaConnected ? 'Connected' : 'Not connected'}
+            </Badge>
+            {stravaConnected ? (
+              <Button variant="ghost" onClick={disconnectStrava} disabled={stravaBusy}>
+                {stravaBusy ? 'Déconnexion…' : 'Disconnect'}
+              </Button>
+            ) : (
+              <Button variant="ghost" onClick={connectStrava} disabled={stravaBusy}>
+                {stravaBusy ? 'Redirection…' : 'Connect'}
+              </Button>
+            )}
           </div>
+          {stravaBanner === 'connected' && (
+            <p className="text-sm text-green-600 mt-2">Compte Strava connecté avec succès.</p>
+          )}
+          {stravaBanner === 'error' && (
+            <p className="text-sm text-red-600 mt-2">Échec de la connexion Strava. Réessaie.</p>
+          )}
         </section>
 
         <div className="flex items-center gap-3">

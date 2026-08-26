@@ -1,7 +1,8 @@
 export type Role = 'ATHLETE' | 'COACH'
-export type ActivitySource = 'FIT' | 'COROS'
+export type ActivitySource = 'FIT' | 'COROS' | 'STRAVA'
 export type WarningSeverity = 'INFO' | 'WARNING' | 'CRITICAL'
 export type WarningFamily = 'INTENSITY' | 'LOAD' | 'PATTERN' | 'RECOVERY'
+export type HeartRateZone = 'Z1' | 'Z2' | 'Z3' | 'Z4' | 'Z5'
 
 export interface User {
   id: string
@@ -65,7 +66,7 @@ export interface Activity {
   elevationLossM: number | null
   athleteNote: string | null
   difficultyNote: number | null
-  plannedSessionId: string | null
+  workoutId: string | null
   laps: Lap[]
 }
 
@@ -133,24 +134,30 @@ export interface UploadGpxResult {
   routePointsCount: number
 }
 
-// Fidèle au model Prisma PlannedLap.
-export interface PlannedLap {
+// Fidèle au model Prisma WorkoutLap.
+export interface WorkoutLap {
   id: string
-  plannedSessionId: string
+  workoutId: string
   index: number
   targetDistanceM: number | null
   targetPaceSecPerKm: number | null
   targetDurationSec: number | null
+  targetHeartRateZone: HeartRateZone | null
 }
 
-// Fidèle au model Prisma PlannedSession.
-export interface PlannedSession {
+// Fidèle au model Prisma Workout — remplace l'ancien PlannedSession depuis la
+// réorganisation coach/plan/workout/activity (un Plan par athlète, N Workout
+// par Plan). GET /workouts renvoie une liste à plat, pas groupée par plan.
+export interface Workout {
   id: string
-  coachId: string
-  athleteId: string
+  planId: string
   title: string
   scheduledDate: string
-  plannedLaps: PlannedLap[]
+  coachNote: string | null
+  targetDistanceM: number | null
+  targetDurationSec: number | null
+  targetHeartRateZone: HeartRateZone | null
+  laps: WorkoutLap[]
   createdAt: string
   updatedAt: string
 }

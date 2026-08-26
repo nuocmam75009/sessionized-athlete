@@ -1,19 +1,19 @@
 import Link from 'next/link'
 import { buttonClassName } from '@/components/ui/Button'
 import { Stat } from '@/components/ui/Stat'
-import { findLinkedActivityId, summarizePlannedLaps } from '@/lib/plan-format'
+import { findLinkedActivityId, summarizeWorkoutLaps } from '@/lib/plan-format'
 import { serverApiFetchStatus } from '@/lib/server-api'
 import { formatDateLabel, isSameCalendarDay } from '@/lib/utils'
-import type { Activity, PlannedSession } from '@/lib/types'
+import type { Activity, Workout } from '@/lib/types'
 
 export default async function DashboardPage() {
-  const [{ data: plans }, { data: activities }] = await Promise.all([
-    serverApiFetchStatus<PlannedSession[]>('/plans'),
+  const [{ data: workouts }, { data: activities }] = await Promise.all([
+    serverApiFetchStatus<Workout[]>('/workouts'),
     serverApiFetchStatus<Activity[]>('/activities'),
   ])
 
   const now = new Date()
-  const today = (plans ?? []).find((p) => isSameCalendarDay(new Date(p.scheduledDate), now))
+  const today = (workouts ?? []).find((w) => isSameCalendarDay(new Date(w.scheduledDate), now))
   const activityId = today ? findLinkedActivityId(today.id, activities ?? []) : undefined
 
   if (!today) {
@@ -38,8 +38,13 @@ export default async function DashboardPage() {
       </div>
       <h1>{today.title}</h1>
       <div className="flex gap-8 my-6">
-        <Stat label="Target" value={summarizePlannedLaps(today.plannedLaps)} />
+        <Stat label="Target" value={summarizeWorkoutLaps(today.laps)} />
       </div>
+      {today.coachNote && (
+        <blockquote className="mb-6 pl-4 border-l-2 border-accent-200 italic text-[17px] max-w-[56ch]">
+          “{today.coachNote}”
+        </blockquote>
+      )}
       <div className="flex gap-3">
         {activityId && (
           <Link href={`/activities/${activityId}`} className={buttonClassName('primary')}>
