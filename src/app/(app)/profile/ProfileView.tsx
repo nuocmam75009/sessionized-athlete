@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ContactCoachButton } from '@/components/chat/ContactCoachButton'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -13,6 +14,7 @@ import type { CoachAssignment, UserProfile } from '@/lib/types'
 
 type NotifyPref = 'new-plan' | 'weekly' | 'none'
 type SaveState = 'idle' | 'saving' | 'saved' | 'error'
+type StravaSyncState = 'idle' | 'syncing' | 'done' | 'error'
 
 function coachName(coach: CoachAssignment) {
   const { firstName, lastName, email } = coach.user
@@ -43,6 +45,29 @@ export function ProfileView({
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const [stravaConnected, setStravaConnected] = useState(initialStravaConnected)
   const [stravaBusy, setStravaBusy] = useState(false)
+  const [stravaSync, setStravaSync] = useState<StravaSyncState>('idle')
+  const router = useRouter()
+
+  // Première connexion Strava : l'import initial peut porter sur des mois
+  // d'historique et prendre un certain temps, contrairement aux resynchros
+  // incrémentales déclenchées ensuite à chaque chargement du dashboard.
+  useEffect(() => {
+    if (stravaBanner !== 'connected') return
+    let cancelled = false
+    setStravaSync('syncing')
+    fetch('/api/strava/sync', { method: 'POST' })
+      .then((res) => {
+        if (cancelled) return
+        setStravaSync(res.ok ? 'done' : 'error')
+        if (res.ok) router.refresh()
+      })
+      .catch(() => {
+        if (!cancelled) setStravaSync('error')
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [stravaBanner, router])
 
   async function connectStrava() {
     setStravaBusy(true)
@@ -166,8 +191,24 @@ export function ProfileView({
               </Button>
             )}
           </div>
-          {stravaBanner === 'connected' && (
-            <p className="text-sm text-green-600 mt-2">Compte Strava connecté avec succès.</p>
+          {stravaBanner === 'connected' && stravaSync === 'syncing' && (
+            <div className="flex items-center gap-2 mt-2 text-sm text-text/70">
+              <span className="w-4 h-4 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
+              Importation de vos activités Strava en cours… cela peut prendre quelques instants.
+            </div>
+          )}
+          {stravaBanner === 'connected' && stravaSync === 'done' && (
+            <p className="text-sm text-green-600 mt-2">
+              Activités Strava importées.{' '}
+              <Link href="/dashboard" className="text-accent hover:text-accent-700">
+                Voir mon calendrier →
+              </Link>
+            </p>
+          )}
+          {stravaBanner === 'connected' && stravaSync === 'error' && (
+            <p className="text-sm text-red-600 mt-2">
+              Compte connecté, mais l&apos;import des activités a échoué. Réessaie depuis le calendrier.
+            </p>
           )}
           {stravaBanner === 'error' && (
             <p className="text-sm text-red-600 mt-2">Échec de la connexion Strava. Réessaie.</p>

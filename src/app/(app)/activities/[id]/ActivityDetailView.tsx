@@ -64,7 +64,7 @@ export function ActivityDetailView({
   const mapPoints = hasGpsTrace ? trackPoints : gpxRoutePoints
 
   const actual = formatActivity(activity)
-  const planned = workout ? workoutTargets(workout.laps) : null
+  const planned = workout ? workoutTargets(workout) : null
 
   return (
     <div>

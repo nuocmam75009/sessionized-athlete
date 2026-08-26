@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
+import { AssignStravaActivity } from '@/components/activities/AssignStravaActivity'
 import { ImportActions } from '@/components/activities/ImportActions'
 import { PlannedVsActualTable } from '@/components/activities/PlannedVsActualTable'
 import { buttonClassName } from '@/components/ui/Button'
@@ -30,6 +31,10 @@ export function WorkoutModal({
   }, [onClose])
 
   const { workout, linkedActivity, unplannedActivities, status } = entry
+
+  // eslint-disable-next-line no-console
+  console.log('[WorkoutModal]', { workout, linkedActivity, unplannedActivities, status })
+  const stravaCandidates = unplannedActivities.filter((a) => a.source === 'STRAVA')
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
@@ -63,11 +68,11 @@ export function WorkoutModal({
                 “{workout.coachNote}”
               </blockquote>
             )}
-            <p className="text-sm text-text/60 mb-5">{summarizeWorkoutLaps(workout.laps)}</p>
+            <p className="text-sm text-text/60 mb-5">{summarizeWorkoutLaps(workout)}</p>
 
             {status === 'done' && linkedActivity && (
               <>
-                <PlannedVsActualTable planned={workoutTargets(workout.laps)} actual={formatActivity(linkedActivity)} />
+                <PlannedVsActualTable planned={workoutTargets(workout)} actual={formatActivity(linkedActivity)} />
                 <Link
                   href={`/activities/${linkedActivity.id}`}
                   className={`${buttonClassName('secondary')} mt-4`}
@@ -77,7 +82,14 @@ export function WorkoutModal({
               </>
             )}
 
-            {(status === 'pending' || status === 'missed') && <ImportActions workoutId={workout.id} />}
+            {(status === 'pending' || status === 'missed') && (
+              <div className="flex gap-3 items-start flex-wrap">
+                <ImportActions workoutId={workout.id} />
+                {stravaCandidates.length > 0 && (
+                  <AssignStravaActivity workoutId={workout.id} candidates={stravaCandidates} />
+                )}
+              </div>
+            )}
           </>
         )}
 
@@ -102,7 +114,7 @@ export function WorkoutModal({
 
         {!workout && unplannedActivities.length === 0 && (
           <div>
-            <p className="text-text/60 text-sm mb-4">Rien de prévu ni loggé ce jour-là.</p>
+            <p className="text-text/60 text-sm mb-4">Rien de prévu ce jour-là.</p>
             <Link href="/activities/upload" className={buttonClassName('secondary')}>
               Log a run
             </Link>

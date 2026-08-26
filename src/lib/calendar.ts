@@ -91,9 +91,10 @@ function buildDayEntry(date: Date, workouts: Workout[], activities: Activity[], 
   const workout = workouts.find((w) => isSameCalendarDay(new Date(w.scheduledDate), date)) ?? null
   const linkedActivityId = workout ? findLinkedActivityId(workout.id, activities) : undefined
   const linkedActivity = linkedActivityId ? (activities.find((a) => a.id === linkedActivityId) ?? null) : null
-  const unplannedActivities = workout
-    ? []
-    : activities.filter((a) => !a.workoutId && isSameCalendarDay(new Date(a.startedAt), date))
+  // Calculé même quand un workout existe : sert de candidates d'assignation
+  // manuelle (le sync Strava automatique ne lie qu'une seule activité par
+  // jour — les autres restent orphelines et doivent être assignées à la main).
+  const unplannedActivities = activities.filter((a) => !a.workoutId && isSameCalendarDay(new Date(a.startedAt), date))
 
   const isToday = isSameCalendarDay(date, today)
   const status = getDayStatus({
