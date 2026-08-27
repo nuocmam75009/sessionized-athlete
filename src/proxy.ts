@@ -18,5 +18,6 @@ export const config = {
     '/profile/:path*',
     '/messages/:path*',
     '/coaches/:path*',
+    '/athlete-data/:path*',
   ],
 }

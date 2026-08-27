@@ -1,7 +1,9 @@
 import Link from 'next/link'
 import { MonthCalendar } from '@/components/calendar/MonthCalendar'
-import { buildMonthEntries, formatMonthLabel, getMonthStart, toMonthParam } from '@/lib/calendar'
+import { Stat } from '@/components/ui/Stat'
+import { buildMonthEntries, buildMonthSummary, formatMonthLabel, getMonthStart, toMonthParam } from '@/lib/calendar'
 import { serverApiFetchStatus } from '@/lib/server-api'
+import { formatDistance, formatDuration } from '@/lib/utils'
 import type { Activity, Workout } from '@/lib/types'
 
 const MONTH_PARAM_RE = /^\d{4}-\d{2}$/
@@ -40,6 +42,7 @@ export default async function DashboardPage({
   ])
 
   const entries = buildMonthEntries(monthStart, workouts ?? [], activities ?? [])
+  const summary = buildMonthSummary(entries)
 
   const prevMonth = new Date(monthStart.getFullYear(), monthStart.getMonth() - 1, 1)
   const nextMonth = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 1)
@@ -63,6 +66,11 @@ export default async function DashboardPage({
         </div>
       </div>
       <MonthCalendar entries={entries} />
+      <div className="flex gap-8 flex-wrap mt-6 pt-6 border-t border-divider">
+        <Stat label="Distance" value={formatDistance(summary.distanceM)} />
+        <Stat label="Time" value={formatDuration(summary.durationSec)} />
+        <Stat label="Activities" value={String(summary.activityCount)} />
+      </div>
     </div>
   )
 }

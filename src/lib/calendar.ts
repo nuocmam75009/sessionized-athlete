@@ -15,6 +15,9 @@ export interface DayEntry {
   linkedActivity: Activity | null
   unplannedActivities: Activity[]
   status: DayStatus
+  distanceM: number
+  durationSec: number
+  activityCount: number
 }
 
 function startOfDay(date: Date): Date {
@@ -105,6 +108,10 @@ function buildDayEntry(date: Date, workouts: Workout[], activities: Activity[], 
     isFuture: date.getTime() > today.getTime(),
   })
 
+  // Toute activité du jour, qu'elle soit liée à un workout ou orpheline —
+  // sert aux récapitulatifs hebdo/mensuel (km, durée, nombre de séances).
+  const dayActivities = linkedActivity ? [linkedActivity, ...unplannedActivities] : unplannedActivities
+
   return {
     dateParam: toDateParam(date),
     dateLabel: formatDateLabel(date.toISOString()),
@@ -116,6 +123,9 @@ function buildDayEntry(date: Date, workouts: Workout[], activities: Activity[], 
     linkedActivity,
     unplannedActivities,
     status,
+    distanceM: dayActivities.reduce((sum, a) => sum + a.totalDistanceM, 0),
+    durationSec: dayActivities.reduce((sum, a) => sum + a.totalDurationSec, 0),
+    activityCount: dayActivities.length,
   }
 }
 
@@ -127,6 +137,39 @@ export function buildMonthEntries(
 ): DayEntry[] {
   const today = startOfDay(now)
   return getMonthGridDays(monthStart).map((date) => buildDayEntry(date, workouts, activities, today, monthStart))
+}
+
+export interface WeekEntry {
+  days: DayEntry[]
+  distanceM: number
+}
+
+// Découpe la grille (toujours un multiple de 7, voir getMonthGridDays) en
+// semaines pour le récapitulatif km affiché à droite de chaque ligne.
+export function buildWeekEntries(entries: DayEntry[]): WeekEntry[] {
+  const weeks: WeekEntry[] = []
+  for (let i = 0; i < entries.length; i += 7) {
+    const days = entries.slice(i, i + 7)
+    weeks.push({ days, distanceM: days.reduce((sum, d) => sum + d.distanceM, 0) })
+  }
+  return weeks
+}
+
+export interface MonthSummary {
+  distanceM: number
+  durationSec: number
+  activityCount: number
+}
+
+// Contrairement à buildWeekEntries, ne compte que les jours du mois affiché
+// (isInCurrentMonth) — les jours de padding des mois voisins ne comptent pas.
+export function buildMonthSummary(entries: DayEntry[]): MonthSummary {
+  const monthDays = entries.filter((d) => d.isInCurrentMonth)
+  return {
+    distanceM: monthDays.reduce((sum, d) => sum + d.distanceM, 0),
+    durationSec: monthDays.reduce((sum, d) => sum + d.durationSec, 0),
+    activityCount: monthDays.reduce((sum, d) => sum + d.activityCount, 0),
+  }
 }
 
 export function dayStatusStyles(status: DayStatus): {

@@ -24,6 +24,7 @@ export interface UserProfile extends User {
   firstName: string | null
   lastName: string | null
   createdAt: string
+  athleteProfile: AthleteProfile | null
 }
 
 // Réponse de GET /users/me/coach — 404 si aucun coach n'est encore assigné.
@@ -38,13 +39,33 @@ export interface CoachAssignment {
   }
 }
 
+// Fidèle au model Prisma AthleteProfile — voir sessionized-api/prisma/schema.prisma.
+// Sous-objet de UserProfile (GET/PATCH /users/me), pas une réponse à part.
 export interface AthleteProfile {
   id: string
-  userId: string
-  coachId?: string
-  ftp?: number
-  vo2max?: number
-  maxHr?: number
+  coachId: string | null
+  // Remplis par l'athlète lui-même (voir AthleteProfileUpdate).
+  age: number | null
+  weightKg: number | null
+  heightCm: number | null
+  basalMetabolicRateKcal: number | null
+  specialty: Specialty | null
+  // Synchronisées depuis Strava (StravaService.syncZones) — lecture seule,
+  // jamais éditées depuis le front.
+  heartRateZonesBpm: number[]
+  paceZonesSecPerKm: number[]
+}
+
+// Corps accepté par PATCH /users/me/athlete-profile — tous les champs sont
+// indépendants, n'envoyer que ceux qu'on modifie (voir UpdateAthleteProfileDto
+// côté backend, qui n'accepte plus heartRateZonesBpm/paceZonesSecPerKm :
+// ces zones viennent uniquement de la sync Strava).
+export interface AthleteProfileUpdate {
+  age?: number
+  weightKg?: number
+  heightCm?: number
+  basalMetabolicRateKcal?: number
+  specialty?: Specialty
 }
 
 // Fidèle au model Prisma Activity — voir sessionized-api/prisma/schema.prisma.
@@ -232,4 +253,16 @@ export interface ChatConversation {
   }
   messages: ChatMessage[] // messages[0] = dernier message (aperçu liste)
   updatedAt: string
+}
+
+// Valeurs = noms des membres : un enum numérique par défaut sérialise
+// Specialty.TRAIL en 0, alors que le backend (AthleteSpecialty côté Prisma)
+// attend la chaîne "TRAIL" dans le JSON.
+export enum Specialty {
+  TRAIL = 'TRAIL',
+  ULTRA_TRAIL = 'ULTRA_TRAIL',
+  MIDDLE_DISTANCE_TRACK = 'MIDDLE_DISTANCE_TRACK',
+  LONG_DISTANCE_TRACK = 'LONG_DISTANCE_TRACK',
+  MIDDLE_DISTANCE_ROAD = 'MIDDLE_DISTANCE_ROAD',
+  LONG_DISTANCE_ROAD = 'LONG_DISTANCE_ROAD',
 }
