@@ -6,7 +6,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <ChatSocketProvider>
       <div className="flex min-h-screen flex-col md:flex-row">
         <AthleteSidebar />
-        <main className="flex-1 px-6 md:px-8 py-8 max-w-[920px]">{children}</main>
+        {/* Les pages sont cadrées à 920px par défaut (confort de lecture d'une
+            colonne). Une page qui a besoin de plus — le dashboard et ses deux
+            colonnes calendrier + récapitulatif — pose data-wide sur sa racine. */}
+        <main className="flex-1 px-6 md:px-8 py-8 w-full max-w-[920px] has-data-wide:max-w-none">
+          {children}
+        </main>
       </div>
     </ChatSocketProvider>
   )

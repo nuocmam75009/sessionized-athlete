@@ -14,6 +14,8 @@ export interface DayEntry {
   workout: Workout | null
   linkedActivity: Activity | null
   unplannedActivities: Activity[]
+  // Toutes les activités du jour (liée + orphelines) — base des récapitulatifs.
+  activities: Activity[]
   status: DayStatus
   distanceM: number
   durationSec: number
@@ -73,6 +75,13 @@ export function toMonthParam(date: Date): string {
   return `${y}-${m}`
 }
 
+// Inverse de toDateParam — construit une date locale (new Date('2026-08-04')
+// serait interprété en UTC et décalerait d'un jour selon le fuseau).
+function fromDateParam(param: string): Date {
+  const [y, m, d] = param.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
 export function getDayStatus(args: {
   hasWorkout: boolean
   hasLinkedActivity: boolean
@@ -122,6 +131,7 @@ function buildDayEntry(date: Date, workouts: Workout[], activities: Activity[], 
     workout,
     linkedActivity,
     unplannedActivities,
+    activities: dayActivities,
     status,
     distanceM: dayActivities.reduce((sum, a) => sum + a.totalDistanceM, 0),
     durationSec: dayActivities.reduce((sum, a) => sum + a.totalDurationSec, 0),
@@ -139,20 +149,137 @@ export function buildMonthEntries(
   return getMonthGridDays(monthStart).map((date) => buildDayEntry(date, workouts, activities, today, monthStart))
 }
 
+// Répartition par sport d'une semaine — le sport vient de Strava/FIT et peut
+// être null (regroupé sous "Other").
+export interface SportBreakdown {
+  sport: string
+  activityCount: number
+  distanceM: number
+  durationSec: number
+}
+
+export interface WeekSummary {
+  distanceM: number
+  durationSec: number
+  elevationGainM: number
+  activityCount: number
+  activeDays: number
+  longestActivityM: number
+  avgPaceSecPerKm: number | null
+  avgHeartRate: number | null
+  maxHeartRate: number | null
+  totalCalories: number | null
+  plannedCount: number
+  doneCount: number
+  missedCount: number
+  upcomingCount: number
+  unplannedCount: number
+  bySport: SportBreakdown[]
+}
+
 export interface WeekEntry {
   days: DayEntry[]
-  distanceM: number
+  startDateParam: string
+  endDateParam: string
+  label: string
+  // Version compacte pour la case de la grille, où la place est comptée.
+  shortLabel: string
+  containsToday: boolean
+  summary: WeekSummary
+}
+
+function buildSportBreakdown(activities: Activity[]): SportBreakdown[] {
+  const bySport = new Map<string, SportBreakdown>()
+  for (const activity of activities) {
+    const sport = activity.sport ?? 'Other'
+    const current = bySport.get(sport) ?? { sport, activityCount: 0, distanceM: 0, durationSec: 0 }
+    current.activityCount += 1
+    current.distanceM += activity.totalDistanceM
+    current.durationSec += activity.totalDurationSec
+    bySport.set(sport, current)
+  }
+  return [...bySport.values()].sort((a, b) => b.distanceM - a.distanceM)
+}
+
+function buildWeekSummary(days: DayEntry[]): WeekSummary {
+  const activities = days.flatMap((d) => d.activities)
+  const distanceM = activities.reduce((sum, a) => sum + a.totalDistanceM, 0)
+  const durationSec = activities.reduce((sum, a) => sum + a.totalDurationSec, 0)
+
+  // FC moyenne pondérée par la durée : une sortie longue doit peser plus dans
+  // la moyenne de la semaine qu'un footing de vingt minutes.
+  const hrActivities = activities.filter((a) => a.avgHeartRate != null)
+  const hrDurationSec = hrActivities.reduce((sum, a) => sum + a.totalDurationSec, 0)
+  const hrWeightedSum = hrActivities.reduce((sum, a) => sum + (a.avgHeartRate ?? 0) * a.totalDurationSec, 0)
+
+  const maxHeartRates = activities.map((a) => a.maxHeartRate).filter((v): v is number => v != null)
+  const calories = activities.map((a) => a.totalCalories).filter((v): v is number => v != null)
+
+  return {
+    distanceM,
+    durationSec,
+    elevationGainM: activities.reduce((sum, a) => sum + (a.elevationGainM ?? 0), 0),
+    activityCount: activities.length,
+    activeDays: days.filter((d) => d.activities.length > 0).length,
+    longestActivityM: activities.reduce((max, a) => Math.max(max, a.totalDistanceM), 0),
+    avgPaceSecPerKm: distanceM > 0 && durationSec > 0 ? Math.round(durationSec / (distanceM / 1000)) : null,
+    avgHeartRate: hrDurationSec > 0 ? Math.round(hrWeightedSum / hrDurationSec) : null,
+    maxHeartRate: maxHeartRates.length > 0 ? Math.max(...maxHeartRates) : null,
+    totalCalories: calories.length > 0 ? Math.round(calories.reduce((sum, c) => sum + c, 0)) : null,
+    plannedCount: days.filter((d) => d.workout != null).length,
+    doneCount: days.filter((d) => d.status === 'done').length,
+    missedCount: days.filter((d) => d.status === 'missed').length,
+    upcomingCount: days.filter((d) => d.status === 'upcoming' || d.status === 'pending').length,
+    unplannedCount: activities.filter((a) => !a.workoutId).length,
+    bySport: buildSportBreakdown(activities),
+  }
+}
+
+// "Aug 4 – Aug 10" — libellé de la semaine, titre de son récapitulatif.
+export function formatWeekRangeLabel(startDateParam: string, endDateParam: string): string {
+  const formatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' })
+  return `${formatter.format(fromDateParam(startDateParam))} – ${formatter.format(fromDateParam(endDateParam))}`
+}
+
+// "Aug 4–10", ou "Aug 30–Sep 5" à cheval sur deux mois — le mois n'est répété
+// que lorsqu'il change.
+export function formatWeekShortLabel(startDateParam: string, endDateParam: string): string {
+  const start = fromDateParam(startDateParam)
+  const end = fromDateParam(endDateParam)
+  const formatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' })
+  if (start.getMonth() === end.getMonth()) return `${formatter.format(start)}–${end.getDate()}`
+  return `${formatter.format(start)}–${formatter.format(end)}`
 }
 
 // Découpe la grille (toujours un multiple de 7, voir getMonthGridDays) en
-// semaines pour le récapitulatif km affiché à droite de chaque ligne.
+// semaines pour le récapitulatif affiché à droite de chaque ligne. Contrairement
+// à buildMonthSummary, une semaine compte ses 7 jours affichés — y compris ceux
+// qui débordent sur le mois voisin.
 export function buildWeekEntries(entries: DayEntry[]): WeekEntry[] {
   const weeks: WeekEntry[] = []
   for (let i = 0; i < entries.length; i += 7) {
     const days = entries.slice(i, i + 7)
-    weeks.push({ days, distanceM: days.reduce((sum, d) => sum + d.distanceM, 0) })
+    const startDateParam = days[0].dateParam
+    const endDateParam = days[days.length - 1].dateParam
+    weeks.push({
+      days,
+      startDateParam,
+      endDateParam,
+      label: formatWeekRangeLabel(startDateParam, endDateParam),
+      shortLabel: formatWeekShortLabel(startDateParam, endDateParam),
+      containsToday: days.some((d) => d.isToday),
+      summary: buildWeekSummary(days),
+    })
   }
   return weeks
+}
+
+// Semaine sélectionnée par défaut dans le récapitulatif : celle du jour quand
+// on regarde le mois courant, sinon la première du mois affiché (la grille
+// commence toujours par la semaine contenant le 1er).
+export function findDefaultWeekIndex(weeks: WeekEntry[]): number {
+  const todayIndex = weeks.findIndex((w) => w.containsToday)
+  return todayIndex >= 0 ? todayIndex : 0
 }
 
 export interface MonthSummary {
@@ -202,4 +329,22 @@ export function dayStatusStyles(status: DayStatus): {
     case 'empty':
       return { dotClass: '', bgClass: 'bg-bg', borderClass: 'border-dashed border-divider', label: '' }
   }
+}
+
+// "2026-08-24" -> "2026-08-24T00:00:00+02:00" (offset local du navigateur).
+// GET /activities/hr-zones refuse une date seule : sans heure ni offset, la
+// période serait interprétée dans le fuseau du serveur. L'offset est recalculé
+// pour chaque borne, donc une semaine à cheval sur un changement d'heure reste
+// correcte.
+export function toIsoDateTimeWithOffset(dateParam: string, bound: 'start' | 'end'): string {
+  const date = fromDateParam(dateParam)
+  if (bound === 'end') date.setHours(23, 59, 59, 0)
+
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const offsetMin = -date.getTimezoneOffset()
+  const sign = offsetMin >= 0 ? '+' : '-'
+  const absOffset = Math.abs(offsetMin)
+  const time = `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+
+  return `${dateParam}T${time}${sign}${pad(Math.floor(absOffset / 60))}:${pad(absOffset % 60)}`
 }

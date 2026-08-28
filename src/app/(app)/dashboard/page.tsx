@@ -48,7 +48,9 @@ export default async function DashboardPage({
   const nextMonth = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 1)
 
   return (
-    <div>
+    // data-wide : le dashboard déborde le cadre 920px du layout pour loger le
+    // récapitulatif de semaine à côté du calendrier (voir (app)/layout.tsx).
+    <div data-wide>
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <h1 className="mb-0">{formatMonthLabel(monthStart)}</h1>
         <div className="flex gap-3 items-center text-sm">

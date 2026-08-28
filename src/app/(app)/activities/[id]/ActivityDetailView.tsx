@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { ActivityNoteEditor } from '@/components/activities/ActivityNoteEditor'
+import { FitFileUpload } from '@/components/activities/FitFileUpload'
 import { GpxRouteUpload } from '@/components/activities/GpxRouteUpload'
 import { PlannedVsActualTable } from '@/components/activities/PlannedVsActualTable'
 import { Badge } from '@/components/ui/Badge'
@@ -9,7 +10,7 @@ import { BackLink } from '@/components/ui/BackLink'
 import { RouteMap, type RoutePoint } from '@/components/ui/RouteMap'
 import { Stat } from '@/components/ui/Stat'
 import { thClass, tdClass } from '@/components/ui/table'
-import { formatActivity } from '@/lib/activity-format'
+import { activityLabelStyle, formatActivity, lapIntensityStyle } from '@/lib/activity-format'
 import { workoutTargets } from '@/lib/plan-format'
 import { formatDateLabel, formatDistance, formatDuration, formatPace } from '@/lib/utils'
 import type { Activity, Workout } from '@/lib/types'
@@ -66,15 +67,31 @@ export function ActivityDetailView({
   const actual = formatActivity(activity)
   const planned = workout ? workoutTargets(workout) : null
 
+  // L'API ne garantit pas l'ordre des laps, et le rattachement d'un .fit les
+  // remplace en bloc : on trie sur index plutôt que de s'y fier.
+  const laps = [...activity.laps].sort((a, b) => a.index - b.index)
+  // Colonne affichée seulement si au moins un lap porte une intensité — sur une
+  // activité Strava sans .fit rattaché, elle serait vide de bout en bout.
+  const showIntensity = laps.some((lap) => lapIntensityStyle(lap.intensity) != null)
+  const canAttachFit = activity.source === 'STRAVA' && !activity.hasFitFile
+
   return (
     <div>
       <BackLink fallbackHref="/dashboard" />
       <div className="font-heading font-semibold text-xs tracking-[0.1em] uppercase text-accent mb-2">
         {formatDateLabel(activity.startedAt)}
       </div>
-      <div className="flex items-baseline gap-3">
+      <div className="flex items-baseline gap-3 flex-wrap">
         <h1 className="mb-0">{workout?.title ?? activity.sport ?? 'Activity'}</h1>
         <Badge variant="outline">{activity.source}</Badge>
+        {activity.labels.map((label) => {
+          const { text, variant } = activityLabelStyle(label)
+          return (
+            <Badge key={label} variant={variant}>
+              {text}
+            </Badge>
+          )
+        })}
       </div>
       <div className="flex gap-8 my-6">
         <Stat label="Distance" value={actual.distance} />
@@ -102,13 +119,16 @@ export function ActivityDetailView({
         />
       )}
 
-      {activity.laps.length > 0 && (
+      {canAttachFit && <FitFileUpload activityId={activity.id} onAttached={setActivity} />}
+
+      {laps.length > 0 && (
         <>
           <h4 className="mb-3">Laps</h4>
           <table className="w-full border-collapse text-sm mb-6">
             <thead>
               <tr>
                 <th className={thClass}>Lap</th>
+                {showIntensity && <th className={thClass}>Type</th>}
                 <th className={thClass}>Distance</th>
                 <th className={thClass}>Duration</th>
                 <th className={thClass}>Pace</th>
@@ -116,19 +136,35 @@ export function ActivityDetailView({
               </tr>
             </thead>
             <tbody>
-              {activity.laps.map((lap) => (
-                <tr key={lap.id}>
-                  <td className={`${tdClass} font-semibold`}>{lap.index + 1}</td>
-                  <td className={tdClass}>{formatDistance(lap.distanceM)}</td>
-                  <td className={tdClass}>{formatDuration(Math.round(lap.durationSec))}</td>
-                  <td className={`${tdClass} text-text/60`}>
-                    {lap.avgPaceSecPerKm != null ? formatPace(lap.avgPaceSecPerKm) : '—'}
-                  </td>
-                  <td className={`${tdClass} text-text/60`}>
-                    {lap.avgHeartRate != null ? `${lap.avgHeartRate}bpm` : '—'}
-                  </td>
-                </tr>
-              ))}
+              {laps.map((lap) => {
+                const intensity = lapIntensityStyle(lap.intensity)
+                return (
+                  <tr key={lap.id} className={intensity?.isRecovery ? 'bg-text/[0.035]' : ''}>
+                    <td className={`${tdClass} font-semibold`}>{lap.index + 1}</td>
+                    {showIntensity && (
+                      <td className={tdClass}>
+                        {intensity && (
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className={`w-1.5 h-1.5 rounded-full ${intensity.dotClass}`} />
+                            <span className="text-[10px] uppercase tracking-wide text-text/50">{intensity.label}</span>
+                          </span>
+                        )}
+                      </td>
+                    )}
+                    <td className={tdClass}>{formatDistance(lap.distanceM)}</td>
+                    <td className={tdClass}>{formatDuration(Math.round(lap.durationSec))}</td>
+                    <td className={`${tdClass} text-text/60`}>
+                      {/* Pas d'allure sur une récupération : trente mètres en
+                          deux minutes donnent 1h/km, un chiffre qui n'apprend
+                          rien et rend la colonne illisible. */}
+                      {intensity?.isRecovery || lap.avgPaceSecPerKm == null ? '—' : formatPace(lap.avgPaceSecPerKm)}
+                    </td>
+                    <td className={`${tdClass} text-text/60`}>
+                      {lap.avgHeartRate != null ? `${lap.avgHeartRate}bpm` : '—'}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </>

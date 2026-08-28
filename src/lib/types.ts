@@ -3,6 +3,13 @@ export type ActivitySource = 'FIT' | 'COROS' | 'STRAVA'
 export type WarningSeverity = 'INFO' | 'WARNING' | 'CRITICAL'
 export type WarningFamily = 'INTENSITY' | 'LOAD' | 'PATTERN' | 'RECOVERY'
 export type HeartRateZone = 'Z1' | 'Z2' | 'Z3' | 'Z4' | 'Z5'
+// Intensité d'un lap, telle qu'écrite par la montre dans le fichier .fit.
+// Toujours null sur un lap venu de Strava : leur API ne l'expose pas.
+export type LapIntensity = 'ACTIVE' | 'REST' | 'WARMUP' | 'COOLDOWN' | 'RECOVERY' | 'INTERVAL' | 'OTHER'
+// Étiquettes de l'activité, déduites de Strava. Une activité peut en porter
+// plusieurs (une sortie longue au seuil est WORKOUT + LONG_RUN), et un tableau
+// vide est normal — ce n'est pas une erreur.
+export type ActivityLabel = 'RACE' | 'LONG_RUN' | 'WORKOUT' | 'RECOVERY'
 
 export interface User {
   id: string
@@ -88,6 +95,11 @@ export interface Activity {
   athleteNote: string | null
   difficultyNote: number | null
   workoutId: string | null
+  // Fichiers rattachés. Le .fit peut arriver après coup sur une activité
+  // importée de Strava (POST /activities/:id/fit) et remplace alors ses laps.
+  hasFitFile: boolean
+  hasGpxFile: boolean
+  labels: ActivityLabel[]
   laps: Lap[]
 }
 
@@ -107,6 +119,7 @@ export interface Lap {
   avgVerticalOscillationMm: number | null
   avgVerticalRatio: number | null
   avgStepLengthMm: number | null
+  intensity: LapIntensity | null
 }
 
 // Réponse de POST /activities/upload : l'Activity créée + le compteur de
@@ -265,4 +278,34 @@ export enum Specialty {
   LONG_DISTANCE_TRACK = 'LONG_DISTANCE_TRACK',
   MIDDLE_DISTANCE_ROAD = 'MIDDLE_DISTANCE_ROAD',
   LONG_DISTANCE_ROAD = 'LONG_DISTANCE_ROAD',
+}
+
+// --- Répartition du temps par zone (GET /activities/hr-zones) ---
+// Forme volontairement générique (min/max/unit plutôt que minBpm/maxBpm) : un
+// futur GET /activities/pace-zones renverra la même structure en
+// unit "sec_per_km", et alimentera le même composant graphique.
+export type ZoneUnit = 'bpm' | 'sec_per_km'
+
+export interface ZoneBucket {
+  index: number
+  label: string
+  min: number
+  // null = zone haute ouverte (pas de plafond).
+  max: number | null
+  seconds: number
+}
+
+export interface ZoneDistribution {
+  from: string
+  to: string
+  unit: ZoneUnit
+  // Vide quand l'athlète n'a pas de zones synchronisées : ce n'est pas une
+  // erreur, les compteurs ci-dessous restent renseignés.
+  zones: ZoneBucket[]
+  // Somme des zones = temps effectivement mesuré avec un capteur FC. Les
+  // pourcentages se calculent là-dessus, pas sur le temps total d'activité.
+  totalSeconds: number
+  secondsWithoutData: number
+  activityCount: number
+  activitiesWithDataCount: number
 }

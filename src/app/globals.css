@@ -41,6 +41,16 @@
   --color-accent-2-800: #790e3d;
   --color-accent-2-900: #4b1528;
 
+  /* Échelle d'intensité des zones d'entraînement (FC aujourd'hui, allure
+     ensuite) : cyan aérobie → magenta anaérobie. Construite depuis les deux
+     accents de la marque plutôt qu'avec le bleu→rouge habituel, pour rester
+     dans l'identité de l'app. */
+  --color-zone-1: #cbeeff;
+  --color-zone-2: #62c5ee;
+  --color-zone-3: #1186ac;
+  --color-zone-4: #ff458e;
+  --color-zone-5: #aa0b56;
+
   --radius-sm: 1px;
   --radius-md: 2px;
   --radius-lg: 4px;
