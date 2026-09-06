@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { buildWeekEntries, dayStatusStyles, findDefaultWeekIndex, type DayEntry, type WeekEntry } from '@/lib/calendar'
+import { sportKindLabel, toSportKind } from '@/lib/sport'
 import { formatDistance } from '@/lib/utils'
 import { WeekSummary } from './WeekSummary'
 import { WorkoutModal } from './WorkoutModal'
@@ -100,7 +101,9 @@ function WeekCell({ week, isSelected, onClick }: { week: WeekEntry; isSelected: 
 function DayCell({ entry, onClick }: { entry: DayEntry; onClick: () => void }) {
   const { dotClass, bgClass, borderClass, label } = dayStatusStyles(entry.status)
   const firstUnplanned = entry.unplannedActivities[0]
-  const title = entry.workout?.title ?? (firstUnplanned ? (firstUnplanned.sport ?? 'Activity') : null)
+  // Libellé normalisé plutôt que la chaîne brute de la montre ou de Strava :
+  // "running" et "TrailRun" côtoyaient "Run" et "Trail run" du récapitulatif.
+  const title = entry.workout?.title ?? (firstUnplanned ? sportKindLabel(toSportKind(firstUnplanned.sport)) : null)
 
   return (
     <button

@@ -2,12 +2,15 @@
 
 import type { ReactNode } from 'react'
 import Link from 'next/link'
+import { SportIcon } from '@/components/ui/SportIcon'
 import { Stat } from '@/components/ui/Stat'
-import { tdClass, thClass } from '@/components/ui/table'
+import { SportBreakdownTable } from './SportBreakdownTable'
 import { WeekHeartRateZones } from './WeekHeartRateZones'
 import { formatActivity } from '@/lib/activity-format'
 import { dayStatusStyles, type DayEntry, type WeekEntry } from '@/lib/calendar'
+import { isFootSport, sportColor, sportKindLabel, toSportKind } from '@/lib/sport'
 import { formatDistance, formatDuration, formatPace } from '@/lib/utils'
+import type { Activity } from '@/lib/types'
 
 // Récapitulatif de la semaine sélectionnée dans le calendrier, affiché en
 // permanence à côté de celui-ci (la semaine du jour au chargement). Tout est
@@ -94,26 +97,7 @@ export function WeekSummary({ week, className = '' }: { week: WeekEntry; classNa
 
           {summary.bySport.length > 0 && (
             <Section title="By sport">
-              <table className="w-full border-collapse text-sm">
-                <thead>
-                  <tr>
-                    <th className={thClass}>Sport</th>
-                    <th className={thClass}>Sessions</th>
-                    <th className={thClass}>Distance</th>
-                    <th className={thClass}>Time</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {summary.bySport.map((entry) => (
-                    <tr key={entry.sport}>
-                      <td className={tdClass}>{entry.sport}</td>
-                      <td className={`${tdClass} text-text/60`}>{entry.activityCount}</td>
-                      <td className={tdClass}>{formatDistance(entry.distanceM)}</td>
-                      <td className={tdClass}>{formatDuration(Math.round(entry.durationSec))}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <SportBreakdownTable bySport={summary.bySport} />
             </Section>
           )}
 
@@ -143,6 +127,32 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   )
 }
 
+// Une ligne d'activité du détail de la semaine : icône du sport, sport, puis
+// les métriques qui ont un sens pour ce sport (pas d'allure min/km à vélo, pas
+// de distance sur une séance de renforcement).
+function ActivityRow({ activity }: { activity: Activity }) {
+  const kind = toSportKind(activity.sport)
+  const { distance, duration, pace } = formatActivity(activity)
+
+  const metrics = [
+    activity.totalDistanceM > 0 ? distance : null,
+    duration,
+    isFootSport(kind) && activity.totalDistanceM > 0 ? pace : null,
+  ].filter((metric): metric is string => metric != null)
+
+  return (
+    <Link
+      href={`/activities/${activity.id}`}
+      className="flex items-center gap-2 text-sm text-text/60 hover:text-accent transition-colors"
+    >
+      <SportIcon kind={kind} className="shrink-0" style={{ color: sportColor(kind) }} />
+      <span className="min-w-0 truncate">
+        <span className="text-text/80">{sportKindLabel(kind)}</span> · {metrics.join(' · ')}
+      </span>
+    </Link>
+  )
+}
+
 function DayRow({ day }: { day: DayEntry }) {
   const { dotClass, label } = dayStatusStyles(day.status)
 
@@ -165,19 +175,10 @@ function DayRow({ day }: { day: DayEntry }) {
       {day.activities.length === 0 ? (
         <div className="text-sm text-text/50">No activity recorded</div>
       ) : (
-        <div className="grid gap-0.5">
-          {day.activities.map((activity) => {
-            const actual = formatActivity(activity)
-            return (
-              <Link
-                key={activity.id}
-                href={`/activities/${activity.id}`}
-                className="text-sm text-text/60 hover:text-accent transition-colors"
-              >
-                {activity.sport ?? 'Activity'} · {actual.distance} · {actual.duration} · {actual.pace}
-              </Link>
-            )
-          })}
+        <div className="grid gap-1">
+          {day.activities.map((activity) => (
+            <ActivityRow key={activity.id} activity={activity} />
+          ))}
         </div>
       )}
     </div>

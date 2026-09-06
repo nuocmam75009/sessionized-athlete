@@ -51,6 +51,18 @@
   --color-zone-4: #ff458e;
   --color-zone-5: #aa0b56;
 
+  /* Identité couleur des sports (récapitulatifs hebdo/mensuel). Cinq teintes
+     seulement : c'est le maximum qui reste distinguable deux à deux sur le fond
+     de l'app, y compris en vision des couleurs déficiente — au-delà, deux
+     sports finissent par se ressembler. Les sports plus rares partagent le
+     neutre : leur icône et leur libellé suffisent à les identifier. */
+  --color-sport-run: #0088b0;
+  --color-sport-trail: #1baf7a;
+  --color-sport-ride: #d6006c;
+  --color-sport-swim: #4a3aa7;
+  --color-sport-strength: #eb6834;
+  --color-sport-other: #7d7979;
+
   --radius-sm: 1px;
   --radius-md: 2px;
   --radius-lg: 4px;

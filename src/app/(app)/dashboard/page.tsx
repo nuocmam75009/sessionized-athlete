@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { MonthCalendar } from '@/components/calendar/MonthCalendar'
+import { MonthSportBreakdown } from '@/components/calendar/MonthSportBreakdown'
 import { Stat } from '@/components/ui/Stat'
 import { buildMonthEntries, buildMonthSummary, formatMonthLabel, getMonthStart, toMonthParam } from '@/lib/calendar'
 import { serverApiFetchStatus } from '@/lib/server-api'
@@ -73,6 +74,7 @@ export default async function DashboardPage({
         <Stat label="Time" value={formatDuration(summary.durationSec)} />
         <Stat label="Activities" value={String(summary.activityCount)} />
       </div>
+      <MonthSportBreakdown bySport={summary.bySport} />
     </div>
   )
 }

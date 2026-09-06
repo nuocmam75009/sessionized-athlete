@@ -1,4 +1,5 @@
 import { findLinkedActivityId } from './plan-format'
+import { sportKindLabel, toSportKind, type SportKind } from './sport'
 import { formatDateLabel, isSameCalendarDay } from './utils'
 import type { Activity, Workout } from './types'
 
@@ -149,10 +150,13 @@ export function buildMonthEntries(
   return getMonthGridDays(monthStart).map((date) => buildDayEntry(date, workouts, activities, today, monthStart))
 }
 
-// Répartition par sport d'une semaine — le sport vient de Strava/FIT et peut
-// être null (regroupé sous "Other").
+// Répartition par sport d'une semaine. Le regroupement se fait sur le sport
+// normalisé (voir toSportKind) et non sur la chaîne brute : selon la source,
+// la même course arrive en "Run" (Strava) ou "running" (.fit), et compterait
+// sinon pour deux sports.
 export interface SportBreakdown {
-  sport: string
+  kind: SportKind
+  label: string
   activityCount: number
   distanceM: number
   durationSec: number
@@ -189,16 +193,24 @@ export interface WeekEntry {
 }
 
 function buildSportBreakdown(activities: Activity[]): SportBreakdown[] {
-  const bySport = new Map<string, SportBreakdown>()
+  const bySport = new Map<SportKind, SportBreakdown>()
   for (const activity of activities) {
-    const sport = activity.sport ?? 'Other'
-    const current = bySport.get(sport) ?? { sport, activityCount: 0, distanceM: 0, durationSec: 0 }
+    const kind = toSportKind(activity.sport)
+    const current = bySport.get(kind) ?? {
+      kind,
+      label: sportKindLabel(kind),
+      activityCount: 0,
+      distanceM: 0,
+      durationSec: 0,
+    }
     current.activityCount += 1
     current.distanceM += activity.totalDistanceM
     current.durationSec += activity.totalDurationSec
-    bySport.set(sport, current)
+    bySport.set(kind, current)
   }
-  return [...bySport.values()].sort((a, b) => b.distanceM - a.distanceM)
+  // Le renforcement ou la natation ne se comparent pas en distance à une
+  // sortie longue : à distance égale (souvent 0), on départage sur la durée.
+  return [...bySport.values()].sort((a, b) => b.distanceM - a.distanceM || b.durationSec - a.durationSec)
 }
 
 function buildWeekSummary(days: DayEntry[]): WeekSummary {
@@ -286,6 +298,7 @@ export interface MonthSummary {
   distanceM: number
   durationSec: number
   activityCount: number
+  bySport: SportBreakdown[]
 }
 
 // Contrairement à buildWeekEntries, ne compte que les jours du mois affiché
@@ -296,6 +309,7 @@ export function buildMonthSummary(entries: DayEntry[]): MonthSummary {
     distanceM: monthDays.reduce((sum, d) => sum + d.distanceM, 0),
     durationSec: monthDays.reduce((sum, d) => sum + d.durationSec, 0),
     activityCount: monthDays.reduce((sum, d) => sum + d.activityCount, 0),
+    bySport: buildSportBreakdown(monthDays.flatMap((d) => d.activities)),
   }
 }
 
