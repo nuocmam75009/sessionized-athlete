@@ -46,7 +46,7 @@ export function AssignStravaActivity({ workoutId, candidates }: { workoutId: str
   }
 
   return (
-    <div className="border border-divider rounded-md p-3 w-full max-w-[420px]">
+    <div className="panel rounded-lg p-4 w-full max-w-[420px]">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-semibold">Assign a Strava activity</span>
         <button
@@ -64,11 +64,11 @@ export function AssignStravaActivity({ workoutId, candidates }: { workoutId: str
           return (
             <div
               key={activity.id}
-              className="flex items-center justify-between gap-2 border border-divider rounded-md px-2.5 py-2"
+              className="flex items-center justify-between gap-2 panel-flat rounded-md px-3 py-2.5"
             >
               <div className="text-sm min-w-0">
                 <div className="font-medium truncate">{activity.sport ?? 'Activity'}</div>
-                <div className="text-text/60 text-[13px]">
+                <div className="metric text-text/45 text-[12px] mt-0.5">
                   {formatDateLabel(activity.startedAt)} · {actual.distance} · {actual.duration}
                 </div>
               </div>
@@ -84,7 +84,7 @@ export function AssignStravaActivity({ workoutId, candidates }: { workoutId: str
           )
         })}
       </div>
-      {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
+      {error && <p className="text-sm text-danger mt-2">{error}</p>}
     </div>
   )
 }

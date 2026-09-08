@@ -30,7 +30,7 @@ export function ChatComposer({ onSend, onTyping }: ChatComposerProps) {
   }
 
   return (
-    <div className="flex gap-2 items-end border-t border-divider pt-3">
+    <div className="flex gap-2 items-end border-t border-divider pt-4">
       <Textarea
         value={content}
         onChange={(e) => handleChange(e.target.value)}

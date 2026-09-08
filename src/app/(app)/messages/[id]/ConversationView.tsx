@@ -112,7 +112,7 @@ export function ConversationView({ conversationId, currentUserId }: { conversati
     return (
       <div>
         <BackLink fallbackHref="/messages" />
-        <p className="text-text/60">Chargement…</p>
+        <p className="text-text/45">Chargement…</p>
       </div>
     )
   }
@@ -121,7 +121,7 @@ export function ConversationView({ conversationId, currentUserId }: { conversati
     return (
       <div>
         <BackLink fallbackHref="/messages" />
-        <p className="text-red-600">{error}</p>
+        <p className="text-danger">{error}</p>
       </div>
     )
   }
@@ -143,13 +143,13 @@ export function ConversationView({ conversationId, currentUserId }: { conversati
         }}
         className="flex-1 overflow-y-auto flex flex-col gap-2 pb-4"
       >
-        {loadingMore && <p className="text-center text-xs text-text/50">Chargement…</p>}
+        {loadingMore && <p className="text-center text-[11px] uppercase tracking-[0.1em] text-text/35">Chargement…</p>}
         {messages.map((m) => (
           <MessageBubble key={m.id} message={m} mine={m.senderId === currentUserId} />
         ))}
       </div>
 
-      {isTyping && <p className="text-xs text-text/50 mb-2">{name} est en train d&apos;écrire…</p>}
+      {isTyping && <p className="text-xs text-text/40 mb-2">{name} est en train d&apos;écrire…</p>}
 
       <ChatComposer onSend={handleSend} onTyping={handleTyping} />
     </div>

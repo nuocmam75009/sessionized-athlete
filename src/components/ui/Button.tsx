@@ -7,13 +7,25 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   block?: boolean
 }
 
+// Le bouton se soulève au survol et s'enfonce au clic : la même grammaire que
+// les cartes, pour que tout ce qui est cliquable réagisse en profondeur plutôt
+// qu'en changeant de teinte.
 const base =
-  'inline-flex items-center justify-center gap-1.5 cursor-pointer font-heading font-semibold text-sm leading-tight rounded-md transition-colors disabled:opacity-45 disabled:cursor-not-allowed'
+  'inline-flex items-center justify-center gap-1.5 cursor-pointer font-heading font-medium text-sm leading-tight rounded-md ' +
+  'transition-[transform,box-shadow,background-color,border-color,color] duration-200 ease-out-3d ' +
+  'hover:-translate-y-px active:translate-y-0 active:duration-75 ' +
+  'disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none'
 
 const variants: Record<ButtonVariant, string> = {
-  primary: 'bg-accent text-bg px-4 py-2.5 hover:bg-accent-600 active:bg-accent-700',
-  secondary: 'border border-divider px-4 py-2.5 hover:bg-text/[0.07] active:bg-text/[0.14]',
-  ghost: 'text-accent px-2 py-2.5 hover:bg-accent/10 active:bg-accent/[0.18]',
+  // L'ombre du primaire est teintée d'accent, pas noire : sur fond sombre,
+  // c'est la lueur sous le bouton qui le fait décoller, pas une ombre portée.
+  primary:
+    'bg-accent text-bg px-4 py-2.5 shadow-[0_8px_20px_-10px_var(--color-accent)] ' +
+    'hover:bg-accent-600 hover:shadow-[0_14px_32px_-12px_var(--color-accent)] active:bg-accent-700',
+  secondary:
+    'border border-divider bg-surface/60 px-4 py-2.5 shadow-[inset_0_1px_0_rgb(255_255_255/0.05)] ' +
+    'hover:border-accent/45 hover:bg-surface-2 hover:text-accent-800 active:bg-surface',
+  ghost: 'text-accent px-2.5 py-2.5 hover:bg-accent/12 hover:text-accent-700 active:bg-accent/20',
 }
 
 export function buttonClassName(variant: ButtonVariant = 'primary', block = false, className = '') {

@@ -21,18 +21,18 @@ export function PlannedVsActualTable({
       <tbody>
         <tr>
           <td className={`${tdClass} text-text/60`}>Distance</td>
-          <td className={tdClass}>{planned.distance}</td>
-          <td className={`${tdClass} font-semibold`}>{actual.distance}</td>
+          <td className={`${tdClass} metric text-text/55`}>{planned.distance}</td>
+          <td className={`${tdClass} metric font-semibold`}>{actual.distance}</td>
         </tr>
         <tr>
           <td className={`${tdClass} text-text/60`}>Duration</td>
-          <td className={tdClass}>{planned.duration}</td>
-          <td className={`${tdClass} font-semibold`}>{actual.duration}</td>
+          <td className={`${tdClass} metric text-text/55`}>{planned.duration}</td>
+          <td className={`${tdClass} metric font-semibold`}>{actual.duration}</td>
         </tr>
         <tr>
           <td className={`${tdClass} text-text/60`}>Avg pace / target</td>
-          <td className={tdClass}>{planned.pace}</td>
-          <td className={`${tdClass} font-semibold`}>{actual.pace}</td>
+          <td className={`${tdClass} metric text-text/55`}>{planned.pace}</td>
+          <td className={`${tdClass} metric font-semibold`}>{actual.pace}</td>
         </tr>
       </tbody>
     </table>

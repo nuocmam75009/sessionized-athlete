@@ -88,7 +88,7 @@ export default function LoginView() {
       title="Your plan, from your coach, every day."
       description="See the session your coach set for today, follow the week ahead, and upload your .fit file the moment you're done."
     >
-      <div className="mb-4">
+      <div className="mb-6">
         <SegmentedControl
           name="authmode"
           ariaLabel="Login or register"
@@ -142,12 +142,12 @@ export default function LoginView() {
             />
           </Field>
         )}
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
         <Button type="submit" block disabled={submitting}>
           {submitting ? '…' : mode === 'login' ? 'Log in' : 'Create account'}
         </Button>
       </form>
-      <p className="text-[13px] mt-4 opacity-70">
+      <p className="text-[13px] mt-5 text-text/45">
         {mode === 'login' ? 'New here?' : 'Already have an account?'}{' '}
         <a
           href="#"

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
-import { Field, Select, Textarea } from '@/components/ui/Field'
+import { Field, inputClassName, Select, Textarea } from '@/components/ui/Field'
 import { RouteMap } from '@/components/ui/RouteMap'
 import { formatDateLabel } from '@/lib/utils'
 import type { UploadedActivity, Workout } from '@/lib/types'
@@ -157,7 +157,7 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
   return (
     <div>
       <h1>Upload activity</h1>
-      <p className="opacity-70 mb-6">
+      <p className="text-text/50 mt-2 mb-8 max-w-[56ch]">
         Attach the .fit file from your watch, and optionally a .gpx for the route — drop both at once.
       </p>
 
@@ -176,9 +176,15 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
             onClick={pickFile}
             onDrop={onDrop}
             onDragOver={onDragOver}
-            className="border border-dashed border-divider rounded-md py-16 px-6 text-center cursor-pointer bg-surface max-w-[600px] transition-colors hover:border-accent"
+            className="group panel-flat lift border-dashed rounded-xl py-20 px-6 text-center cursor-pointer max-w-[600px] hover:border-accent/60"
           >
-            <svg width="28" height="28" viewBox="0 0 256 256" fill="currentColor" className="mx-auto mb-3">
+            <svg
+              width="30"
+              height="30"
+              viewBox="0 0 256 256"
+              fill="currentColor"
+              className="mx-auto mb-4 text-text/35 transition-[color,transform] duration-300 ease-out-3d group-hover:-translate-y-1 group-hover:text-accent"
+            >
               <path
                 opacity="0.25"
                 d="M216,144v64a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V144a8,8,0,0,1,16,0v56H208V144a8,8,0,0,1,16,0Z"
@@ -186,11 +192,11 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
               <path d="M92.69,84.69,120,57.37V152a8,8,0,0,0,16,0V57.37l27.31,27.32a8,8,0,0,0,11.32-11.32l-40-40a8,8,0,0,0-11.32,0l-40,40A8,8,0,0,0,92.69,84.69ZM224,144v64a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V144a16,16,0,0,1,32,0v56H208V144a16,16,0,0,1,16,0Z" />
             </svg>
             <div className="font-semibold">Drag your .fit and .gpx files here, or click to browse</div>
-            <div className="text-text/60 text-[13px] mt-1">
+            <div className="text-text/45 text-[13px] mt-1.5 max-w-[46ch] mx-auto">
               Dépose le .fit et le .gpx ensemble pour associer le tracé, ou un seul fichier à la fois.
             </div>
           </div>
-          {uploadError && <p className="text-sm text-red-600 mt-3 max-w-[600px]">{uploadError}</p>}
+          {uploadError && <p className="text-sm text-danger mt-3 max-w-[600px]">{uploadError}</p>}
         </>
       )}
 
@@ -198,17 +204,17 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
         <div className="max-w-[680px]">
           <div className="flex gap-2 items-start mb-5">
             {gpxData ? (
-              <RouteMap gpxData={gpxData} className="flex-1 h-[220px] rounded-md" />
+              <RouteMap gpxData={gpxData} className="flex-1 h-[220px] rounded-lg border border-divider" />
             ) : (
-              <div className="flex-1 h-[220px] border border-dashed border-divider rounded-md bg-surface flex flex-col items-center justify-center gap-2">
-                <svg width="22" height="22" viewBox="0 0 256 256" fill="currentColor" className="opacity-50">
+              <div className="flex-1 h-[220px] panel-flat border-dashed rounded-lg flex flex-col items-center justify-center gap-2.5">
+                <svg width="22" height="22" viewBox="0 0 256 256" fill="currentColor" className="opacity-35">
                   <path
                     opacity="0.25"
                     d="M128,16a88,88,0,0,0-88,88c0,75,80,132,83.42,134.5a8,8,0,0,0,9.16,0C136,236,216,179,216,104A88,88,0,0,0,128,16Z"
                   />
                   <path d="M128,8A96.11,96.11,0,0,0,32,104c0,43.13,26.36,74.34,52.29,99.28A280.34,280.34,0,0,0,123.3,235a8,8,0,0,0,9.4,0,280.34,280.34,0,0,0,39-31.72C199.64,178.34,226,147.13,226,104A96.11,96.11,0,0,0,128,8Zm0,208.32C112,203,48,150.72,48,104a80,80,0,0,1,160,0C208,150.72,144,203,128,216.32ZM128,64a40,40,0,1,0,40,40A40,40,0,0,0,128,64Zm0,64a24,24,0,1,1,24-24A24,24,0,0,1,128,128Z" />
                 </svg>
-                <div className="text-text/60 text-[13px]">
+                <div className="text-text/45 text-[13px] max-w-[36ch] text-center">
                   Ajoute un .gpx pour prévisualiser le tracé — sinon la carte sera calculée après envoi.
                 </div>
               </div>
@@ -243,7 +249,7 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
                 min={1}
                 max={10}
                 step={1}
-                className="w-24 min-h-9 px-2.5 py-1.5 text-sm text-text bg-surface border border-divider rounded-md focus-visible:border-accent focus-visible:outline-none"
+                className={`w-24 ${inputClassName}`}
                 value={difficultyNote}
                 onChange={(e) => setDifficultyNote(e.target.value)}
               />
@@ -269,7 +275,7 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
             <Button variant="ghost" onClick={discard} disabled={uploading}>
               Discard
             </Button>
-            {uploadError && <span className="text-sm text-red-600">{uploadError}</span>}
+            {uploadError && <span className="text-sm text-danger">{uploadError}</span>}
           </div>
         </div>
       )}

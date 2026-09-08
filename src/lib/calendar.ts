@@ -319,29 +319,47 @@ export function dayStatusStyles(status: DayStatus): {
   borderClass: string
   label: string
 } {
+  // Sur fond noir, un statut se dit par un voile teinté très faible (7-10 %) et
+  // par la couleur du liseré — un aplat franc à la valeur d'un thème clair
+  // écraserait le contenu de la case.
   switch (status) {
     case 'done':
-      return { dotClass: 'bg-green-500', bgClass: 'bg-green-50/70', borderClass: 'border-divider/60', label: 'Done' }
+      return {
+        dotClass: 'bg-success shadow-[0_0_8px_0_var(--color-success)]',
+        bgClass: 'bg-success/[0.07]',
+        borderClass: 'border-success/25',
+        label: 'Done',
+      }
     case 'missed':
-      return { dotClass: 'bg-red-500', bgClass: 'bg-red-50/70', borderClass: 'border-divider/60', label: 'Missed' }
+      return {
+        dotClass: 'bg-danger',
+        bgClass: 'bg-danger/[0.06]',
+        borderClass: 'border-danger/25',
+        label: 'Missed',
+      }
     case 'pending':
       return {
-        dotClass: 'bg-accent',
-        bgClass: 'bg-accent-100/70',
-        borderClass: 'border-divider/60',
+        dotClass: 'bg-accent shadow-[0_0_8px_0_var(--color-accent)]',
+        bgClass: 'bg-accent/[0.09]',
+        borderClass: 'border-accent/35',
         label: 'Today',
       }
     case 'upcoming':
-      return { dotClass: 'bg-accent-300', bgClass: 'bg-bg', borderClass: 'border-divider/60', label: 'Upcoming' }
+      return {
+        dotClass: 'bg-accent-400',
+        bgClass: 'bg-surface/50',
+        borderClass: 'border-divider',
+        label: 'Upcoming',
+      }
     case 'unplanned':
       return {
-        dotClass: 'bg-neutral-400',
-        bgClass: 'bg-neutral-100/70',
-        borderClass: 'border-divider/60',
+        dotClass: 'bg-neutral-500',
+        bgClass: 'bg-surface/50',
+        borderClass: 'border-divider',
         label: 'Unplanned',
       }
     case 'empty':
-      return { dotClass: '', bgClass: 'bg-bg', borderClass: 'border-dashed border-divider', label: '' }
+      return { dotClass: '', bgClass: 'bg-transparent', borderClass: 'border-dashed border-divider/50', label: '' }
   }
 }
 

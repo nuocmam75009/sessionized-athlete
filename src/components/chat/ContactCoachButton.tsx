@@ -74,7 +74,7 @@ export function ContactCoachButton({ coachId, coachName, label = 'Contacter' }: 
         <Button variant="secondary" onClick={openOrCompose} disabled={checking}>
           {checking ? '…' : label}
         </Button>
-        {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
+        {error && <p className="text-sm text-danger mt-2">{error}</p>}
       </div>
     )
   }
@@ -94,7 +94,7 @@ export function ContactCoachButton({ coachId, coachName, label = 'Contacter' }: 
         <Button variant="ghost" onClick={() => setOpen(false)} disabled={sending}>
           Annuler
         </Button>
-        {error && <span className="text-sm text-red-600">{error}</span>}
+        {error && <span className="text-sm text-danger">{error}</span>}
       </div>
     </div>
   )

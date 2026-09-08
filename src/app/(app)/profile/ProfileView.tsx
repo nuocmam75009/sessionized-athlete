@@ -109,7 +109,7 @@ export function ProfileView({
   return (
     <div>
       <h1>Profile</h1>
-      {!user && <p className="text-red-600 mb-4">Impossible de charger le profil.</p>}
+      {!user && <p className="text-danger mb-4">Impossible de charger le profil.</p>}
       <div className="grid gap-8 max-w-[560px] mt-5">
         <section>
           <h4 className="mb-3">Account</h4>
@@ -129,15 +129,16 @@ export function ProfileView({
         <section>
           <h4 className="mb-3">Coach</h4>
           {coach ? (
-            <div>
-              <p className="m-0">
-                <strong>{coachName(coach)}</strong> · assigned since {assignedSince(coach.createdAt)}
+            <div className="panel-flat rounded-lg px-4 py-3.5">
+              <p className="m-0 text-sm">
+                <strong className="font-semibold">{coachName(coach)}</strong>
+                <span className="text-text/45"> · assigned since {assignedSince(coach.createdAt)}</span>
               </p>
               <ContactCoachButton coachId={coach.id} coachName={coachName(coach)} label="Message" />
             </div>
           ) : (
             <div>
-              <p className="m-0 text-text/60 mb-2">Aucun coach assigné.</p>
+              <p className="m-0 text-text/50 mb-2">Aucun coach assigné.</p>
               <Link href="/coaches" className="text-sm text-accent hover:text-accent-700">
                 Trouver un coach →
               </Link>
@@ -198,7 +199,7 @@ export function ProfileView({
             </div>
           )}
           {stravaBanner === 'connected' && stravaSync === 'done' && (
-            <p className="text-sm text-green-600 mt-2">
+            <p className="text-sm text-success mt-2">
               Activités Strava importées.{' '}
               <Link href="/dashboard" className="text-accent hover:text-accent-700">
                 Voir mon calendrier →
@@ -206,12 +207,12 @@ export function ProfileView({
             </p>
           )}
           {stravaBanner === 'connected' && stravaSync === 'error' && (
-            <p className="text-sm text-red-600 mt-2">
+            <p className="text-sm text-danger mt-2">
               Compte connecté, mais l&apos;import des activités a échoué. Réessaie depuis le calendrier.
             </p>
           )}
           {stravaBanner === 'error' && (
-            <p className="text-sm text-red-600 mt-2">Échec de la connexion Strava. Réessaie.</p>
+            <p className="text-sm text-danger mt-2">Échec de la connexion Strava. Réessaie.</p>
           )}
         </section>
 
@@ -219,8 +220,8 @@ export function ProfileView({
           <Button className="w-fit" onClick={save} disabled={saveState === 'saving'}>
             {saveState === 'saving' ? 'Saving…' : 'Save changes'}
           </Button>
-          {saveState === 'saved' && <span className="text-sm text-green-600">Saved.</span>}
-          {saveState === 'error' && <span className="text-sm text-red-600">Échec de l&apos;enregistrement.</span>}
+          {saveState === 'saved' && <span className="text-sm text-success">Saved.</span>}
+          {saveState === 'error' && <span className="text-sm text-danger">Échec de l&apos;enregistrement.</span>}
         </div>
       </div>
     </div>

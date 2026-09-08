@@ -47,7 +47,7 @@ export function GpxRouteUpload({ activityId, hasRoute, onUploaded }: GpxRouteUpl
       <Button variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
         {uploading ? 'Import…' : hasRoute ? 'Remplacer le tracé .gpx' : 'Attacher un tracé .gpx'}
       </Button>
-      {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
+      {error && <p className="text-sm text-danger mt-2">{error}</p>}
     </div>
   )
 }

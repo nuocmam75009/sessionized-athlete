@@ -27,9 +27,9 @@ export function SportBreakdownTable({ bySport }: { bySport: SportBreakdown[] }) 
                 {entry.label}
               </span>
             </td>
-            <td className={`${tdClass} text-text/60`}>{entry.activityCount}</td>
-            <td className={tdClass}>{entry.distanceM > 0 ? formatDistance(entry.distanceM) : '—'}</td>
-            <td className={tdClass}>{formatDuration(Math.round(entry.durationSec))}</td>
+            <td className={`${tdClass} metric text-text/50`}>{entry.activityCount}</td>
+            <td className={`${tdClass} metric`}>{entry.distanceM > 0 ? formatDistance(entry.distanceM) : "—"}</td>
+            <td className={`${tdClass} metric`}>{formatDuration(Math.round(entry.durationSec))}</td>
           </tr>
         ))}
       </tbody>

@@ -11,9 +11,13 @@ export function BackLink({ fallbackHref }: { fallbackHref: string }) {
         e.preventDefault()
         router.back()
       }}
-      className="inline-block mb-4 text-[13px] text-accent hover:text-accent-700"
+      className="group inline-flex items-center gap-1.5 mb-5 text-[12px] uppercase tracking-[0.09em] text-text/45 transition-colors hover:text-accent"
     >
-      ← Back
+      {/* La flèche recule au survol : le geste dit le sens du lien avant le mot. */}
+      <span className="transition-transform duration-200 ease-out-3d group-hover:-translate-x-0.5">
+        ←
+      </span>
+      Back
     </a>
   )
 }

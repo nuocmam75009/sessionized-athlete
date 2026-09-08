@@ -62,9 +62,9 @@ export function WeekHeartRateZones({ week }: { week: WeekEntry }) {
   return (
     <>
       {zones.length >= 3 && (
-        <div className="flex items-baseline gap-2 mb-3">
-          <span className="font-heading font-semibold text-[22px]">{easyShare} %</span>
-          <span className="text-sm text-text/60">easy (Z1–Z2) · {formatDuration(totalSeconds)} with HR</span>
+        <div className="flex items-baseline gap-2.5 mb-4">
+          <span className="metric font-semibold text-[26px] leading-none">{easyShare} %</span>
+          <span className="text-sm text-text/50">easy (Z1–Z2) · {formatDuration(totalSeconds)} with HR</span>
         </div>
       )}
 

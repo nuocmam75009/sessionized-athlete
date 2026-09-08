@@ -37,9 +37,9 @@ export function MessagesView({ currentUserId }: { currentUserId: string }) {
   return (
     <div>
       <h1>Messages</h1>
-      {error && <p className="text-red-600 mb-4">{error}</p>}
-      {conversations === null && !error && <p className="text-text/60 mt-5">Chargement…</p>}
-      {conversations?.length === 0 && <p className="text-text/60 mt-5">Aucune conversation pour l&apos;instant.</p>}
+      {error && <p className="text-danger mb-4">{error}</p>}
+      {conversations === null && !error && <p className="text-text/45 mt-6">Chargement…</p>}
+      {conversations?.length === 0 && <p className="text-text/45 mt-6">Aucune conversation pour l&apos;instant.</p>}
       <div className="grid gap-2 mt-5 max-w-[560px]">
         {conversations?.map((c) => (
           <ConversationListItem key={c.id} conversation={c} currentUserId={currentUserId} />

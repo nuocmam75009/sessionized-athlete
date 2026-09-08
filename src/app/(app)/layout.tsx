@@ -9,7 +9,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Les pages sont cadrées à 920px par défaut (confort de lecture d'une
             colonne). Une page qui a besoin de plus — le dashboard et ses deux
             colonnes calendrier + récapitulatif — pose data-wide sur sa racine. */}
-        <main className="flex-1 px-6 md:px-8 py-8 w-full max-w-[920px] has-data-wide:max-w-none">
+        <main className="flex-1 px-6 md:px-10 py-10 w-full max-w-[920px] has-data-wide:max-w-none">
           {children}
         </main>
       </div>

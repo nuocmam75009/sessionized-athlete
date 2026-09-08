@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
-import { Field, Textarea } from '@/components/ui/Field'
+import { Field, inputClassName, Textarea } from '@/components/ui/Field'
 import type { Activity } from '@/lib/types'
 
 export function ActivityNoteEditor({ activity, onSaved }: { activity: Activity; onSaved: (activity: Activity) => void }) {
@@ -83,7 +83,7 @@ export function ActivityNoteEditor({ activity, onSaved }: { activity: Activity; 
             min={1}
             max={10}
             step={1}
-            className="w-24 min-h-9 px-2.5 py-1.5 text-sm text-text bg-surface border border-divider rounded-md focus-visible:border-accent focus-visible:outline-none"
+            className={`w-24 ${inputClassName}`}
             value={difficultyNote}
             onChange={(e) => setDifficultyNote(e.target.value)}
           />
@@ -96,7 +96,7 @@ export function ActivityNoteEditor({ activity, onSaved }: { activity: Activity; 
         <Button variant="ghost" onClick={() => setEditing(false)} disabled={saving}>
           Annuler
         </Button>
-        {error && <span className="text-sm text-red-600">{error}</span>}
+        {error && <span className="text-sm text-danger">{error}</span>}
       </div>
     </div>
   )

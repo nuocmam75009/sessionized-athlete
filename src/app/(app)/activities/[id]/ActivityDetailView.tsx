@@ -78,7 +78,7 @@ export function ActivityDetailView({
   return (
     <div>
       <BackLink fallbackHref="/dashboard" />
-      <div className="font-heading font-semibold text-xs tracking-[0.1em] uppercase text-accent mb-2">
+      <div className="font-heading font-semibold text-[10px] tracking-[0.18em] uppercase text-accent mb-2.5">
         {formatDateLabel(activity.startedAt)}
       </div>
       <div className="flex items-baseline gap-3 flex-wrap">
@@ -93,14 +93,16 @@ export function ActivityDetailView({
           )
         })}
       </div>
-      <div className="flex gap-8 my-6">
+      <div className="panel rounded-lg my-7 px-6 py-5 flex gap-10 flex-wrap">
         <Stat label="Distance" value={actual.distance} />
         <Stat label="Duration" value={actual.duration} />
         <Stat label="Avg pace" value={actual.pace} />
       </div>
 
       {workout?.coachNote && (
-        <blockquote className="mb-6 pl-4 border-l-2 border-accent-200 italic text-[17px] max-w-[56ch]">
+        // Filet d'accent dégradé plutôt qu'un trait plein : sur fond noir, une
+        // barre pleine de 2px sur toute la hauteur pèse plus que la citation.
+        <blockquote className="mb-7 pl-5 border-l-2 border-transparent [border-image:linear-gradient(to_bottom,var(--color-accent),transparent)_1] text-[17px] leading-relaxed text-text/85 max-w-[56ch]">
           “{workout.coachNote}”
         </blockquote>
       )}
@@ -108,7 +110,7 @@ export function ActivityDetailView({
       {mapPoints && mapPoints.length > 0 && (
         <>
           <h4 className="mb-3">Route</h4>
-          <RouteMap points={mapPoints} className="w-full h-[280px] rounded-md mb-6" />
+          <RouteMap points={mapPoints} className="w-full h-[280px] rounded-lg mb-7 border border-divider" />
         </>
       )}
       {!hasGpsTrace && (
@@ -139,27 +141,27 @@ export function ActivityDetailView({
               {laps.map((lap) => {
                 const intensity = lapIntensityStyle(lap.intensity)
                 return (
-                  <tr key={lap.id} className={intensity?.isRecovery ? 'bg-text/[0.035]' : ''}>
-                    <td className={`${tdClass} font-semibold`}>{lap.index + 1}</td>
+                  <tr key={lap.id} className={intensity?.isRecovery ? 'bg-text/[0.045]' : ''}>
+                    <td className={`${tdClass} metric font-semibold`}>{lap.index + 1}</td>
                     {showIntensity && (
                       <td className={tdClass}>
                         {intensity && (
                           <span className="inline-flex items-center gap-1.5">
                             <span className={`w-1.5 h-1.5 rounded-full ${intensity.dotClass}`} />
-                            <span className="text-[10px] uppercase tracking-wide text-text/50">{intensity.label}</span>
+                            <span className="text-[9px] uppercase tracking-[0.1em] text-text/45">{intensity.label}</span>
                           </span>
                         )}
                       </td>
                     )}
-                    <td className={tdClass}>{formatDistance(lap.distanceM)}</td>
-                    <td className={tdClass}>{formatDuration(Math.round(lap.durationSec))}</td>
-                    <td className={`${tdClass} text-text/60`}>
+                    <td className={`${tdClass} metric`}>{formatDistance(lap.distanceM)}</td>
+                    <td className={`${tdClass} metric`}>{formatDuration(Math.round(lap.durationSec))}</td>
+                    <td className={`${tdClass} metric text-text/55`}>
                       {/* Pas d'allure sur une récupération : trente mètres en
                           deux minutes donnent 1h/km, un chiffre qui n'apprend
                           rien et rend la colonne illisible. */}
                       {intensity?.isRecovery || lap.avgPaceSecPerKm == null ? '—' : formatPace(lap.avgPaceSecPerKm)}
                     </td>
-                    <td className={`${tdClass} text-text/60`}>
+                    <td className={`${tdClass} metric text-text/55`}>
                       {lap.avgHeartRate != null ? `${lap.avgHeartRate}bpm` : '—'}
                     </td>
                   </tr>

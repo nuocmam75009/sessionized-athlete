@@ -34,7 +34,7 @@ export function MonthCalendar({ entries }: { entries: DayEntry[] }) {
                   {WEEKDAY_HEADERS.map((label) => (
                     <div
                       key={label}
-                      className="text-center text-[11px] font-medium uppercase tracking-wide text-text/45"
+                      className="text-center text-[10px] font-medium uppercase tracking-[0.12em] text-text/35"
                     >
                       {label}
                     </div>
@@ -84,14 +84,16 @@ function WeekCell({ week, isSelected, onClick }: { week: WeekEntry; isSelected: 
       onClick={onClick}
       aria-pressed={isSelected}
       aria-label={`Week summary ${week.label}`}
-      className={`w-20 shrink-0 flex flex-col items-center justify-center gap-0.5 rounded-lg border px-1 cursor-pointer transition-colors ${
+      className={`lift w-20 shrink-0 flex flex-col items-center justify-center gap-1 rounded-lg border px-1 cursor-pointer ${
+        // La semaine sélectionnée est la seule à porter un halo : c'est ce qui
+        // relie la ligne du calendrier au panneau de récapitulatif à sa droite.
         isSelected
-          ? 'border-accent bg-accent-100/70'
-          : 'border-dashed border-divider hover:border-solid hover:border-accent-300 hover:bg-accent-100/40'
+          ? 'border-accent/60 bg-accent/10 glow-accent'
+          : 'border-dashed border-divider bg-surface/30 hover:border-solid'
       }`}
     >
-      <span className="font-heading font-semibold text-sm">{formatDistance(week.summary.distanceM)}</span>
-      <span className={`text-[9px] uppercase tracking-wide ${isSelected ? 'text-accent-700' : 'text-text/45'}`}>
+      <span className="metric font-semibold text-[13px]">{formatDistance(week.summary.distanceM)}</span>
+      <span className={`text-[9px] uppercase tracking-[0.1em] ${isSelected ? 'text-accent-700' : 'text-text/40'}`}>
         {week.shortLabel}
       </span>
     </button>
@@ -109,13 +111,20 @@ function DayCell({ entry, onClick }: { entry: DayEntry; onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className={`group flex flex-col items-center h-24 rounded-lg border px-2 py-2 cursor-pointer transition-colors hover:border-divider ${borderClass} ${bgClass} ${
-        entry.isToday ? 'ring-2 ring-accent ring-offset-1 ring-offset-bg' : ''
-      } ${entry.isInCurrentMonth ? '' : 'opacity-40'}`}
+      // Pas de `sheen` sur les cases : le balayage lumineux ajoutait un
+      // pseudo-élément et un contexte d'empilement à chacune des 42 cases de la
+      // grille, pour un reflet à peine perceptible sur 100px de large.
+      className={`lift group flex flex-col items-center h-24 rounded-lg border px-2 py-2 cursor-pointer ${borderClass} ${bgClass} ${
+        // Le jour courant est le seul repère permanent de la grille : halo plutôt
+        // qu'anneau, pour qu'il se voie sans ajouter un second trait à la case.
+        entry.isToday ? 'glow-accent' : ''
+      } ${entry.isInCurrentMonth ? '' : 'opacity-35'}`}
     >
       <div
-        className={`flex items-center justify-center w-7 h-7 rounded-full text-sm font-heading font-semibold mb-1 transition-colors ${
-          entry.isToday ? 'bg-accent text-bg' : 'text-text group-hover:bg-text/[0.06]'
+        className={`flex items-center justify-center w-7 h-7 rounded-full text-[13px] metric font-semibold mb-1.5 transition-colors ${
+          entry.isToday
+            ? 'bg-accent text-bg shadow-[0_4px_14px_-4px_var(--color-accent)]'
+            : 'text-text/85 group-hover:bg-text/[0.07]'
         }`}
       >
         {entry.dayNumber}
@@ -124,14 +133,14 @@ function DayCell({ entry, onClick }: { entry: DayEntry; onClick: () => void }) {
       {dotClass && (
         <div className="flex items-center gap-1 mb-0.5">
           <span className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />
-          <span className="text-[9px] uppercase tracking-wide text-text/50">{label}</span>
+          <span className="text-[9px] uppercase tracking-[0.09em] text-text/45">{label}</span>
         </div>
       )}
 
-      <div className="text-[10px] text-text/70 text-center leading-snug line-clamp-2">
+      <div className="text-[10px] text-text/60 text-center leading-snug line-clamp-2">
         {title}
         {entry.unplannedActivities.length > 1 && (
-          <span className="text-text/50"> +{entry.unplannedActivities.length - 1}</span>
+          <span className="text-text/40"> +{entry.unplannedActivities.length - 1}</span>
         )}
       </div>
     </button>

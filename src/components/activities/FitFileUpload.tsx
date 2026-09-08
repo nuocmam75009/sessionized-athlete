@@ -57,7 +57,7 @@ export function FitFileUpload({ activityId, onAttached }: FitFileUploadProps) {
       <Button variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
         {uploading ? 'Import…' : 'Attacher le fichier .fit'}
       </Button>
-      {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
+      {error && <p className="text-sm text-danger mt-2">{error}</p>}
     </div>
   )
 }

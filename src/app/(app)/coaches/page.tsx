@@ -8,14 +8,14 @@ export default async function CoachesPage() {
 
   return (
     <div>
-      <div className="font-heading font-semibold text-xs tracking-[0.1em] uppercase text-accent mb-2">
+      <div className="font-heading font-semibold text-[10px] tracking-[0.18em] uppercase text-accent mb-2.5">
         Marketplace
       </div>
       <h1>Find your coach</h1>
       {status !== 200 ? (
-        <p className="text-red-600 mb-4">Impossible de charger les coachs.</p>
+        <p className="text-danger mb-4">Impossible de charger les coachs.</p>
       ) : (
-        <p className="opacity-70 mb-8">
+        <p className="text-text/50 mt-2 mb-8 max-w-[52ch]">
           {coaches.length} coachs disponibles — parcours et choisis celui qui correspond à ton objectif.
         </p>
       )}

@@ -21,10 +21,10 @@ const SPECIALTY_LABELS: Record<Specialty, string> = {
 function ZoneRow({ label, values }: { label: string; values: string[] }) {
   return (
     <div>
-      <span className="block text-xs text-text/70 mb-1.5">{label}</span>
+      <span className="block text-[11px] uppercase tracking-[0.08em] text-text/50 mb-2">{label}</span>
       <div className="flex flex-wrap gap-2">
         {values.map((v, i) => (
-          <div key={i} className="min-w-14 px-2.5 py-1.5 text-sm text-center bg-surface border border-divider rounded-md">
+          <div key={i} className="metric min-w-14 px-3 py-1.5 text-[13px] text-center panel-flat rounded-md">
             {v}
           </div>
         ))}
@@ -67,7 +67,7 @@ export function AthleteDataView({ athleteProfile }: { athleteProfile: AthletePro
   return (
     <div>
       <h1>Athlete Data</h1>
-      <p className="text-text/60 mt-1 max-w-[52ch]">
+      <p className="text-text/50 mt-2 max-w-[52ch]">
         These physiological details help your coach fine-tune your sessions — target zones, load, recovery.
       </p>
       <form
@@ -124,14 +124,14 @@ export function AthleteDataView({ athleteProfile }: { athleteProfile: AthletePro
           <Button type="submit" className="w-fit" disabled={saveState === 'saving'}>
             {saveState === 'saving' ? 'Saving…' : 'Save changes'}
           </Button>
-          {saveState === 'saved' && <span className="text-sm text-green-600">Saved.</span>}
-          {saveState === 'error' && <span className="text-sm text-red-600">Échec de l&apos;enregistrement.</span>}
+          {saveState === 'saved' && <span className="text-sm text-success">Saved.</span>}
+          {saveState === 'error' && <span className="text-sm text-danger">Échec de l&apos;enregistrement.</span>}
         </div>
       </form>
 
       {athleteProfile && (athleteProfile.heartRateZonesBpm.length > 0 || athleteProfile.paceZonesSecPerKm.length > 0) && (
         <div className="grid gap-4 max-w-[420px] mt-8 pt-6 border-t border-divider">
-          <div className="text-[11px] uppercase tracking-[0.08em] text-text/45">Synced from Strava</div>
+          <div className="text-[10px] uppercase tracking-[0.14em] text-accent font-semibold">Synced from Strava</div>
           {athleteProfile.heartRateZonesBpm.length > 0 && (
             <ZoneRow label="Heart rate zones (bpm)" values={athleteProfile.heartRateZonesBpm.map(String)} />
           )}

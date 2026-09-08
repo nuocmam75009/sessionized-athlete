@@ -23,6 +23,15 @@ export interface RoutePoint {
   longitude: number | null
 }
 
+// Fond de carte sombre : les tuiles OSM standard sont claires et arrachent
+// l'œil au milieu d'une page noire. CARTO sert le même jeu de données OSM en
+// version sombre, ce qui laisse le tracé d'accent seul élément lumineux.
+const TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+const TILE_ATTRIBUTION = '© OpenStreetMap contributors © CARTO'
+// Miroir de --color-accent : Leaflet dessine sur un canvas et n'interprète pas
+// les variables CSS.
+const ROUTE_COLOR = '#3b9dfa'
+
 interface RouteMapProps {
   // Fournir soit gpxData (aperçu client d'un fichier .gpx avant envoi), soit
   // points (trace GPS persistée, rechargée depuis GET /activities/:id/track).
@@ -46,9 +55,10 @@ export function RouteMap({ gpxData, points, onStats, className }: RouteMapProps)
       if (cancelled || !containerRef.current) return
 
       map = L.map(containerRef.current)
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 19,
+      L.tileLayer(TILE_URL, {
+        attribution: TILE_ATTRIBUTION,
+        subdomains: 'abcd',
+        maxZoom: 20,
       }).addTo(map)
 
       if (points) {
@@ -57,7 +67,7 @@ export function RouteMap({ gpxData, points, onStats, className }: RouteMapProps)
           .map((p) => [p.latitude, p.longitude] as [number, number])
         if (latLngs.length === 0) return
 
-        const polyline = L.polyline(latLngs, { color: '#0088b0', weight: 4 }).addTo(map)
+        const polyline = L.polyline(latLngs, { color: ROUTE_COLOR, weight: 4 }).addTo(map)
         map.fitBounds(polyline.getBounds())
         return
       }
@@ -80,7 +90,7 @@ export function RouteMap({ gpxData, points, onStats, className }: RouteMapProps)
       const GPX = (L as unknown as { GPX: new (data: string, options?: object) => GpxLayer }).GPX
       const gpxLayer = new GPX(gpxData, {
         async: true,
-        polyline_options: { color: '#0088b0', weight: 4 },
+        polyline_options: { color: ROUTE_COLOR, weight: 4 },
       })
       gpxLayer.on('loaded', (e: LeafletEvent) => {
         const layer = e.target as GpxLayer

@@ -21,15 +21,19 @@ export function WeekSummary({ week, className = '' }: { week: WeekEntry; classNa
   const detailedDays = week.days.filter((d) => d.activities.length > 0 || d.workout != null)
 
   return (
-    <aside className={`bg-surface rounded-md p-5 ${className}`}>
-      <div className="flex items-baseline justify-between gap-3 mb-1">
-        <div className="font-heading font-semibold text-xs tracking-[0.1em] uppercase text-accent">Week summary</div>
+    <aside className={`panel rounded-lg p-6 ${className}`}>
+      <div className="flex items-baseline justify-between gap-3 mb-1.5">
+        <div className="font-heading font-semibold text-[10px] tracking-[0.16em] uppercase text-accent">
+          Week summary
+        </div>
         {week.containsToday && (
-          <span className="text-[10px] uppercase tracking-wide text-text/45">This week</span>
+          <span className="text-[9px] uppercase tracking-[0.11em] text-text/40 rounded-sm px-2 py-1 ring-1 ring-inset ring-divider">
+            This week
+          </span>
         )}
       </div>
       <h3 className="mb-1">{week.label}</h3>
-      <p className="text-sm text-text/60 mb-5">
+      <p className="text-sm text-text/50 mb-6">
         {summary.activeDays} active day{summary.activeDays === 1 ? '' : 's'} out of 7
       </p>
 
@@ -119,9 +123,9 @@ export function WeekSummary({ week, className = '' }: { week: WeekEntry; classNa
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="mb-6 last:mb-0">
-      <h4 className="text-[11px] uppercase tracking-[0.08em] text-text/55 mb-3 pb-2 border-b border-divider">
-        {title}
-      </h4>
+      {/* Le style d'étiquette (capitales sourdes) vient de globals.css — h4 ne
+          sert jamais de titre de contenu dans l'app. */}
+      <h4 className="mb-3 pb-2 border-b border-divider">{title}</h4>
       {children}
     </section>
   )
@@ -157,13 +161,13 @@ function DayRow({ day }: { day: DayEntry }) {
   const { dotClass, label } = dayStatusStyles(day.status)
 
   return (
-    <div className="border border-divider rounded-md px-3 py-2.5">
+    <div className="panel-flat rounded-md px-3.5 py-3">
       <div className="flex items-baseline justify-between gap-3 mb-1">
-        <span className="font-heading font-semibold text-sm">
+        <span className="font-heading font-semibold text-[13px] tracking-[-0.01em]">
           {day.weekdayLabel} {day.dayNumber}
         </span>
         {dotClass && (
-          <span className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-text/50">
+          <span className="flex items-center gap-1.5 text-[9px] uppercase tracking-[0.1em] text-text/45">
             <span className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />
             {label}
           </span>
@@ -173,7 +177,7 @@ function DayRow({ day }: { day: DayEntry }) {
       {day.workout && <div className="text-sm mb-1">{day.workout.title}</div>}
 
       {day.activities.length === 0 ? (
-        <div className="text-sm text-text/50">No activity recorded</div>
+        <div className="text-sm text-text/40">No activity recorded</div>
       ) : (
         <div className="grid gap-1">
           {day.activities.map((activity) => (

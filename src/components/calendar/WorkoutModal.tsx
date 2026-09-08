@@ -26,11 +26,11 @@ export function WorkoutModal({
         <>
           <h3 className="mb-2">{workout.title}</h3>
           {workout.coachNote && (
-            <blockquote className="mb-4 pl-4 border-l-2 border-accent-200 italic text-[15px] max-w-[48ch]">
+            <blockquote className="mb-4 pl-4 border-l-2 border-accent/45 text-[15px] leading-relaxed text-text/80 max-w-[48ch]">
               “{workout.coachNote}”
             </blockquote>
           )}
-          <p className="text-sm text-text/60 mb-5">{summarizeWorkoutLaps(workout)}</p>
+          <p className="text-sm text-text/50 mb-5">{summarizeWorkoutLaps(workout)}</p>
 
           {status === 'done' && linkedActivity && (
             <>
@@ -57,9 +57,9 @@ export function WorkoutModal({
           {unplannedActivities.map((activity) => {
             const actual = formatActivity(activity)
             return (
-              <div key={activity.id} className="border border-divider rounded-md px-3 py-2.5">
+              <div key={activity.id} className="panel-flat rounded-md px-3.5 py-3">
                 <div className="font-semibold text-sm mb-1">{activity.sport ?? 'Activity'}</div>
-                <div className="text-text/60 text-sm mb-2">
+                <div className="metric text-text/50 text-[13px] mb-2.5">
                   {actual.distance} · {actual.duration} · {actual.pace}
                 </div>
                 <Link href={`/activities/${activity.id}`} className={buttonClassName('secondary')}>

@@ -45,6 +45,19 @@ function CloseIcon({ className }: SidebarIconProps) {
   )
 }
 
+// Marque : un petit volume plutôt qu'un logotype. Le dégradé simule une face
+// éclairée par le haut, et le bloc bascule légèrement au survol — c'est le
+// seul objet franchement 3D de la navigation, tout le reste reste plat.
+function BrandMark({ mark }: { mark: string }) {
+  return (
+    <span className="perspective-near">
+      <span className="flex h-7 w-7 items-center justify-center rounded-md bg-linear-to-br from-accent-600 to-accent-400 text-bg font-heading text-[13px] font-bold shadow-[0_6px_16px_-6px_var(--color-accent),inset_0_1px_0_rgb(255_255_255/0.35)] transition-transform duration-500 ease-out-3d hover:transform-[rotateX(24deg)_rotateY(-24deg)]">
+        {mark}
+      </span>
+    </span>
+  )
+}
+
 interface SidebarItemProps {
   label: string
   icon: SidebarIcon
@@ -60,18 +73,27 @@ interface SidebarItemProps {
 // la pastille active glissante (layoutId) n'apparaît que sur les vrais liens
 // de nav, pas sur les actions du footer (upload, logout...).
 function SidebarItem({ label, icon: Icon, active, collapsed, showPill = true, href, onClick, onNavigate }: SidebarItemProps) {
-  const className = 'group relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors cursor-pointer'
+  const className =
+    'group relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors duration-200 cursor-pointer'
 
   const content = (
     <>
       {active && showPill && (
         <motion.div
           layoutId="sidebar-active-pill"
-          className="absolute inset-0 rounded-md bg-accent/10"
+          className="absolute inset-0 rounded-md bg-accent/10 ring-1 ring-inset ring-accent/25 shadow-[0_8px_24px_-14px_var(--color-accent)]"
           transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-        />
+        >
+          {/* Barre lumineuse sur l'arête gauche : le repère qu'on suit du coin
+              de l'œil quand la sidebar est repliée en icônes seules. */}
+          <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-accent shadow-[0_0_10px_1px_var(--color-accent)]" />
+        </motion.div>
       )}
-      <span className={`relative z-10 shrink-0 transition-colors ${active ? 'text-accent' : 'text-text/60 group-hover:text-text'}`}>
+      <span
+        className={`relative z-10 shrink-0 transition-[color,transform] duration-200 ease-out-3d group-hover:scale-110 ${
+          active ? 'text-accent' : 'text-text/45 group-hover:text-text'
+        }`}
+      >
         <Icon />
       </span>
       <AnimatePresence initial={false}>
@@ -82,7 +104,7 @@ function SidebarItem({ label, icon: Icon, active, collapsed, showPill = true, hr
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -4 }}
             transition={{ duration: 0.15 }}
-            className={`relative z-10 whitespace-nowrap font-medium transition-colors ${active ? 'text-accent' : 'text-text/80 group-hover:text-text'}`}
+            className={`relative z-10 whitespace-nowrap font-medium transition-colors ${active ? 'text-accent-800' : 'text-text/70 group-hover:text-text'}`}
           >
             {label}
           </motion.span>
@@ -145,6 +167,13 @@ function ActionList({ actions, collapsed, onNavigate }: { actions: SidebarAction
   )
 }
 
+// Aplat presque opaque, sans backdrop-filter. Un flou d'arrière-plan sur une
+// barre haute comme le viewport est recalculé à chaque image du défilement :
+// c'était le poste de dépense le plus visible au scroll, pour un effet que
+// 92 % d'opacité rend de façon quasi identique sur un thème sombre — le halo
+// d'ambiance transparaît encore.
+const SHELL = 'bg-surface/92'
+
 // Sidebar générique, sans dépendance à une app en particulier : la marque,
 // les items de nav et les actions (upload, logout...) sont fournis par
 // l'app appelante (voir AthleteSidebar.tsx). Repose uniquement sur les
@@ -163,7 +192,7 @@ export function Sidebar({ brand, brandMark, navItems, actions = [] }: SidebarPro
 
   return (
     <>
-      <div className="flex items-center gap-3 border-b border-divider px-4 py-3 md:hidden">
+      <div className={`sticky top-0 z-30 flex items-center gap-3 border-b border-divider px-4 py-3 md:hidden ${SHELL}`}>
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
@@ -172,7 +201,8 @@ export function Sidebar({ brand, brandMark, navItems, actions = [] }: SidebarPro
         >
           <MenuIcon />
         </button>
-        <span className="font-heading font-semibold">{brand}</span>
+        <BrandMark mark={mark} />
+        <span className="font-heading font-semibold tracking-[-0.01em]">{brand}</span>
       </div>
 
       <AnimatePresence>
@@ -184,7 +214,7 @@ export function Sidebar({ brand, brandMark, navItems, actions = [] }: SidebarPro
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setMobileOpen(false)}
-              className="fixed inset-0 z-40 bg-text/40 md:hidden"
+              className="fixed inset-0 z-40 bg-bg/70 backdrop-blur-sm md:hidden"
             />
             <motion.aside
               key="drawer"
@@ -192,10 +222,13 @@ export function Sidebar({ brand, brandMark, navItems, actions = [] }: SidebarPro
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-              className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-surface md:hidden"
+              className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-divider md:hidden ${SHELL}`}
             >
-              <div className="flex items-center justify-between px-4 py-3">
-                <span className="font-heading font-semibold">{brand}</span>
+              <div className="flex items-center justify-between px-4 py-4">
+                <span className="flex items-center gap-2.5">
+                  <BrandMark mark={mark} />
+                  <span className="font-heading font-semibold tracking-[-0.01em]">{brand}</span>
+                </span>
                 <button
                   type="button"
                   onClick={() => setMobileOpen(false)}
@@ -215,17 +248,31 @@ export function Sidebar({ brand, brandMark, navItems, actions = [] }: SidebarPro
       <motion.aside
         animate={{ width: collapsed ? 72 : 232 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="sticky top-0 hidden h-screen flex-col border-r border-divider bg-surface md:flex"
+        className={`sticky top-0 z-30 hidden h-screen flex-col border-r border-divider md:flex ${SHELL}`}
       >
+        {/* Filet lumineux le long de l'arête droite : il fait lire la sidebar
+            comme un plan situé devant la page, pas comme une colonne peinte. */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-0 w-px bg-linear-to-b from-transparent via-accent/35 to-transparent"
+        />
+
         <div className="flex items-center justify-between px-4 py-4">
           <AnimatePresence initial={false} mode="wait">
             {collapsed ? (
-              <motion.span key="mark" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="font-heading font-semibold text-accent">
-                {mark}
+              <motion.span key="mark" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <BrandMark mark={mark} />
               </motion.span>
             ) : (
-              <motion.span key="wordmark" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="whitespace-nowrap font-heading font-semibold">
-                {brand}
+              <motion.span
+                key="wordmark"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex items-center gap-2.5"
+              >
+                <BrandMark mark={mark} />
+                <span className="whitespace-nowrap font-heading font-semibold tracking-[-0.01em]">{brand}</span>
               </motion.span>
             )}
           </AnimatePresence>
@@ -233,7 +280,7 @@ export function Sidebar({ brand, brandMark, navItems, actions = [] }: SidebarPro
             type="button"
             onClick={() => setCollapsed((c) => !c)}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-sm text-text/60 transition-colors hover:bg-text/[0.07] hover:text-text cursor-pointer"
+            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-sm text-text/45 transition-colors hover:bg-text/[0.07] hover:text-text cursor-pointer"
           >
             <motion.svg
               width="16"

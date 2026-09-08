@@ -71,14 +71,16 @@ export function ZoneDistributionChart({
           width={26}
           axisLine={false}
           tickLine={false}
-          tick={{ fill: 'var(--color-text)', fontSize: 11, opacity: 0.6 }}
+          tick={{ fill: 'var(--color-text)', fontSize: 11, opacity: 0.45 }}
         />
-        <Tooltip cursor={{ fill: 'var(--color-text)', fillOpacity: 0.04 }} content={<ZoneTooltip />} />
-        <Bar dataKey="seconds" radius={2} barSize={18} isAnimationActive={false}>
+        <Tooltip cursor={{ fill: 'var(--color-text)', fillOpacity: 0.06 }} content={<ZoneTooltip />} />
+        {/* Barres arrondies et plus fines : sur fond noir, une barre pleine et
+            carrée pèse beaucoup plus qu'un thème clair ne le laisse croire. */}
+        <Bar dataKey="seconds" radius={3} barSize={16} isAnimationActive={false}>
           {rows.map((row) => (
             <Cell key={row.label} fill={row.color} />
           ))}
-          <LabelList dataKey="valueLabel" position="right" fill="var(--color-text)" fontSize={11} />
+          <LabelList dataKey="valueLabel" position="right" fill="var(--color-text)" fillOpacity={0.6} fontSize={11} />
         </Bar>
       </BarChart>
     </ResponsiveContainer>
@@ -90,7 +92,7 @@ function ZoneTooltip({ active, payload }: Partial<TooltipContentProps<number, st
   const row = payload[0].payload as ZoneRow
 
   return (
-    <div className="bg-bg border border-divider rounded-md px-3 py-2 shadow-sm">
+    <div className="panel rounded-md px-3 py-2 shadow-lg backdrop-blur-sm">
       <div className="font-heading font-semibold text-xs">
         {row.label} · {row.range}
       </div>

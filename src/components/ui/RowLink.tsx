@@ -13,7 +13,7 @@ export function RowLink({ href, children }: RowLinkProps) {
   return (
     <tr
       onClick={href ? () => router.push(href) : undefined}
-      className={href ? 'cursor-pointer hover:bg-text/[0.04]' : ''}
+      className={href ? 'cursor-pointer transition-colors duration-150 hover:bg-text/[0.05]' : ''}
     >
       {children}
     </tr>

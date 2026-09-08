@@ -21,23 +21,28 @@ export function ConversationListItem({
   return (
     <Link
       href={`/messages/${conversation.id}`}
-      className="flex items-center gap-3 p-3 rounded-md bg-surface hover:bg-text/[0.04] transition-colors"
+      className="lift sheen flex items-center gap-3.5 p-3.5 rounded-lg panel-flat"
     >
       <Avatar name={name} size={44} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
           <span className="font-semibold text-sm">{name}</span>
           {last && (
-            <span className="text-text/50 text-xs shrink-0">
+            <span className="text-text/35 text-[11px] shrink-0">
               {new Date(last.createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
             </span>
           )}
         </div>
-        <p className={`text-sm truncate ${unread ? 'font-semibold text-text' : 'text-text/60'}`}>
+        <p className={`text-sm truncate ${unread ? 'font-semibold text-text' : 'text-text/50'}`}>
           {last?.content ?? 'Nouvelle conversation'}
         </p>
       </div>
-      {unread && <span className="w-2.5 h-2.5 rounded-full bg-accent-2 shrink-0" aria-label="Non lu" />}
+      {unread && (
+        <span
+          className="w-2 h-2 rounded-full bg-accent-2 shadow-[0_0_10px_1px_var(--color-accent-2)] shrink-0"
+          aria-label="Non lu"
+        />
+      )}
     </Link>
   )
 }

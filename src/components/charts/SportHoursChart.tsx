@@ -64,10 +64,10 @@ export function SportHoursChart({ bySport }: { bySport: SportBreakdown[] }) {
       {/* Le trou du donut porte le total : sans lui, les arcs ne disent que des
           proportions. pointer-events-none pour ne pas manger le survol. */}
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-        <span className="font-heading font-semibold text-lg leading-none">
+        <span className="metric font-semibold text-[19px] leading-none">
           {formatDuration(Math.round(totalSeconds))}
         </span>
-        <span className="text-[10px] uppercase tracking-wide text-text/45 mt-1">total</span>
+        <span className="text-[9px] uppercase tracking-[0.12em] text-text/35 mt-1.5">total</span>
       </div>
     </div>
   )
@@ -78,7 +78,7 @@ function SportTooltip({ active, payload }: Partial<TooltipContentProps<number, s
   const slice = payload[0].payload as SportSlice
 
   return (
-    <div className="bg-bg border border-divider rounded-md px-3 py-2 shadow-sm">
+    <div className="panel rounded-md px-3 py-2 shadow-lg backdrop-blur-sm">
       <div className="font-heading font-semibold text-xs">{slice.label}</div>
       <div className="text-xs text-text/60 mt-0.5">
         {formatDuration(Math.round(slice.durationSec))} · {slice.shareLabel}

@@ -24,16 +24,16 @@ export function formatDistance(meters: number): string {
 
 // Couleur du delta allure
 export function paceColor(delta: number): string {
-  if (delta < -10) return 'text-red-600'
-  if (delta < -5) return 'text-orange-500'
-  return 'text-green-600'
+  if (delta < -10) return 'text-danger'
+  if (delta < -5) return 'text-warning'
+  return 'text-success'
 }
 
 // Couleur du TSB
 export function tsbColor(tsb: number): string {
-  if (tsb < -20) return 'text-red-600'
-  if (tsb < 0) return 'text-orange-500'
-  return 'text-green-600'
+  if (tsb < -20) return 'text-danger'
+  if (tsb < 0) return 'text-warning'
+  return 'text-success'
 }
 
 // Convertit un ISO datetime en "Tue, Aug 4"

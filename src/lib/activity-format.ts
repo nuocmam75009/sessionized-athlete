@@ -28,15 +28,15 @@ export function lapIntensityStyle(intensity: LapIntensity | null): {
   switch (intensity) {
     case 'ACTIVE':
     case 'INTERVAL':
-      return { label: 'Work', dotClass: 'bg-accent', isRecovery: false }
+      return { label: 'Work', dotClass: 'bg-accent shadow-[0_0_8px_0_var(--color-accent)]', isRecovery: false }
     case 'RECOVERY':
-      return { label: 'Recovery', dotClass: 'bg-neutral-400', isRecovery: true }
+      return { label: 'Recovery', dotClass: 'bg-neutral-500', isRecovery: true }
     case 'REST':
-      return { label: 'Rest', dotClass: 'bg-neutral-400', isRecovery: true }
+      return { label: 'Rest', dotClass: 'bg-neutral-500', isRecovery: true }
     case 'WARMUP':
-      return { label: 'Warm-up', dotClass: 'bg-accent-300', isRecovery: false }
+      return { label: 'Warm-up', dotClass: 'bg-accent-400', isRecovery: false }
     case 'COOLDOWN':
-      return { label: 'Cool-down', dotClass: 'bg-accent-300', isRecovery: false }
+      return { label: 'Cool-down', dotClass: 'bg-accent-400', isRecovery: false }
     default:
       return null
   }
