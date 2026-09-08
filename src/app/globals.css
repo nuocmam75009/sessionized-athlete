@@ -1,26 +1,360 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ============================================================================
+   Sessionized — thème sombre "instrument"
+   ----------------------------------------------------------------------------
+   Fond quasi noir, un seul accent (le bleu de la marque, remonté en luminosité
+   pour tenir sur du noir), et de la profondeur obtenue par la lumière plutôt
+   que par le trait : liseré clair en haut des surfaces, ombres portées longues,
+   halos d'ambiance. Les traits restent fins (1px) et les aplats rares.
+   ========================================================================== */
+
+@theme {
+  /* Trois niveaux d'élévation. bg = le vide, surface = une carte posée dessus,
+     surface-2 = un élément posé sur une carte (champ, ligne survolée). */
+  --color-bg: #08090b;
+  --color-surface: #101319;
+  --color-surface-2: #171b23;
+  --color-text: #e6ecf5;
+  --color-accent: #3b9dfa;
+  --color-accent-2: #8b6cff;
+  --color-divider: color-mix(in srgb, #e6ecf5 11%, transparent);
+
+  /* Retours d'état. Choisies claires : sur fond noir, le red-600 de Tailwind
+     passe sous le seuil de contraste. */
+  --color-success: #34d399;
+  --color-danger: #fb7185;
+  --color-warning: #fbbf24;
+
+  /* Échelles inversées par rapport à un thème clair : 100 est la teinte la plus
+     sombre, 900 la plus claire. Les composants écrivent `bg-accent-100
+     text-accent-800` pour une pastille — sur noir, cela doit donner un fond
+     sourd et un texte lumineux, soit exactement l'inverse d'un thème clair.
+     Inverser la rampe une fois évite de réécrire chaque appel. */
+  --color-neutral-100: #14171d;
+  --color-neutral-200: #1b1f27;
+  --color-neutral-300: #262b35;
+  --color-neutral-400: #3d4450;
+  --color-neutral-500: #5b6472;
+  --color-neutral-600: #808a99;
+  --color-neutral-700: #a4acb9;
+  --color-neutral-800: #c9cfda;
+  --color-neutral-900: #e6ecf5;
+
+  --color-accent-100: #0b1a2c;
+  --color-accent-200: #10263e;
+  --color-accent-300: #1b4472;
+  --color-accent-400: #2a6cb4;
+  --color-accent-500: #3b9dfa;
+  --color-accent-600: #57abfb;
+  --color-accent-700: #7cc0ff;
+  --color-accent-800: #a8d6ff;
+  --color-accent-900: #d5ecff;
+
+  --color-accent-2-100: #150f2e;
+  --color-accent-2-200: #1e1547;
+  --color-accent-2-300: #2f2270;
+  --color-accent-2-400: #4a35a8;
+  --color-accent-2-500: #6d4fe0;
+  --color-accent-2-600: #8b6cff;
+  --color-accent-2-700: #a891ff;
+  --color-accent-2-800: #c4b5ff;
+  --color-accent-2-900: #e2daff;
+
+  /* Rampe d'intensité des zones (FC aujourd'hui, allure ensuite) : bleu sourd
+     en aérobie, dérive vers le violet puis le rose à mesure que ça pique.
+     Construite depuis l'accent de la marque plutôt qu'en bleu→rouge standard. */
+  --color-zone-1: #2c5c8f;
+  --color-zone-2: #3b9dfa;
+  --color-zone-3: #6f83f7;
+  --color-zone-4: #a866f0;
+  --color-zone-5: #f0568f;
+
+  /* Identité couleur des sports. Cinq teintes seulement : c'est le maximum qui
+     reste distinguable deux à deux sur fond noir, y compris en vision des
+     couleurs déficiente. Les sports plus rares partagent le neutre — leur icône
+     et leur libellé suffisent à les identifier. */
+  --color-sport-run: #3b9dfa;
+  --color-sport-trail: #2fd39a;
+  --color-sport-ride: #ff7a5c;
+  --color-sport-swim: #9b8bff;
+  --color-sport-strength: #f5c451;
+  --color-sport-other: #78889c;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* Ombres noires et longues : sur fond sombre, une ombre courte ne se voit
+     pas — c'est son étalement qui fait décoller l'élément. */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.55);
+  --shadow-md: 0 10px 30px -12px rgb(0 0 0 / 0.85), 0 2px 8px -4px rgb(0 0 0 / 0.7);
+  --shadow-lg: 0 32px 70px -26px rgb(0 0 0 / 0.95), 0 10px 24px -12px rgb(0 0 0 / 0.8);
+
+  /* Courbe partagée par toutes les réactions au pointeur : démarre vite et
+     freine longtemps, c'est ce qui donne une sensation de masse plutôt que de
+     clignotement. */
+  --ease-out-3d: cubic-bezier(0.16, 0.84, 0.24, 1);
+
+  --animate-float: float 7s ease-in-out infinite alternate;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans-ui);
+  --font-body: var(--font-sans-ui);
+  --font-mono: var(--font-mono-ui);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Flottement vertical des cartes décoratives de l'écran d'auth. Séparé de leur
+   rotation, portée par l'élément parent : une seule propriété `transform` ne
+   peut pas être à la fois animée et fixée. */
+@keyframes float {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, -11px, 0);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  /* Fait basculer les contrôles natifs (select, input number, autofill,
+     ascenseurs par défaut) en rendu sombre — sans ça, un menu déroulant
+     s'ouvre en blanc au milieu de la page. */
+  :root {
+    color-scheme: dark;
+  }
+
+  body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-body);
+    /* Chiffres à chasse fixe partout : les allures et durées d'une colonne
+       doivent s'aligner verticalement sans passer chaque cellule en mono. */
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Échelle typographique posée sur l'élément et non en classes utilitaires :
+     les pages n'ont rien à déclarer. Dans @layer base pour qu'un `text-4xl`
+     local (l'écran d'auth) reprenne la main. */
+  h1 {
+    font-size: clamp(1.7rem, 1.25rem + 1.4vw, 2.2rem);
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+  }
+  h2 {
+    font-size: 1.5rem;
+    line-height: 1.15;
+    letter-spacing: -0.025em;
+  }
+  h3 {
+    font-size: 1.2rem;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+  /* h4 sert partout de titre de section, jamais de titre de contenu : traité
+     comme une étiquette (capitales espacées, sourd) plutôt que comme un titre. */
+  h4 {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.11em;
+    color: color-mix(in srgb, var(--color-text) 52%, transparent);
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+    font-weight: 600;
+  }
+
+  :focus {
+    outline: none;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--color-accent) 32%, transparent);
+    color: #fff;
+  }
+
+  /* Barres de défilement accordées au fond — celles du système, claires,
+     déchirent la page sur un thème sombre. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-neutral-300) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-neutral-300);
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-neutral-400);
+    background-clip: content-box;
+  }
+}
+
+/* ============================================================================
+   Profondeur — classes de composant
+   ----------------------------------------------------------------------------
+   Tout repose sur des transforms composées par le GPU (translate3d / rotate3d)
+   et jamais sur une propriété qui reflowe. Chaque composant 3D ouvre sa propre
+   perspective sur son cadre extérieur (voir Tilt, Reveal, Modal) : `perspective`
+   ne descend qu'aux enfants directs, une perspective globale ne les atteindrait
+   pas.
+
+   Déclarées dans @layer components et non en CSS nu : une règle hors layer bat
+   toutes les utilitaires Tailwind, et `panel border-dashed` ou
+   `panel hover:border-accent` cesseraient de fonctionner. Dans ce layer, une
+   utilitaire posée à côté reprend toujours la main.
+   ========================================================================== */
+
+@layer components {
+
+/* Surface éclairée par le haut : dégradé descendant + liseré clair sur l'arête
+   supérieure. C'est ce liseré, pas la bordure, qui fait lire le relief. */
+.panel {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, #ffffff 4.5%, transparent), transparent 45%),
+    var(--color-surface);
+  border: 1px solid var(--color-divider);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #ffffff 7%, transparent),
+    var(--shadow-md);
+}
+
+.panel-flat {
+  background: var(--color-surface);
+  border: 1px solid var(--color-divider);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 5%, transparent);
+}
+
+/* Réaction au survol : l'élément se soulève vers le lecteur et l'ombre s'étale.
+   Appliqué aux cartes cliquables (jours du calendrier, coachs, conversations). */
+/* Pas de `will-change: transform` ici : la classe est portée par les 42 cases
+   du calendrier, et `will-change` aurait promu chacune en couche de composition
+   permanente — une cinquantaine de couches à garder en mémoire et à recomposer,
+   pour un survol qui ne concerne qu'une case à la fois. Le navigateur promeut
+   très bien à la volée au début de la transition. */
+.lift {
+  transition:
+    transform 340ms var(--ease-out-3d),
+    box-shadow 340ms var(--ease-out-3d),
+    border-color 200ms ease,
+    background-color 200ms ease;
+}
+.lift:hover {
+  transform: translate3d(0, -3px, 0);
+  border-color: color-mix(in srgb, var(--color-accent) 38%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #ffffff 9%, transparent),
+    var(--shadow-lg);
+}
+.lift:active {
+  transform: translate3d(0, -1px, 0);
+  transition-duration: 90ms;
+}
+
+/* Balayage lumineux au survol — une seule passe, sans boucle : c'est un accusé
+   de réception, pas une décoration animée en permanence. */
+.sheen {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.sheen::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 34%,
+    color-mix(in srgb, #ffffff 9%, transparent) 47%,
+    transparent 60%
+  );
+  transform: translate3d(-130%, 0, 0);
+  transition: transform 760ms var(--ease-out-3d);
+}
+.sheen:hover::after {
+  transform: translate3d(130%, 0, 0);
+}
+
+/* Halo d'accent : désigne l'élément actif (jour du jour, semaine sélectionnée,
+   bouton primaire au survol). */
+.glow-accent {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-accent) 45%, transparent),
+    0 12px 40px -14px color-mix(in srgb, var(--color-accent) 65%, transparent);
+}
+
+/* Chiffres d'instrument : chasse fixe, légèrement resserrés. Réservé aux
+   métriques (allure, distance, durée, FC), jamais au texte courant. */
+.metric {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.035em;
+}
+
+/* Sol en perspective de l'arrière-plan : une grille plate basculée vers un
+   point de fuite. Fondue par un masque pour n'exister qu'en périphérie. */
+.grid-floor {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--color-text) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--color-text) 7%, transparent) 1px, transparent 1px);
+  background-size: 64px 64px;
+  transform: perspective(340px) rotateX(64deg);
+  transform-origin: 50% 0%;
+  mask-image: linear-gradient(to bottom, #000 0%, transparent 72%);
+}
+
+}
+
+/* Leaflet arrive avec ses propres styles clairs : conteneur blanc, contrôles et
+   attribution sur fond blanc. Sans ces surcharges, la carte troue la page. */
+.leaflet-container {
+  background: var(--color-surface);
+  font-family: var(--font-body);
+}
+.leaflet-control-attribution,
+.leaflet-bar a {
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent) !important;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent) !important;
+  border-color: var(--color-divider) !important;
+}
+.leaflet-control-attribution a {
+  color: var(--color-accent) !important;
+}
+.leaflet-bar a:hover {
+  background: var(--color-surface-2) !important;
+  color: var(--color-text) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .lift:hover,
+  .lift:active {
+    transform: none;
+  }
+  .sheen::after {
+    display: none;
+  }
 }

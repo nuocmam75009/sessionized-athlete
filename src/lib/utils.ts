@@ -1,0 +1,47 @@
+// Convertit des secondes/km en "4'05"/km" — arrondi car les valeurs venant
+// directement du backend (ex: Lap.avgPaceSecPerKm) sont des Float, pas des
+// entiers déjà arrondis comme le fait activity-format.ts avant d'appeler ceci.
+export function formatPace(secPerKm: number): string {
+  const rounded = Math.round(secPerKm)
+  const min = Math.floor(rounded / 60)
+  const sec = rounded % 60
+  return `${min}'${String(sec).padStart(2, '0')}"/km`
+}
+
+// Convertit des secondes en "52'34""
+export function formatDuration(seconds: number): string {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = seconds % 60
+  if (h > 0) return `${h}h${String(m).padStart(2, '0')}'`
+  return `${m}'${String(s).padStart(2, '0')}"`
+}
+
+// Convertit des mètres en "8,4 km"
+export function formatDistance(meters: number): string {
+  return `${(meters / 1000).toFixed(1)} km`
+}
+
+// Couleur du delta allure
+export function paceColor(delta: number): string {
+  if (delta < -10) return 'text-danger'
+  if (delta < -5) return 'text-warning'
+  return 'text-success'
+}
+
+// Couleur du TSB
+export function tsbColor(tsb: number): string {
+  if (tsb < -20) return 'text-danger'
+  if (tsb < 0) return 'text-warning'
+  return 'text-success'
+}
+
+// Convertit un ISO datetime en "Tue, Aug 4"
+export function formatDateLabel(iso: string): string {
+  return new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(iso))
+}
+
+// Deux dates tombent le même jour calendaire (comparaison locale)
+export function isSameCalendarDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+}
