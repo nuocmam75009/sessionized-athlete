@@ -109,7 +109,7 @@ export default function LoginView() {
       >
         {mode === 'register' && (
           <Field label="Full name" htmlFor="sn-name">
-            <Input id="sn-name" placeholder="Jordan Reyes" value={name} onChange={(e) => setName(e.target.value)} />
+            <Input id="sn-name" placeholder="Jakob Ingebrigsten" value={name} onChange={(e) => setName(e.target.value)} />
           </Field>
         )}
         <Field label="Email" htmlFor="sn-email">

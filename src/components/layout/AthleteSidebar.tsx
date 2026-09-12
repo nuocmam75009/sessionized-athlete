@@ -1,6 +1,7 @@
 'use client'
 
 import { Sidebar, type SidebarAction, type SidebarIconProps, type SidebarNavItem } from '@/components/layout/Sidebar'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { useAuth } from '@/hooks/useAuth'
 
 function CalendarIcon({ className }: SidebarIconProps) {
@@ -71,5 +72,5 @@ export function AthleteSidebar() {
     { key: 'logout', label: 'Log out', icon: LogoutIcon, onClick: logout },
   ]
 
-  return <Sidebar brand="Sessionized" navItems={NAV_ITEMS} actions={actions} />
+  return <Sidebar brand="Sessionized" navItems={NAV_ITEMS} actions={actions} utility={<ThemeToggle />} />
 }
