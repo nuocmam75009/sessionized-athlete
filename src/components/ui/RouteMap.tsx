@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useTheme } from '@/hooks/useTheme'
+import type { Theme } from '@/lib/theme'
 import type { FeatureGroup, LeafletEvent, Map as LeafletMap } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -23,14 +25,21 @@ export interface RoutePoint {
   longitude: number | null
 }
 
-// Fond de carte sombre : les tuiles OSM standard sont claires et arrachent
-// l'œil au milieu d'une page noire. CARTO sert le même jeu de données OSM en
-// version sombre, ce qui laisse le tracé d'accent seul élément lumineux.
-const TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+// Les tuiles sont des images : contrairement au reste de l'interface, elles ne
+// suivent pas les variables CSS et doivent être rechargées au changement de
+// thème. CARTO sert le même jeu de données OSM dans les deux versions.
+const TILE_URL: Record<Theme, string> = {
+  dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+  light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+}
 const TILE_ATTRIBUTION = '© OpenStreetMap contributors © CARTO'
-// Miroir de --color-accent : Leaflet dessine sur un canvas et n'interprète pas
-// les variables CSS.
-const ROUTE_COLOR = '#3b9dfa'
+
+// Miroirs de --color-accent : Leaflet dessine le tracé dans un canvas et
+// n'interprète pas les variables CSS. À garder alignés sur globals.css.
+const ROUTE_COLOR: Record<Theme, string> = {
+  dark: '#3b9dfa',
+  light: '#1b6fc9',
+}
 
 interface RouteMapProps {
   // Fournir soit gpxData (aperçu client d'un fichier .gpx avant envoi), soit
@@ -43,6 +52,7 @@ interface RouteMapProps {
 
 export function RouteMap({ gpxData, points, onStats, className }: RouteMapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const { theme } = useTheme()
 
   useEffect(() => {
     let map: LeafletMap | undefined
@@ -55,7 +65,7 @@ export function RouteMap({ gpxData, points, onStats, className }: RouteMapProps)
       if (cancelled || !containerRef.current) return
 
       map = L.map(containerRef.current)
-      L.tileLayer(TILE_URL, {
+      L.tileLayer(TILE_URL[theme], {
         attribution: TILE_ATTRIBUTION,
         subdomains: 'abcd',
         maxZoom: 20,
@@ -67,7 +77,7 @@ export function RouteMap({ gpxData, points, onStats, className }: RouteMapProps)
           .map((p) => [p.latitude, p.longitude] as [number, number])
         if (latLngs.length === 0) return
 
-        const polyline = L.polyline(latLngs, { color: ROUTE_COLOR, weight: 4 }).addTo(map)
+        const polyline = L.polyline(latLngs, { color: ROUTE_COLOR[theme], weight: 4 }).addTo(map)
         map.fitBounds(polyline.getBounds())
         return
       }
@@ -90,7 +100,7 @@ export function RouteMap({ gpxData, points, onStats, className }: RouteMapProps)
       const GPX = (L as unknown as { GPX: new (data: string, options?: object) => GpxLayer }).GPX
       const gpxLayer = new GPX(gpxData, {
         async: true,
-        polyline_options: { color: ROUTE_COLOR, weight: 4 },
+        polyline_options: { color: ROUTE_COLOR[theme], weight: 4 },
       })
       gpxLayer.on('loaded', (e: LeafletEvent) => {
         const layer = e.target as GpxLayer
@@ -111,7 +121,7 @@ export function RouteMap({ gpxData, points, onStats, className }: RouteMapProps)
       cancelled = true
       map?.remove()
     }
-  }, [gpxData, points, onStats])
+  }, [gpxData, points, onStats, theme])
 
   return <div ref={containerRef} className={className ?? 'w-full h-[220px] rounded-md'} />
 }

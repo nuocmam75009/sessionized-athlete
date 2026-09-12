@@ -12,9 +12,12 @@
 // Pas d'animation non plus : le dynamisme de l'interface vient des réactions au
 // pointeur (survol, inclinaison), pas d'un décor qui tourne en boucle et
 // dispute des frames au défilement.
+// Les deux teintes passent par --halo-accent / --halo-accent-2, redéfinies par
+// thème dans globals.css : sur fond clair, la même intensité qu'en sombre
+// virerait au lavis bleu.
 const HALOS = `
-  radial-gradient(58% 52% at 10% -6%, color-mix(in srgb, var(--color-accent) 15%, transparent) 0%, transparent 62%),
-  radial-gradient(52% 48% at 94% 104%, color-mix(in srgb, var(--color-accent-2) 13%, transparent) 0%, transparent 64%)
+  radial-gradient(58% 52% at 10% -6%, var(--halo-accent) 0%, transparent 62%),
+  radial-gradient(52% 48% at 94% 104%, var(--halo-accent-2) 0%, transparent 64%)
 `
 
 export function AmbientBackdrop() {

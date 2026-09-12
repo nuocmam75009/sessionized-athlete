@@ -41,7 +41,9 @@ export function Tilt({ children, className = '', max = 7, glare = true }: TiltPr
   const rotateX = useSpring(useTransform(offsetY, (v) => -v * max), spring)
   const rotateY = useSpring(useTransform(offsetX, (v) => v * max), spring)
 
-  const glareBackground = useMotionTemplate`radial-gradient(320px circle at ${glareX}% ${glareY}%, color-mix(in srgb, #ffffff 9%, transparent), transparent 68%)`
+  // --sheen-tint suit le thème : lueur blanche sur fond sombre, reflet d'accent
+  // sur fond clair — où un blanc sur une carte blanche ne se verrait pas.
+  const glareBackground = useMotionTemplate`radial-gradient(320px circle at ${glareX}% ${glareY}%, var(--sheen-tint), transparent 68%)`
 
   function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
     const frame = frameRef.current

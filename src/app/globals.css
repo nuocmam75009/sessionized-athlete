@@ -106,6 +106,120 @@
   --font-mono: var(--font-mono-ui);
 }
 
+/* ============================================================================
+   Bi-thème
+   ----------------------------------------------------------------------------
+   Les valeurs de `@theme` ci-dessus sont celles du sombre : c'est le thème pour
+   lequel l'interface est dessinée, le clair en est la traduction. Tailwind
+   compile ses utilitaires en `var(--color-…)`, donc redéfinir ces variables sur
+   un sélecteur suffit à faire basculer toute l'app — aucune classe `dark:` à
+   semer dans les composants.
+
+   Ces blocs sont hors layer volontairement : `@theme` écrit dans `@layer theme`,
+   et une règle sans layer l'emporte toujours sur une règle layerée, quelle que
+   soit la spécificité.
+   ========================================================================== */
+
+/* Variables d'habillage — pas des tokens exposés en utilitaires, seulement les
+   réglages dont les classes de composant ont besoin pour changer de registre.
+   Sur fond sombre, le relief vient d'un reflet clair sur l'arête haute ; sur
+   fond clair il n'y a rien à refléter, ce sont l'ombre et le trait qui portent. */
+:root {
+  color-scheme: dark;
+
+  --panel-sheen: linear-gradient(180deg, color-mix(in srgb, #ffffff 4.5%, transparent), transparent 45%);
+  --panel-inset: inset 0 1px 0 color-mix(in srgb, #ffffff 7%, transparent);
+  --panel-inset-flat: inset 0 1px 0 color-mix(in srgb, #ffffff 5%, transparent);
+  --panel-inset-hover: inset 0 1px 0 color-mix(in srgb, #ffffff 9%, transparent);
+  --sheen-tint: color-mix(in srgb, #ffffff 9%, transparent);
+  --halo-accent: color-mix(in srgb, var(--color-accent) 15%, transparent);
+  --halo-accent-2: color-mix(in srgb, var(--color-accent-2) 13%, transparent);
+  --grid-line: color-mix(in srgb, var(--color-text) 7%, transparent);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  /* Le fond n'est pas blanc : les cartes, elles, le sont, et il leur faut un
+     gris légèrement froid pour s'en détacher sans avoir à s'alourdir d'ombre. */
+  --color-bg: #f5f7fa;
+  --color-surface: #ffffff;
+  --color-surface-2: #eef1f6;
+  --color-text: #0a111c;
+  --color-accent: #1b6fc9;
+  --color-accent-2: #6a4bd4;
+  --color-divider: color-mix(in srgb, #0a111c 14%, transparent);
+
+  --color-success: #0f7a55;
+  --color-danger: #c8253a;
+  --color-warning: #9a6200;
+
+  /* Les rampes reprennent leur sens naturel : 100 le plus clair, 900 le plus
+     sombre. En sombre elles sont inversées — c'est ce qui permet à un même
+     `bg-accent-100 text-accent-800` de rester lisible dans les deux thèmes
+     sans qu'aucun composant ne teste le thème courant. */
+  --color-neutral-100: #f4f6f9;
+  --color-neutral-200: #e7ebf0;
+  --color-neutral-300: #d3d9e2;
+  --color-neutral-400: #aeb7c4;
+  --color-neutral-500: #8892a1;
+  --color-neutral-600: #656f7e;
+  --color-neutral-700: #49525e;
+  --color-neutral-800: #2e3540;
+  --color-neutral-900: #161c25;
+
+  --color-accent-100: #e9f2fd;
+  --color-accent-200: #cee3fa;
+  --color-accent-300: #a3c9f2;
+  --color-accent-400: #6ba4e4;
+  --color-accent-500: #3382d4;
+  --color-accent-600: #145ba8;
+  --color-accent-700: #114a8a;
+  --color-accent-800: #0e3c6f;
+  --color-accent-900: #0a2b4f;
+
+  --color-accent-2-100: #f0ecff;
+  --color-accent-2-200: #ded4ff;
+  --color-accent-2-300: #c3b2fb;
+  --color-accent-2-400: #a189f2;
+  --color-accent-2-500: #8064e8;
+  --color-accent-2-600: #5b3cc4;
+  --color-accent-2-700: #4a309f;
+  --color-accent-2-800: #39257a;
+  --color-accent-2-900: #261a52;
+
+  --color-zone-1: #7fabd8;
+  --color-zone-2: #3382d4;
+  --color-zone-3: #5a62dd;
+  --color-zone-4: #8f4fd4;
+  --color-zone-5: #cf3a72;
+
+  --color-sport-run: #1b6fc9;
+  --color-sport-trail: #0f7a55;
+  --color-sport-ride: #cc5527;
+  --color-sport-swim: #6a4bd4;
+  --color-sport-strength: #a87708;
+  --color-sport-other: #656f7e;
+
+  /* Ombres grises et courtes : une ombre noire étalée, qui fait décoller sur
+     du noir, salit immédiatement un fond clair. */
+  --shadow-sm: 0 1px 2px rgb(10 17 28 / 0.09);
+  --shadow-md: 0 6px 18px -8px rgb(10 17 28 / 0.2), 0 2px 5px -2px rgb(10 17 28 / 0.1);
+  --shadow-lg: 0 26px 52px -22px rgb(10 17 28 / 0.28), 0 8px 18px -10px rgb(10 17 28 / 0.14);
+
+  /* Un reflet blanc sur une carte blanche ne se voit pas : le relief passe
+     entièrement par l'ombre. Les inset sont neutralisés par une ombre nulle —
+     `none` est interdit au milieu d'une liste de box-shadow. */
+  --panel-sheen: none;
+  --panel-inset: 0 0 0 0 rgb(0 0 0 / 0);
+  --panel-inset-flat: 0 0 0 0 rgb(0 0 0 / 0);
+  --panel-inset-hover: 0 0 0 0 rgb(0 0 0 / 0);
+  --sheen-tint: color-mix(in srgb, var(--color-accent) 7%, transparent);
+  --halo-accent: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  --halo-accent-2: color-mix(in srgb, var(--color-accent-2) 8%, transparent);
+  --grid-line: color-mix(in srgb, var(--color-text) 5%, transparent);
+}
+
 /* Flottement vertical des cartes décoratives de l'écran d'auth. Séparé de leur
    rotation, portée par l'élément parent : une seule propriété `transform` ne
    peut pas être à la fois animée et fixée. */
@@ -119,13 +233,6 @@
 }
 
 @layer base {
-  /* Fait basculer les contrôles natifs (select, input number, autofill,
-     ascenseurs par défaut) en rendu sombre — sans ça, un menu déroulant
-     s'ouvre en blanc au milieu de la page. */
-  :root {
-    color-scheme: dark;
-  }
-
   body {
     background: var(--color-bg);
     color: var(--color-text);
@@ -134,6 +241,12 @@
        doivent s'aligner verticalement sans passer chaque cellule en mono. */
     font-variant-numeric: tabular-nums;
     -webkit-font-smoothing: antialiased;
+    /* Adoucit le basculement de thème. Posé sur le seul <body> : généraliser la
+       transition à tous les éléments ferait ramer chaque bascule sur une page
+       chargée, pour un gain invisible. */
+    transition:
+      background-color 260ms var(--ease-out-3d),
+      color 260ms var(--ease-out-3d);
   }
 
   /* Échelle typographique posée sur l'élément et non en classes utilitaires :
@@ -179,9 +292,11 @@
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
   }
+  /* La couleur du texte sélectionné suit le thème : forcer du blanc rendait la
+     sélection illisible sur fond clair. */
   ::selection {
-    background: color-mix(in srgb, var(--color-accent) 32%, transparent);
-    color: #fff;
+    background: color-mix(in srgb, var(--color-accent) 30%, transparent);
+    color: var(--color-text);
   }
 
   /* Barres de défilement accordées au fond — celles du système, claires,
@@ -224,21 +339,22 @@
 @layer components {
 
 /* Surface éclairée par le haut : dégradé descendant + liseré clair sur l'arête
-   supérieure. C'est ce liseré, pas la bordure, qui fait lire le relief. */
+   supérieure. En sombre, c'est ce liseré — pas la bordure — qui fait lire le
+   relief ; en clair il est neutralisé et l'ombre prend le relais.
+   `background-image` et `background-color` sont séparés plutôt que réunis dans
+   le raccourci : le thème clair y passe `none`, ce qu'une liste de couches du
+   raccourci n'accepte pas. */
 .panel {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, #ffffff 4.5%, transparent), transparent 45%),
-    var(--color-surface);
+  background-color: var(--color-surface);
+  background-image: var(--panel-sheen);
   border: 1px solid var(--color-divider);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, #ffffff 7%, transparent),
-    var(--shadow-md);
+  box-shadow: var(--panel-inset), var(--shadow-md);
 }
 
 .panel-flat {
-  background: var(--color-surface);
+  background-color: var(--color-surface);
   border: 1px solid var(--color-divider);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 5%, transparent);
+  box-shadow: var(--panel-inset-flat);
 }
 
 /* Réaction au survol : l'élément se soulève vers le lecteur et l'ombre s'étale.
@@ -258,9 +374,7 @@
 .lift:hover {
   transform: translate3d(0, -3px, 0);
   border-color: color-mix(in srgb, var(--color-accent) 38%, transparent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, #ffffff 9%, transparent),
-    var(--shadow-lg);
+  box-shadow: var(--panel-inset-hover), var(--shadow-lg);
 }
 .lift:active {
   transform: translate3d(0, -1px, 0);
@@ -279,12 +393,9 @@
   position: absolute;
   inset: -1px;
   pointer-events: none;
-  background: linear-gradient(
-    115deg,
-    transparent 34%,
-    color-mix(in srgb, #ffffff 9%, transparent) 47%,
-    transparent 60%
-  );
+  /* Sur fond sombre le balayage est une lueur blanche ; sur fond clair un blanc
+     sur blanc ne se verrait pas, --sheen-tint y devient un reflet d'accent. */
+  background: linear-gradient(115deg, transparent 34%, var(--sheen-tint) 47%, transparent 60%);
   transform: translate3d(-130%, 0, 0);
   transition: transform 760ms var(--ease-out-3d);
 }
@@ -312,8 +423,8 @@
    point de fuite. Fondue par un masque pour n'exister qu'en périphérie. */
 .grid-floor {
   background-image:
-    linear-gradient(to right, color-mix(in srgb, var(--color-text) 7%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in srgb, var(--color-text) 7%, transparent) 1px, transparent 1px);
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
   background-size: 64px 64px;
   transform: perspective(340px) rotateX(64deg);
   transform-origin: 50% 0%;
