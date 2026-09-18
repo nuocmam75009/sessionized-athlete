@@ -81,6 +81,16 @@
   --color-sport-strength: #f5c451;
   --color-sport-other: #78889c;
 
+  /* Charge d'entraînement : condition, fatigue, fraîcheur. Trois teintes
+     seulement, choisies pour rester séparables deux à deux en vision des
+     couleurs déficiente sur le fond sombre des panneaux (écart OKLab ≥ 20 en
+     protanopie comme en tritanopie) — plus sourdes que la rampe des zones,
+     parce que ce sont des courbes fines lues sur une longue période et non
+     des aplats. */
+  --color-load-fitness: #3388e0;
+  --color-load-fatigue: #e0643a;
+  --color-load-form: #7d5ae8;
+
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;

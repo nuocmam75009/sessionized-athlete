@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { AerobicAnalysis } from '@/components/activities/AerobicAnalysis'
 import { ActivityNoteEditor } from '@/components/activities/ActivityNoteEditor'
 import { FitFileUpload } from '@/components/activities/FitFileUpload'
 import { GpxRouteUpload } from '@/components/activities/GpxRouteUpload'
@@ -122,6 +123,8 @@ export function ActivityDetailView({
       )}
 
       {canAttachFit && <FitFileUpload activityId={activity.id} onAttached={setActivity} />}
+
+      <AerobicAnalysis activityId={activity.id} />
 
       {laps.length > 0 && (
         <>
