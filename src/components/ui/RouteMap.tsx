@@ -5,6 +5,7 @@ import { useTheme } from '@/hooks/useTheme'
 import type { Theme } from '@/lib/theme'
 import type { FeatureGroup, LeafletEvent, Map as LeafletMap } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import 'maplibre-gl/dist/maplibre-gl.css'
 
 export interface GpxStats {
   distanceM: number
@@ -25,14 +26,20 @@ export interface RoutePoint {
   longitude: number | null
 }
 
-// Les tuiles sont des images : contrairement au reste de l'interface, elles ne
-// suivent pas les variables CSS et doivent être rechargées au changement de
-// thème. CARTO sert le même jeu de données OSM dans les deux versions.
-const TILE_URL: Record<Theme, string> = {
-  dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-  light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+// Le fond de carte ne suit pas les variables CSS : il faut le recharger au
+// changement de thème, d'où un style par thème.
+//
+// OpenFreeMap sert des tuiles vectorielles OpenMapTiles, sans compte, sans clé
+// d'API et sans quota (projet libre financé par dons). Ses styles `positron` et
+// `dark` sont les portages des fonds CARTO Positron et Dark Matter utilisés
+// auparavant : rendu identique, mais `basemaps.cartocdn.com` exige désormais
+// une clé et estampille les tuiles d'un filigrane « API KEY REQUIRED ».
+const STYLE_URL: Record<Theme, string> = {
+  dark: 'https://tiles.openfreemap.org/styles/dark',
+  light: 'https://tiles.openfreemap.org/styles/positron',
 }
-const TILE_ATTRIBUTION = '© OpenStreetMap contributors © CARTO'
+const TILE_ATTRIBUTION =
+  '<a href="https://openfreemap.org" target="_blank" rel="noreferrer">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/" target="_blank" rel="noreferrer">OpenMapTiles</a> © OpenStreetMap contributors'
 
 // Miroirs de --color-accent : Leaflet dessine le tracé dans un canvas et
 // n'interprète pas les variables CSS. À garder alignés sur globals.css.
@@ -61,15 +68,27 @@ export function RouteMap({ gpxData, points, onStats, className }: RouteMapProps)
     async function init() {
       const leaflet = await import('leaflet')
       const L = leaflet.default
+      // Pont Leaflet ↔ MapLibre : les tuiles vectorielles sont rendues au WebGL
+      // dans le tilePane, sous les calques Leaflet habituels (tracé, marqueurs).
+      const { maplibreGL } = await import('@maplibre/maplibre-gl-leaflet')
 
       if (cancelled || !containerRef.current) return
 
-      map = L.map(containerRef.current)
-      L.tileLayer(TILE_URL[theme], {
-        attribution: TILE_ATTRIBUTION,
-        subdomains: 'abcd',
-        maxZoom: 20,
-      }).addTo(map)
+      // minZoom 1 : au zoom 0 les deux moteurs se désynchronisent (cf. README
+      // du pont). maxZoom 20 reprend le plafond de l'ancien calque raster —
+      // les tuiles vectorielles s'arrêtent au zoom 14 et sont sur-zoomées
+      // au-delà, sans perte de netteté puisqu'elles sont redessinées.
+      map = L.map(containerRef.current, { minZoom: 1, maxZoom: 20 })
+
+      // Le calque GL lit le centre de la carte à son ajout : il ne peut être
+      // posé qu'une fois la vue cadrée sur la trace.
+      const addBaseLayer = (target: LeafletMap) =>
+        maplibreGL({
+          style: STYLE_URL[theme],
+          // Le pont recopie sinon l'attribution déduite du style dans le
+          // contrôle Leaflet, en double de la nôtre.
+          attributionControl: false,
+        }).addTo(target)
 
       if (points) {
         const latLngs = points
@@ -79,6 +98,8 @@ export function RouteMap({ gpxData, points, onStats, className }: RouteMapProps)
 
         const polyline = L.polyline(latLngs, { color: ROUTE_COLOR[theme], weight: 4 }).addTo(map)
         map.fitBounds(polyline.getBounds())
+        map.attributionControl.addAttribution(TILE_ATTRIBUTION)
+        addBaseLayer(map)
         return
       }
 
@@ -104,7 +125,12 @@ export function RouteMap({ gpxData, points, onStats, className }: RouteMapProps)
       })
       gpxLayer.on('loaded', (e: LeafletEvent) => {
         const layer = e.target as GpxLayer
-        map?.fitBounds(layer.getBounds())
+        // Le parsing est asynchrone : l'effet peut avoir été nettoyé entretemps,
+        // et poser le calque GL rouvrirait un contexte WebGL sur une carte morte.
+        if (cancelled || !map) return
+        map.fitBounds(layer.getBounds())
+        map.attributionControl.addAttribution(TILE_ATTRIBUTION)
+        addBaseLayer(map)
         onStats?.({
           distanceM: layer.get_distance(),
           elevationGainM: layer.get_elevation_gain(),
