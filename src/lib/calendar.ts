@@ -76,6 +76,20 @@ export function toMonthParam(date: Date): string {
   return `${y}-${m}`
 }
 
+const MONTH_PARAM_RE = /^\d{4}-\d{2}$/
+
+// Inverse de toMonthParam pour le paramètre ?month= du dashboard. Toute valeur
+// invalide retombe sur le mois courant plutôt que de faire échouer la page.
+export function parseMonthParam(raw: string | undefined, now: Date = new Date()): Date {
+  if (raw && MONTH_PARAM_RE.test(raw)) {
+    const [y, m] = raw.split('-').map(Number)
+    // La regex laisse passer "2026-13" ou "2026-00", que new Date reporterait
+    // silencieusement sur un mois voisin (janvier 2027, décembre 2025).
+    if (m >= 1 && m <= 12) return new Date(y, m - 1, 1)
+  }
+  return getMonthStart(now)
+}
+
 // Inverse de toDateParam — construit une date locale (new Date('2026-08-04')
 // serait interprété en UTC et décalerait d'un jour selon le fuseau).
 function fromDateParam(param: string): Date {

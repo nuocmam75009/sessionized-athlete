@@ -6,16 +6,10 @@ import { AuthLayout } from '@/components/layout/AuthLayout'
 import { Button } from '@/components/ui/Button'
 import { Field, Input } from '@/components/ui/Field'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
+import { safeRedirectTarget } from '@/lib/redirect'
 import type { AuthUser } from '@/lib/types'
 
 type Mode = 'login' | 'register'
-
-// N'accepte que des chemins internes ("/plan") pour éviter une redirection
-// ouverte vers un domaine externe via le paramètre `redirect`.
-function safeRedirectTarget(value: string | null): string {
-  if (value && value.startsWith('/') && !value.startsWith('//')) return value
-  return '/dashboard'
-}
 
 export default function LoginView() {
   const router = useRouter()

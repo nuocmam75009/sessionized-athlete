@@ -136,7 +136,15 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
       if (trimmedNote) formData.append('athleteNote', trimmedNote)
       if (difficultyValue !== null) formData.append('difficultyNote', String(difficultyValue))
       const res = await fetch('/api/activities/upload', { method: 'POST', body: formData })
-      if (!res.ok) throw new Error('upload failed')
+      if (!res.ok) {
+        // L'API refuse avec des messages précis (doublon, fichier corrompu) :
+        // ils valent mieux qu'un « réessaie » qui, sur un doublon, échouerait
+        // à nouveau.
+        const body = await res.json().catch(() => null)
+        const message = Array.isArray(body?.message) ? body.message.join(', ') : body?.message
+        setUploadError(message ?? "Échec de l'envoi. Réessaie.")
+        return
+      }
       const activity: UploadedActivity = await res.json()
 
       if (selectedGpxFile) {
