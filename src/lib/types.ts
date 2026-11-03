@@ -227,15 +227,82 @@ export interface Warning {
   createdAt: string
 }
 
-export interface TrainingLoad {
-  id: string
-  athleteId: string
+// --- Charge d'entraînement (GET /training-load) ---
+// Toutes ces valeurs sont des estimations : la charge d’une séance est
+// déduite du temps passé dans chaque zone FC, à défaut du ressenti déclaré,
+// à défaut de la seule durée. `sourceCounts` dit dans quelle proportion —
+// une série majoritairement DURATION ne se lit pas comme une série mesurée.
+export type TrainingLoadSource = 'HEART_RATE' | 'PERCEIVED' | 'DURATION'
+
+export interface TrainingLoadPoint {
+  // Jour civil UTC, format YYYY-MM-DD.
   date: string
+  load: number
+  // Condition (moyenne exponentielle 42 jours).
   ctl: number
+  // Fatigue (moyenne exponentielle 7 jours).
   atl: number
+  // Fraîcheur = CTL - ATL de la veille.
   tsb: number
-  weeklyTss: number
+  // false tant que la CTL n'a pas 42 jours d'historique derrière elle : elle
+  // part de zéro et sous-estime alors la condition.
+  settled: boolean
 }
+
+export interface TrainingLoadSeries {
+  from: string
+  to: string
+  points: TrainingLoadPoint[]
+  current: {
+    date: string
+    ctl: number
+    atl: number
+    tsb: number
+    settled: boolean
+  }
+  weeklyLoad: number
+  // Variation de CTL sur sept jours — la vitesse de montée en charge.
+  rampRate: number
+  sourceCounts: Record<TrainingLoadSource, number>
+  activityCount: number
+}
+
+// --- Réponse aérobie (GET /activities/:id/analysis) ---
+// Indicateurs qui n'ont de sens que sur un effort régulier : hors de ces
+// conditions la réponse est `{ eligible: false, reason }` — ce n’est pas une
+// erreur, il n’y a simplement rien à calculer.
+export type AerobicRejection = 'NO_HEART_RATE' | 'NO_SPEED' | 'TOO_SHORT' | 'VARIABLE_EFFORT'
+export type DecouplingRating = 'GOOD' | 'MODERATE' | 'HIGH'
+
+export interface AerobicHalf {
+  durationSec: number
+  avgSpeedMPerSec: number
+  avgPaceSecPerKm: number
+  avgHeartRate: number
+  efficiencyFactor: number
+}
+
+export interface AerobicAnalysisResult {
+  eligible: true
+  // Mètres par minute et par battement : monte quand l’athlète va plus vite à
+  // FC égale.
+  efficiencyFactor: number
+  // Perte d’efficacité de la seconde moitié par rapport à la première, en %.
+  decouplingPct: number
+  rating: DecouplingRating
+  first: AerobicHalf
+  second: AerobicHalf
+  analyzedFromSec: number
+  analyzedDurationSec: number
+  elevationGainMPerKm: number | null
+  // false en terrain vallonné : tant que l’allure n’est pas corrigée de la
+  // pente, le découplage n’y est pas interprétable.
+  terrainReliable: boolean
+}
+
+export type AerobicAnalysis =
+  | { eligible: false; reason: AerobicRejection }
+  | AerobicAnalysisResult
 
 // --- Chat (namespace WebSocket /chat + REST /chat/conversations) ---
 // `id` sur ChatUserSummary n'est pas listé explicitement dans le contrat

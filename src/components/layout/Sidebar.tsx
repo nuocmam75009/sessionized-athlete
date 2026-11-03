@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
@@ -27,6 +27,11 @@ export interface SidebarProps {
   brandMark?: string
   navItems: SidebarNavItem[]
   actions?: SidebarAction[]
+  /** Contrôle rendu à droite de la barre mobile et dans le pied de la sidebar
+      desktop — le bascule de thème aujourd'hui. Passé en ReactNode pour que ce
+      composant reste ignorant de ce qu'il héberge, et donc copiable tel quel
+      dans l'app coach. */
+  utility?: ReactNode
 }
 
 function MenuIcon({ className }: SidebarIconProps) {
@@ -146,10 +151,25 @@ function NavList({ items, collapsed, pathname, onNavigate }: { items: SidebarNav
   )
 }
 
-function ActionList({ actions, collapsed, onNavigate }: { actions: SidebarAction[]; collapsed: boolean; onNavigate?: () => void }) {
-  if (actions.length === 0) return null
+// Pied de la sidebar : l'utilitaire (bascule de thème) au-dessus des actions,
+// séparé par le même filet. Replié, il se centre sous les icônes de nav.
+function SidebarFooter({
+  actions,
+  collapsed,
+  utility,
+  onNavigate,
+}: {
+  actions: SidebarAction[]
+  collapsed: boolean
+  utility?: ReactNode
+  onNavigate?: () => void
+}) {
+  if (actions.length === 0 && !utility) return null
   return (
     <div className="flex flex-col gap-1 border-t border-divider px-3 py-3">
+      {utility && (
+        <div className={`mb-1 flex px-1 ${collapsed ? 'justify-center' : 'justify-start'}`}>{utility}</div>
+      )}
       {actions.map((action) => (
         <SidebarItem
           key={action.key}
@@ -180,7 +200,7 @@ const SHELL = 'bg-surface/92'
 // tokens de thème partagés (--color-accent, --color-surface, --color-text,
 // --color-divider, --font-heading) — copiable tel quel dans sessionized-coach
 // tant que ces tokens y sont définis.
-export function Sidebar({ brand, brandMark, navItems, actions = [] }: SidebarProps) {
+export function Sidebar({ brand, brandMark, navItems, actions = [], utility }: SidebarProps) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -203,6 +223,9 @@ export function Sidebar({ brand, brandMark, navItems, actions = [] }: SidebarPro
         </button>
         <BrandMark mark={mark} />
         <span className="font-heading font-semibold tracking-[-0.01em]">{brand}</span>
+        {/* Poussé à droite de la barre : sur mobile c'est le seul endroit où le
+            contrôle reste atteignable sans ouvrir le tiroir. */}
+        {utility && <span className="ml-auto">{utility}</span>}
       </div>
 
       <AnimatePresence>
@@ -239,7 +262,7 @@ export function Sidebar({ brand, brandMark, navItems, actions = [] }: SidebarPro
                 </button>
               </div>
               <NavList items={navItems} collapsed={false} pathname={pathname} onNavigate={() => setMobileOpen(false)} />
-              <ActionList actions={actions} collapsed={false} onNavigate={() => setMobileOpen(false)} />
+              <SidebarFooter actions={actions} collapsed={false} utility={utility} onNavigate={() => setMobileOpen(false)} />
             </motion.aside>
           </>
         )}
@@ -301,7 +324,7 @@ export function Sidebar({ brand, brandMark, navItems, actions = [] }: SidebarPro
 
         <div className="mt-2 flex flex-1 flex-col">
           <NavList items={navItems} collapsed={collapsed} pathname={pathname} />
-          <ActionList actions={actions} collapsed={collapsed} />
+          <SidebarFooter actions={actions} collapsed={collapsed} utility={utility} />
         </div>
       </motion.aside>
     </>

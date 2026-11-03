@@ -1,14 +1,19 @@
 import Link from 'next/link'
 import { MonthCalendar } from '@/components/calendar/MonthCalendar'
 import { MonthSportBreakdown } from '@/components/calendar/MonthSportBreakdown'
+import { TrainingLoadPanel } from '@/components/training/TrainingLoadPanel'
 import { Reveal } from '@/components/ui/Reveal'
 import { Stat } from '@/components/ui/Stat'
 import { buildMonthEntries, buildMonthSummary, formatMonthLabel, getMonthStart, toMonthParam } from '@/lib/calendar'
 import { serverApiFetchStatus } from '@/lib/server-api'
 import { formatDistance, formatDuration } from '@/lib/utils'
-import type { Activity, Workout } from '@/lib/types'
+import type { Activity, TrainingLoadSeries, Workout } from '@/lib/types'
 
 const MONTH_PARAM_RE = /^\d{4}-\d{2}$/
+
+// Fenêtre affichée par le graphe de charge. Assez longue pour qu'une reprise
+// ou une coupure se voient, assez courte pour que la courbe garde du relief.
+const LOAD_WINDOW_DAYS = 90
 
 const MONTH_NAV_LINK =
   'rounded-sm px-3 py-1.5 text-text/60 transition-colors hover:bg-text/[0.06] hover:text-text'
@@ -41,9 +46,21 @@ export default async function DashboardPage({
     await serverApiFetchStatus('/strava/sync', { method: 'POST' })
   }
 
-  const [{ data: workouts }, { data: activities }] = await Promise.all([
+  // La charge suit la navigation du calendrier : sur le mois courant elle va
+  // jusqu'à maintenant, sur un mois passé elle s'arrête à sa dernière heure.
+  const loadTo = isCurrentMonth
+    ? new Date()
+    : new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0, 23, 59, 59)
+  const loadFrom = new Date(loadTo.getTime() - LOAD_WINDOW_DAYS * 24 * 60 * 60 * 1000)
+  const loadQuery = new URLSearchParams({
+    from: loadFrom.toISOString(),
+    to: loadTo.toISOString(),
+  })
+
+  const [{ data: workouts }, { data: activities }, { data: trainingLoad }] = await Promise.all([
     serverApiFetchStatus<Workout[]>('/workouts'),
     serverApiFetchStatus<Activity[]>('/activities'),
+    serverApiFetchStatus<TrainingLoadSeries>(`/training-load?${loadQuery.toString()}`),
   ])
 
   const entries = buildMonthEntries(monthStart, workouts ?? [], activities ?? [])
@@ -93,6 +110,15 @@ export default async function DashboardPage({
         <Stat label="Time" value={formatDuration(summary.durationSec)} />
         <Stat label="Activities" value={String(summary.activityCount)} />
       </div>
+      {/* Backend injoignable : le tableau de bord reste utilisable sans son
+          graphe de charge plutôt que de tomber en entier. */}
+      {trainingLoad && (
+        <Reveal>
+          <div className="mt-6">
+            <TrainingLoadPanel series={trainingLoad} />
+          </div>
+        </Reveal>
+      )}
 
       {/* La répartition par sport, elle, est bien en dessous : son entrée
           animée ne coûte rien à la première peinture. */}

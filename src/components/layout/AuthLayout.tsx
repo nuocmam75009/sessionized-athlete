@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
 
 interface AuthLayoutProps {
   eyebrow: string
@@ -63,7 +64,12 @@ function CardStack() {
 // contenu marketing et le formulaire sont fournis par l'app appelante.
 export function AuthLayout({ eyebrow, title, description, children }: AuthLayoutProps) {
   return (
-    <div className="grid md:grid-cols-[1.05fr_0.95fr] min-h-screen">
+    <div className="relative grid md:grid-cols-[1.05fr_0.95fr] min-h-screen">
+      {/* L'écran d'auth n'a pas de sidebar : sans ce rappel, on ne pourrait pas
+          changer de thème avant d'être connecté. */}
+      <div className="absolute right-4 top-4 z-10">
+        <ThemeToggle />
+      </div>
       <div className="relative overflow-hidden px-8 md:px-16 py-16 flex flex-col justify-center">
         <CardStack />
         <div className="relative max-w-xl">

@@ -22,8 +22,10 @@ const variants: Record<ButtonVariant, string> = {
   primary:
     'bg-accent text-bg px-4 py-2.5 shadow-[0_8px_20px_-10px_var(--color-accent)] ' +
     'hover:bg-accent-600 hover:shadow-[0_14px_32px_-12px_var(--color-accent)] active:bg-accent-700',
+  // Le liseré haut passe par la variable de thème : en clair, un blanc à 5 %
+  // sur un bouton déjà blanc ne dit rien, la variable l'y neutralise.
   secondary:
-    'border border-divider bg-surface/60 px-4 py-2.5 shadow-[inset_0_1px_0_rgb(255_255_255/0.05)] ' +
+    'border border-divider bg-surface/60 px-4 py-2.5 shadow-[var(--panel-inset-flat)] ' +
     'hover:border-accent/45 hover:bg-surface-2 hover:text-accent-800 active:bg-surface',
   ghost: 'text-accent px-2.5 py-2.5 hover:bg-accent/12 hover:text-accent-700 active:bg-accent/20',
 }

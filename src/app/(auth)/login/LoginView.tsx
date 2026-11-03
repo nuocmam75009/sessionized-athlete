@@ -85,8 +85,8 @@ export default function LoginView() {
   return (
     <AuthLayout
       eyebrow="Sessionized"
-      title="Your plan, from your coach, every day."
-      description="See the session your coach set for today, follow the week ahead, and upload your .fit file the moment you're done."
+      title="Your workouts plan and data, in one place."
+      description=" "
     >
       <div className="mb-6">
         <SegmentedControl
@@ -109,7 +109,7 @@ export default function LoginView() {
       >
         {mode === 'register' && (
           <Field label="Full name" htmlFor="sn-name">
-            <Input id="sn-name" placeholder="Jordan Reyes" value={name} onChange={(e) => setName(e.target.value)} />
+            <Input id="sn-name" placeholder="Jakob Ingebrigsten" value={name} onChange={(e) => setName(e.target.value)} />
           </Field>
         )}
         <Field label="Email" htmlFor="sn-email">
