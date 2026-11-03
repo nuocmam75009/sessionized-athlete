@@ -12,14 +12,6 @@ function CalendarIcon({ className }: SidebarIconProps) {
   )
 }
 
-function MessageIcon({ className }: SidebarIconProps) {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M4 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2v3l3.5-3H16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H4z" />
-    </svg>
-  )
-}
-
 function ProfileIcon({ className }: SidebarIconProps) {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -58,7 +50,6 @@ function LogoutIcon({ className }: SidebarIconProps) {
 
 const NAV_ITEMS: SidebarNavItem[] = [
   { href: '/dashboard', label: 'Calendar', icon: CalendarIcon },
-  { href: '/messages', label: 'Messages', icon: MessageIcon },
   { href: '/athlete-data', label: 'Athlete Data', icon: HeartPulseIcon },
   { href: '/profile', label: 'Profile', icon: ProfileIcon },
 ]

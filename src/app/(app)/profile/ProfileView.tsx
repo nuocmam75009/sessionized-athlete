@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ContactCoachButton } from '@/components/chat/ContactCoachButton'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Field, Input } from '@/components/ui/Field'
@@ -134,7 +133,6 @@ export function ProfileView({
                 <strong className="font-semibold">{coachName(coach)}</strong>
                 <span className="text-text/45"> · assigned since {assignedSince(coach.createdAt)}</span>
               </p>
-              <ContactCoachButton coachId={coach.id} coachName={coachName(coach)} label="Message" />
             </div>
           ) : (
             <div>

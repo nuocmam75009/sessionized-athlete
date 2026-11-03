@@ -1,5 +1,4 @@
 import { Avatar } from '@/components/ui/Avatar'
-import { ContactCoachButton } from '@/components/chat/ContactCoachButton'
 import { Tilt } from '@/components/ui/Tilt'
 import type { CoachAssignment } from '@/lib/types'
 
@@ -15,8 +14,8 @@ function memberSince(createdAt: string) {
 
 // La grille de coachs est le seul endroit où l'inclinaison au pointeur est
 // justifiée : on parcourt des cartes côte à côte pour comparer, et le relief
-// dit laquelle on survole mieux qu'un changement de teinte. Amplitude réduite —
-// la carte contient un bouton, elle ne doit pas fuir sous le curseur.
+// dit laquelle on survole mieux qu'un changement de teinte. Amplitude réduite :
+// la carte ne doit pas fuir sous le curseur.
 export function CoachCard({ coach }: { coach: CoachAssignment }) {
   const name = coachDisplayName(coach)
 
@@ -32,10 +31,6 @@ export function CoachCard({ coach }: { coach: CoachAssignment }) {
         </div>
 
         <div className="flex-1 text-sm text-text/55">Coach depuis {memberSince(coach.createdAt)}</div>
-
-        <div className="pt-3 border-t border-divider">
-          <ContactCoachButton coachId={coach.id} coachName={name} />
-        </div>
       </div>
     </Tilt>
   )

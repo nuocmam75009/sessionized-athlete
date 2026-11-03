@@ -16,7 +16,6 @@ export const config = {
     '/dashboard/:path*',
     '/activities/:path*',
     '/profile/:path*',
-    '/messages/:path*',
     '/coaches/:path*',
     '/athlete-data/:path*',
   ],
