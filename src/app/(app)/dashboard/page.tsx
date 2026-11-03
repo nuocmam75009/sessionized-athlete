@@ -4,12 +4,17 @@ import { MonthSportBreakdown } from '@/components/calendar/MonthSportBreakdown'
 import { TrainingLoadPanel } from '@/components/training/TrainingLoadPanel'
 import { Reveal } from '@/components/ui/Reveal'
 import { Stat } from '@/components/ui/Stat'
-import { buildMonthEntries, buildMonthSummary, formatMonthLabel, getMonthStart, toMonthParam } from '@/lib/calendar'
+import {
+  buildMonthEntries,
+  buildMonthSummary,
+  formatMonthLabel,
+  getMonthStart,
+  parseMonthParam,
+  toMonthParam,
+} from '@/lib/calendar'
 import { serverApiFetchStatus } from '@/lib/server-api'
 import { formatDistance, formatDuration } from '@/lib/utils'
 import type { Activity, TrainingLoadSeries, Workout } from '@/lib/types'
-
-const MONTH_PARAM_RE = /^\d{4}-\d{2}$/
 
 // Fenêtre affichée par le graphe de charge. Assez longue pour qu'une reprise
 // ou une coupure se voient, assez courte pour que la courbe garde du relief.
@@ -17,15 +22,6 @@ const LOAD_WINDOW_DAYS = 90
 
 const MONTH_NAV_LINK =
   'rounded-sm px-3 py-1.5 text-text/60 transition-colors hover:bg-text/[0.06] hover:text-text'
-
-function parseMonthParam(raw: string | undefined): Date {
-  if (raw && MONTH_PARAM_RE.test(raw)) {
-    const [y, m] = raw.split('-').map(Number)
-    const parsed = new Date(y, m - 1, 1)
-    if (!Number.isNaN(parsed.getTime())) return parsed
-  }
-  return getMonthStart(new Date())
-}
 
 export default async function DashboardPage({
   searchParams,

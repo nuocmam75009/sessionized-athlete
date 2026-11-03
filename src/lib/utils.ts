@@ -41,6 +41,15 @@ export function formatDateLabel(iso: string): string {
   return new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(iso))
 }
 
+// Identifiant transmis tel quel dans une URL du backend (cuid Prisma : lettres
+// et chiffres). Tout autre caractère est refusé : une fois concaténé, un
+// segment "../users/me" — que Next décode depuis "..%2Fusers%2Fme" — ferait
+// sortir la requête de /activities vers n'importe quel endpoint, avec le jeton
+// de l'athlète.
+export function isValidId(id: string): boolean {
+  return /^[A-Za-z0-9_-]{1,64}$/.test(id)
+}
+
 // Deux dates tombent le même jour calendaire (comparaison locale)
 export function isSameCalendarDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
