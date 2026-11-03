@@ -1,0 +1,66 @@
+# Environnement conteneurisé du front athlète : l'application et les services
+# dont elle dépend (API NestJS, PostgreSQL), sur une base locale jetable.
+# Suppose le dépôt de l'API cloné à côté de celui-ci :
+#
+#   Sessionized/
+#   ├── sessionized-api/
+#   └── sessionized-athlete/   ← ce fichier
+#
+#   docker compose up --build    puis http://localhost:3000
+#   docker compose down -v       arrête tout et supprime la base
+#
+# Les valeurs par défaut ne valent que pour ce poste : en production, chaque
+# secret vient du gestionnaire de secrets de l'hébergeur. Strava n'est pas
+# configuré ici (l'application fonctionne sans compte relié).
+name: sessionized
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: sessionized
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sessionized}
+      POSTGRES_DB: sessionized
+    # 5433 côté hôte, pour ne pas entrer en conflit avec un PostgreSQL local ;
+    # exposé seulement sur la boucle locale (psql, Prisma Studio).
+    ports: ["127.0.0.1:5433:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sessionized -d sessionized"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: ../sessionized-api
+    # Pas d'env_file : le .env de l'API vise la base Neon partagée, et
+    # scripts/migrate.js, lancé au démarrage du conteneur, la migrerait.
+    environment:
+      DATABASE_URL: postgresql://sessionized:${POSTGRES_PASSWORD:-sessionized}@db:5432/sessionized
+      DATABASE_URL_UNPOOLED: postgresql://sessionized:${POSTGRES_PASSWORD:-sessionized}@db:5432/sessionized
+      JWT_SECRET: ${JWT_SECRET:-secret-de-developpement-local-uniquement}
+      JWT_EXPIRES_IN: 7d
+      PORT: 3000
+      FRONTEND_URLS: http://localhost:3000
+      ATHLETE_APP_URL: http://localhost:3000
+    # Port 3001 côté hôte, comme `npm run start:dev` de l'API.
+    ports: ["127.0.0.1:3001:3000"]
+    depends_on:
+      db: { condition: service_healthy }
+
+  athlete:
+    build:
+      context: .
+      args:
+        # Figée dans le bundle au build (variable publique).
+        NEXT_PUBLIC_COACH_APP_URL: http://localhost:3002
+    environment:
+      # Nom du service sur le réseau Compose : seul le serveur Next l'appelle,
+      # jamais le navigateur.
+      API_URL: http://api:3000
+      COOKIE_DOMAIN: ""
+    ports: ["127.0.0.1:3000:3000"]
+    depends_on: [api]
+
+volumes:
+  pgdata:

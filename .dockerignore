@@ -1,0 +1,17 @@
+# Le contexte de build ne doit embarquer ni dépendances de l'hôte (binaires
+# natifs Windows/macOS), ni builds précédents, ni secrets locaux.
+node_modules
+.next
+coverage
+test-results
+playwright-report
+blob-report
+.env
+.env.*
+!.env.example
+.git
+.vscode
+.idea
+rncp
+npm-debug.log*
+*.tsbuildinfo

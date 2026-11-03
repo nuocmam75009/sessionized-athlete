@@ -1,7 +1,6 @@
 import { cookies } from 'next/headers'
 import { SESSION_COOKIE_NAME } from './auth-cookie'
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL
+import { backendUrl } from './env'
 
 interface ServerApiResult<T> {
   status: number
@@ -19,7 +18,7 @@ export async function serverApiFetchStatus<T>(path: string, options?: RequestIni
   if (!token) return { status: 401, data: null }
 
   try {
-    const res = await fetch(`${BASE_URL}${path}`, {
+    const res = await fetch(backendUrl(path), {
       ...options,
       headers: {
         'Content-Type': 'application/json',

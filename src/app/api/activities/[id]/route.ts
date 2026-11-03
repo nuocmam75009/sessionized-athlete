@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { SESSION_COOKIE_NAME } from '@/lib/auth-cookie'
+import { backendUrl } from '@/lib/env'
 import { isValidId } from '@/lib/utils'
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const cookieStore = await cookies()
@@ -13,7 +12,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { id } = await params
   if (!isValidId(id)) return NextResponse.json({ message: 'Identifiant invalide' }, { status: 400 })
 
-  const backendRes = await fetch(`${BASE_URL}/activities/${id}`, {
+  const backendRes = await fetch(backendUrl(`/activities/${id}`), {
     headers: { Authorization: `Bearer ${token}` },
   })
 
@@ -30,7 +29,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (!isValidId(id)) return NextResponse.json({ message: 'Identifiant invalide' }, { status: 400 })
   const body = await request.json()
 
-  const backendRes = await fetch(`${BASE_URL}/activities/${id}`, {
+  const backendRes = await fetch(backendUrl(`/activities/${id}`), {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',

@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Produit .next/standalone : un serveur Node minimal avec les seules
+  // dépendances tracées, base de l'image Docker (voir Dockerfile). `next start`
+  // continue de fonctionner comme avant.
+  output: 'standalone',
   async redirects() {
     return [
       { source: '/plan', destination: '/dashboard', permanent: false },

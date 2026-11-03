@@ -27,7 +27,7 @@ Ce fichier est utilisé dans les deux projets frontend. Le backend est document�
 | Style | Tailwind CSS |
 | Graphes | Recharts |
 | Auth | JWT stocké en httpOnly cookie |
-| API | REST — `NEXT_PUBLIC_API_URL` (ex: `http://localhost:3001`) |
+| API | REST, appelée côté serveur uniquement — `API_URL` (ex: `http://localhost:3001`) |
 | Temps réel | WebSocket natif (notifications warnings) |
 | Icônes | Tabler Icons (`@tabler/icons-react`) |
 
@@ -107,7 +107,8 @@ src/
 │   ├── warnings/             ← WarningBadge, WarningBlock
 │   └── layout/               ← Sidebar, TopBar
 ├── lib/
-│   ├── api.ts                ← fetch wrapper avec gestion d'erreurs et auth
+│   ├── server-api.ts         ← appels à l'API depuis les Server Components (cookie → Bearer)
+│   ├── env.ts                ← backendUrl() : URL de l'API, côté serveur uniquement
 │   ├── types.ts              ← interfaces TypeScript partagées
 │   └── utils.ts              ← formatPace(), formatDuration(), etc.
 └── hooks/
@@ -226,34 +227,17 @@ export interface TrainingLoad {
 
 ## Appels API
 
-Toujours utiliser le wrapper `lib/api.ts` — ne jamais appeler `fetch` directement dans les composants.
+Le navigateur n'appelle **jamais** l'API NestJS en direct (pattern BFF) :
+
+- **Server Components** : `serverApiFetchStatus()` / `serverApiFetch()` de `lib/server-api.ts`, qui lisent le cookie httpOnly et le transmettent en `Authorization: Bearer`.
+- **Composants client** : `fetch('/api/...')` vers un Route Handler de `src/app/api/`, qui relaie vers l'API.
+- **Route Handlers** : URL du backend construite avec `backendUrl()` de `lib/env.ts` (jamais `process.env` directement). Valider tout segment dynamique avec `isValidId()` avant de le concaténer.
 
 ```typescript
-// lib/api.ts
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL
-
-export async function apiFetch<T>(
-  path: string,
-  options?: RequestInit
-): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    ...options,
-    credentials: 'include',           // envoie le cookie httpOnly
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  })
-
-  if (!res.ok) {
-    if (res.status === 401) {
-      window.location.href = '/login'
-    }
-    throw new Error(`API error ${res.status}`)
-  }
-
-  return res.json()
-}
+// src/app/api/workouts/route.ts
+const backendRes = await fetch(backendUrl('/workouts'), {
+  headers: { Authorization: `Bearer ${token}` },
+})
 ```
 
 ---
@@ -356,12 +340,12 @@ Dans cet ordre :
 
 ## Variables d'environnement
 
-```env
-NEXT_PUBLIC_API_URL=http://localhost:3001
-```
-
-En production :
+Liste complète et commentée dans `.env.example`. Aucun secret dans le front, et aucun secret ne doit porter le préfixe `NEXT_PUBLIC_` (copié dans le bundle navigateur au build).
 
 ```env
-NEXT_PUBLIC_API_URL=https://api.sessionized.app
+API_URL=http://localhost:3001                     # serveur uniquement, lue à l'exécution
+COOKIE_DOMAIN=                                    # serveur uniquement, vide recommandé
+NEXT_PUBLIC_COACH_APP_URL=http://localhost:3002   # publique, figée au build
 ```
+
+En production : `API_URL=https://api.sessionized.app`, `NEXT_PUBLIC_COACH_APP_URL=https://coach.sessionized.app`.

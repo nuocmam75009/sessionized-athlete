@@ -28,7 +28,7 @@ Les Server Components asynchrones (`dashboard/page.tsx`…) ne se testent pas av
 
 ## Environnement de tests
 
-- **Unitaire et intégration** : aucune dépendance externe. `NEXT_PUBLIC_API_URL` est fixé à `http://api.test` dans `vitest.config.mts`, et toute requête non déclarée par le test le fait échouer (`onUnhandledFrame: 'error'`). `cookies()` de `next/headers` est remplacé par un faux magasin (`tests/integration/support/cookies.ts`).
+- **Unitaire et intégration** : aucune dépendance externe. `API_URL` est fixé à `http://api.test` dans `vitest.config.mts`, et toute requête non déclarée par le test le fait échouer (`onUnhandledFrame: 'error'`). `cookies()` de `next/headers` est remplacé par un faux magasin (`tests/integration/support/cookies.ts`).
 - **Système** : `playwright.config.ts` démarre deux serveurs :
   - `tests/e2e/mock-api/server.ts` sur le port **4010**. C'est une API simulée qui reprend les routes, les formes de réponse et les messages d'erreur de `sessionized-api`, sur des données en mémoire.
   - le **build de production** du front (`next build && next start`) sur le port **3100**, branché sur cette API.
@@ -36,7 +36,7 @@ Les Server Components asynchrones (`dashboard/page.tsx`…) ne se testent pas av
   En local, un serveur déjà lancé sur ces ports est réutilisé. En CI (`CI=1`), tout est reconstruit.
 - **Comptes de test** (mot de passe `Passw0rd!`) : `athlete@`, `uploader@`, `duplicate@`, `strava@`, `other@` et `coach@test.dev`. Il y a un compte par scénario, pour que les tests parallèles ne se gênent pas.
 - **Réseau** : toute requête hors de `localhost` est bloquée pendant les tests système (`tests/e2e/fixtures.ts`).
-- **Recette manuelle sur données fictives** : lancer `npm run mock-api`, puis `NEXT_PUBLIC_API_URL=http://localhost:4010 npm run dev`.
+- **Recette manuelle sur données fictives** : lancer `npm run mock-api`, puis `API_URL=http://localhost:4010 npm run dev`.
 
 ## Traçabilité plan → tests
 

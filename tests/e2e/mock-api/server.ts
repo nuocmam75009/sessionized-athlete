@@ -9,7 +9,7 @@ import { Readable } from 'node:stream'
 // ses propres tests (Jest + Supertest).
 //
 // Lancement autonome, pour une recette manuelle sur données fictives :
-//   npm run mock-api   puis   NEXT_PUBLIC_API_URL=http://localhost:4010 npm run dev
+//   npm run mock-api   puis   API_URL=http://localhost:4010 npm run dev
 //
 // Fichier exécuté directement par Node (--experimental-strip-types) : seules
 // des annotations de type effaçables sont permises, et aucun import relatif.

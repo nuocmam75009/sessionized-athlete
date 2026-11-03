@@ -13,7 +13,7 @@ export default defineConfig({
     // Fixées ici plutôt que lues dans .env : les tests ne doivent jamais
     // dépendre de la configuration locale du développeur, ni joindre la vraie API.
     env: {
-      NEXT_PUBLIC_API_URL: 'http://api.test',
+      API_URL: 'http://api.test',
       NEXT_PUBLIC_COACH_APP_URL: 'http://coach.test',
     },
     coverage: {

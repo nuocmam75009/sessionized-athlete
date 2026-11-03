@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { setSessionCookie } from '@/lib/auth-cookie'
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL
+import { backendUrl } from '@/lib/env'
 
 export async function POST(request: NextRequest) {
   const payload = await request.json()
 
-  const backendRes = await fetch(`${BASE_URL}/auth/register`, {
+  const backendRes = await fetch(backendUrl(`/auth/register`), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),

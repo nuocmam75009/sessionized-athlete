@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { SESSION_COOKIE_NAME } from '@/lib/auth-cookie'
+import { backendUrl } from '@/lib/env'
 import { isValidId } from '@/lib/utils'
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL
 
 // Rattache un .fit à une activité déjà créée (typiquement importée de Strava) :
 // l'API remplace alors ses laps par ceux du fichier, avec leur intensité et les
@@ -19,7 +18,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   // Ne pas fixer Content-Type ici : fetch doit générer lui-même la boundary
   // multipart à partir du FormData transmis.
-  const backendRes = await fetch(`${BASE_URL}/activities/${id}/fit`, {
+  const backendRes = await fetch(backendUrl(`/activities/${id}/fit`), {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
     body: formData,

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { SESSION_COOKIE_NAME } from '@/lib/auth-cookie'
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL
+import { backendUrl } from '@/lib/env'
 
 // Segment statique déclaré à côté de [id] : Next fait primer la route statique,
 // /api/activities/hr-zones n'est donc jamais interprété comme un id d'activité.
@@ -21,7 +20,7 @@ export async function GET(request: NextRequest) {
     if (value) params.set(key, value)
   }
 
-  const backendRes = await fetch(`${BASE_URL}/activities/hr-zones?${params.toString()}`, {
+  const backendRes = await fetch(backendUrl(`/activities/hr-zones?${params.toString()}`), {
     headers: { Authorization: `Bearer ${token}` },
   })
 

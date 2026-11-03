@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sessionized — front athlète
 
-## Getting Started
+Application Next.js de l'athlète : calendrier des séances prescrites par le coach, import des fichiers `.fit` et `.gpx`, analyse des activités, synchronisation Strava. Elle s'appuie sur l'API NestJS (`sessionized-api`) et ne l'appelle jamais depuis le navigateur : tout passe par les Route Handlers de `src/app/api/`, qui relaient le jeton stocké en cookie `HttpOnly`.
 
-First, run the development server:
+## Prérequis
+
+- Node.js 22 et npm
+- L'API `sessionized-api` démarrée en local (port 3001), ou Docker pour lancer toute la pile
+
+## Démarrer en local
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env    # puis adapter si besoin
+npm run dev             # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Variables d'environnement
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Elles sont décrites dans [`.env.example`](.env.example). Le front n'a besoin d'**aucun secret** : ceux de Strava, du JWT et de la base appartiennent à l'API.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Lue par | Moment | Rôle |
+|---|---|---|---|
+| `API_URL` | Serveur Next.js | Exécution | URL de l'API NestJS |
+| `COOKIE_DOMAIN` | Serveur Next.js | Exécution | Domaine du cookie de session (vide recommandé) |
+| `NEXT_PUBLIC_COACH_APP_URL` | Navigateur | Build | App coach, vers laquelle un compte coach est redirigé |
 
-## Learn More
+Une variable préfixée `NEXT_PUBLIC_` est copiée dans le JavaScript envoyé au navigateur au moment de `next build` : elle est publique, et la changer impose de reconstruire. Les autres restent sur le serveur et se lisent au démarrage.
 
-To learn more about Next.js, take a look at the following resources:
+## Pile complète avec Docker
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+[`docker-compose.yml`](docker-compose.yml) lance le front, l'API et une base PostgreSQL locale. Le dépôt de l'API doit être cloné à côté de celui-ci (`../sessionized-api`).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+docker compose up --build    # front sur http://localhost:3000, API sur :3001, base sur :5433
+docker compose down          # arrête la pile (ajouter -v pour supprimer la base)
+```
 
-## Deploy on Vercel
+La base démarre vide (migrations appliquées au lancement de l'API) : créer un compte depuis l'écran d'inscription. Strava n'est pas configuré dans cette pile.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+L'image du front ([`Dockerfile`](Dockerfile)) est construite en mode `output: 'standalone'`. Elle s'exécute avec un utilisateur non privilégié, et la même image sert tous les environnements : seule `NEXT_PUBLIC_COACH_APP_URL` est figée au build (argument `NEXT_PUBLIC_COACH_APP_URL`).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Scripts
+
+| Commande | Rôle |
+|---|---|
+| `npm run dev` | Serveur de développement |
+| `npm run build` / `npm run start` | Build et serveur de production |
+| `npm run lint` | ESLint |
+| `npm test` | Tests unitaires et d'intégration (Vitest) |
+| `npm run test:e2e` | Tests système, sécurité et accessibilité (Playwright) |
+| `npm run test:coverage` | Couverture de code |
+
+Le détail des tests, de leur environnement et de la traçabilité avec le plan de tests est dans [`tests/README.md`](tests/README.md).

@@ -1,15 +1,14 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { SESSION_COOKIE_NAME } from '@/lib/auth-cookie'
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL
+import { backendUrl } from '@/lib/env'
 
 export async function GET() {
   const cookieStore = await cookies()
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value
   if (!token) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
 
-  const backendRes = await fetch(`${BASE_URL}/strava/status`, {
+  const backendRes = await fetch(backendUrl(`/strava/status`), {
     headers: { Authorization: `Bearer ${token}` },
   })
 

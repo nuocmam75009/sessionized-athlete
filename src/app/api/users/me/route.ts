@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { SESSION_COOKIE_NAME } from '@/lib/auth-cookie'
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL
+import { backendUrl } from '@/lib/env'
 
 export async function PATCH(request: NextRequest) {
   const cookieStore = await cookies()
@@ -10,7 +9,7 @@ export async function PATCH(request: NextRequest) {
   if (!token) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json()
-  const backendRes = await fetch(`${BASE_URL}/users/me`, {
+  const backendRes = await fetch(backendUrl(`/users/me`), {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',

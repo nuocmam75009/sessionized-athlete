@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { setSessionCookie } from '@/lib/auth-cookie'
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL
+import { backendUrl } from '@/lib/env'
 
 // Le backend NestJS renvoie le JWT dans le corps ({ accessToken, user }),
 // pas via Set-Cookie. Un cookie httpOnly ne pouvant être posé que par un
@@ -11,7 +10,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL
 export async function POST(request: NextRequest) {
   const credentials = await request.json()
 
-  const backendRes = await fetch(`${BASE_URL}/auth/login`, {
+  const backendRes = await fetch(backendUrl(`/auth/login`), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(credentials),

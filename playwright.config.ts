@@ -34,7 +34,7 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       timeout: 300_000,
       env: {
-        NEXT_PUBLIC_API_URL: `http://localhost:${MOCK_API_PORT}`,
+        API_URL: `http://localhost:${MOCK_API_PORT}`,
         NEXT_PUBLIC_COACH_APP_URL: COACH_APP_URL,
         COOKIE_DOMAIN: '',
       },
