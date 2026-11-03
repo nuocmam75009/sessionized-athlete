@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isJwtExpired } from './jwt'
+import { isJwtExpired, jwtExpiresAt } from './jwt'
 
 const NOW = Date.UTC(2026, 10, 3, 12, 0, 0)
 
@@ -39,5 +39,19 @@ describe('isJwtExpired', () => {
     ['exp non numérique', jwt({ exp: 'demain' })],
   ])('jeton illisible (%s) → expiré', (_label, token) => {
     expect(isJwtExpired(token, NOW)).toBe(true)
+  })
+})
+
+describe('jwtExpiresAt', () => {
+  it('convertit exp (secondes) en date', () => {
+    expect(jwtExpiresAt(jwt({ sub: 'u1', exp: NOW / 1000 + 60 }))).toEqual(new Date(NOW + 60_000))
+  })
+
+  it.each([
+    ['sans exp', jwt({ sub: 'u1' })],
+    ['exp non numérique', jwt({ exp: 'demain' })],
+    ['illisible', 'pas-un-jwt'],
+  ])('%s → null', (_label, token) => {
+    expect(jwtExpiresAt(token)).toBeNull()
   })
 })

@@ -2,6 +2,7 @@
 
 import { useRef, useState, type ChangeEvent } from 'react'
 import { Button } from '@/components/ui/Button'
+import { clientFetch } from '@/lib/client-fetch'
 import type { Activity } from '@/lib/types'
 
 interface FitFileUploadProps {
@@ -39,10 +40,10 @@ export function FitFileUpload({ activityId, onAttached }: FitFileUploadProps) {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      const res = await fetch(`/api/activities/${activityId}/fit`, { method: 'POST', body: formData })
+      const res = await clientFetch(`/api/activities/${activityId}/fit`, { method: 'POST', body: formData })
       if (!res.ok) throw new Error(attachErrorMessage(res.status))
 
-      const refreshed = await fetch(`/api/activities/${activityId}`)
+      const refreshed = await clientFetch(`/api/activities/${activityId}`)
       if (!refreshed.ok) throw new Error("File attached, but the activity couldn't be reloaded. Refresh the page.")
       onAttached(await refreshed.json())
     } catch (err: unknown) {
@@ -62,7 +63,11 @@ export function FitFileUpload({ activityId, onAttached }: FitFileUploadProps) {
       <Button variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
         {uploading ? 'Uploading…' : 'Attach .fit file'}
       </Button>
-      {error && <p className="text-sm text-danger mt-2">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-danger mt-2">
+          {error}
+        </p>
+      )}
     </div>
   )
 }

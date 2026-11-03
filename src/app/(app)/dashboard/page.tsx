@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { MonthCalendar } from '@/components/calendar/MonthCalendar'
 import { MonthSportBreakdown } from '@/components/calendar/MonthSportBreakdown'
 import { TrainingLoadPanel } from '@/components/training/TrainingLoadPanel'
@@ -34,12 +35,19 @@ export default async function DashboardPage({
   const isCurrentMonth = monthStart.getTime() === currentMonthStart.getTime()
 
   const { data: strava } = await serverApiFetchStatus<{ connected: boolean }>('/strava/status')
+  let stravaSyncFailed = false
   if (strava?.connected) {
     // Sync avant de charger les activités pour que les runs Strava tout
     // juste apparus atterrissent sur leur case dès ce chargement — pas de
-    // sélection manuelle, une activité échouée/API Strava down dégrade
-    // silencieusement (serverApiFetchStatus n'throw jamais).
-    await serverApiFetchStatus('/strava/sync', { method: 'POST' })
+    // sélection manuelle.
+    const { status } = await serverApiFetchStatus('/strava/sync', { method: 'POST' })
+    // 409 : connexion inutilisable (token illisible, accès retiré depuis
+    // Strava). Seul l'athlète peut la réparer : il est envoyé sur le bouton de
+    // reconnexion du profil, qui propose aussi de déconnecter Strava — sans
+    // cette issue, chaque visite du tableau de bord le renverrait là.
+    if (status === 409) redirect('/profile?strava=reconnect')
+    // Toute autre erreur est une panne passagère : signalée, sans bloquer.
+    stravaSyncFailed = status < 200 || status >= 300
   }
 
   // La charge suit la navigation du calendrier : sur le mois courant elle va
@@ -53,11 +61,15 @@ export default async function DashboardPage({
     to: loadTo.toISOString(),
   })
 
-  const [{ data: workouts }, { data: activities }, { data: trainingLoad }] = await Promise.all([
+  const [workoutsRes, activitiesRes, { data: trainingLoad }] = await Promise.all([
     serverApiFetchStatus<Workout[]>('/workouts'),
     serverApiFetchStatus<Activity[]>('/activities'),
     serverApiFetchStatus<TrainingLoadSeries>(`/training-load?${loadQuery.toString()}`),
   ])
+  const workouts = workoutsRes.data
+  const activities = activitiesRes.data
+  // Sans ce signalement, une API en panne se lirait comme un mois sans séance.
+  const calendarFailed = !workouts || !activities
 
   const entries = buildMonthEntries(monthStart, workouts ?? [], activities ?? [])
   const summary = buildMonthSummary(entries)
@@ -99,6 +111,18 @@ export default async function DashboardPage({
           plus grand élément de la page, c'est lui que le navigateur mesure pour
           le LCP — le décaler d'une hydratation plus une demi-seconde d'animation
           se payait directement sur la métrique. */}
+      {stravaSyncFailed && (
+        <p role="alert" className="panel-flat rounded-md px-4 py-3 mb-4 text-sm text-danger">
+          Couldn&apos;t sync with Strava — your latest Strava activities may be missing. Refresh the page to try
+          again.
+        </p>
+      )}
+      {calendarFailed && (
+        <p role="alert" className="panel-flat rounded-md px-4 py-3 mb-4 text-sm text-danger">
+          Couldn&apos;t load all your workouts and activities — the calendar may be incomplete. Refresh the page to
+          try again.
+        </p>
+      )}
       <MonthCalendar entries={entries} />
 
       <div className="panel rounded-lg mt-6 px-6 py-5 flex gap-10 flex-wrap">

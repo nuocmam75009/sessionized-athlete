@@ -2,6 +2,7 @@
 
 import { useRef, useState, type ChangeEvent } from 'react'
 import { Button } from '@/components/ui/Button'
+import { clientFetch } from '@/lib/client-fetch'
 import type { RoutePoint } from '@/components/ui/RouteMap'
 
 interface GpxRouteUploadProps {
@@ -28,10 +29,10 @@ export function GpxRouteUpload({ activityId, hasRoute, onUploaded }: GpxRouteUpl
     try {
       const formData = new FormData()
       formData.append('file', file)
-      const res = await fetch(`/api/activities/${activityId}/gpx`, { method: 'POST', body: formData })
+      const res = await clientFetch(`/api/activities/${activityId}/gpx`, { method: 'POST', body: formData })
       if (!res.ok) throw new Error('gpx upload failed')
 
-      const routeRes = await fetch(`/api/activities/${activityId}/route`)
+      const routeRes = await clientFetch(`/api/activities/${activityId}/route`)
       if (!routeRes.ok) throw new Error('route fetch failed')
       onUploaded(await routeRes.json())
     } catch {
@@ -47,7 +48,11 @@ export function GpxRouteUpload({ activityId, hasRoute, onUploaded }: GpxRouteUpl
       <Button variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
         {uploading ? 'Uploading…' : hasRoute ? 'Replace .gpx route' : 'Attach .gpx route'}
       </Button>
-      {error && <p className="text-sm text-danger mt-2">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-danger mt-2">
+          {error}
+        </p>
+      )}
     </div>
   )
 }

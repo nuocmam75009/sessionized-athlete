@@ -67,4 +67,67 @@ describe('LoginView', () => {
 
     await waitFor(() => expect(navigation.push).toHaveBeenCalledWith('/dashboard'))
   })
+
+  it('T06/T20 — ?reason=expired : explique pourquoi l’athlète doit se reconnecter', () => {
+    navigation.search = 'redirect=%2Fprofile&reason=expired'
+    render(<LoginView />)
+
+    expect(screen.getByRole('status')).toHaveTextContent('Your session has expired.')
+  })
+
+  it('sans ?reason : aucun message de session', () => {
+    render(<LoginView />)
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+})
+
+describe('LoginView — messages d’erreur', () => {
+  beforeEach(() => {
+    navigation.push.mockReset()
+    navigation.search = ''
+  })
+
+  it('champs vides : erreur reliée à chaque champ, focus sur le premier, aucun appel', () => {
+    const fetchMock = stubLogin(Response.json(athleteUser))
+    render(<LoginView />)
+    fireEvent.click(screen.getByRole('button', { name: 'Log in' }))
+
+    const email = screen.getByLabelText('Email')
+    expect(email).toHaveAttribute('aria-invalid', 'true')
+    expect(email).toHaveAccessibleDescription('Enter your email.')
+    expect(email).toHaveFocus()
+    expect(screen.getByLabelText('Password')).toHaveAccessibleDescription('Enter your password.')
+    expect(screen.getAllByRole('alert')).toHaveLength(2)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('les champs obligatoires sont signalés comme tels', () => {
+    render(<LoginView />)
+    expect(screen.getByLabelText('Email')).toBeRequired()
+    expect(screen.getByLabelText('Password')).toBeRequired()
+  })
+
+  it('inscription : mot de passe trop court refusé avant l’API', () => {
+    const fetchMock = stubLogin(Response.json(athleteUser))
+    render(<LoginView />)
+    fireEvent.click(screen.getByRole('link', { name: 'Create an account' }))
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'new@test.dev' } })
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'court' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }))
+
+    expect(screen.getByLabelText('Password')).toHaveAccessibleDescription('Use at least 8 characters.')
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('inscription refusée par l’API : message propre à l’inscription, annoncé', async () => {
+    stubLogin(Response.json({ message: 'Un compte existe déjà avec cet email' }, { status: 409 }))
+    render(<LoginView />)
+    fireEvent.click(screen.getByRole('link', { name: 'Create an account' }))
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'pris@test.dev' } })
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'Passw0rd!' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't create your account.")
+    expect(navigation.push).not.toHaveBeenCalled()
+  })
 })

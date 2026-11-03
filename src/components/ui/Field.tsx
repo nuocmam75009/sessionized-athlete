@@ -14,16 +14,33 @@ export const inputClassName =
 interface FieldProps {
   label: string
   htmlFor: string
+  error?: string | null
   children: ReactNode
 }
 
-export function Field({ label, htmlFor, children }: FieldProps) {
+function fieldErrorId(htmlFor: string) {
+  return `${htmlFor}-error`
+}
+
+// À étaler sur le champ d'un Field en erreur : le marque invalide et le relie à
+// son message, que les lecteurs d'écran lisent avec l'étiquette en y revenant.
+export function fieldErrorProps(htmlFor: string, error: string | null | undefined) {
+  return error ? { 'aria-invalid': true, 'aria-describedby': fieldErrorId(htmlFor) } : {}
+}
+
+export function Field({ label, htmlFor, error, children }: FieldProps) {
   return (
     <div className="grid gap-1.5">
       <label htmlFor={htmlFor} className="block text-[11px] uppercase tracking-[0.08em] text-text/50">
         {label}
       </label>
       {children}
+      {/* role="alert" : annoncé dès son apparition, sans que le focus bouge. */}
+      {error && (
+        <p id={fieldErrorId(htmlFor)} role="alert" className="text-sm text-danger">
+          {error}
+        </p>
+      )}
     </div>
   )
 }

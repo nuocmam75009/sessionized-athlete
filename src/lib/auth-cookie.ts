@@ -1,4 +1,5 @@
 import type { cookies } from 'next/headers'
+import { jwtExpiresAt } from './jwt'
 
 type CookieStore = Awaited<ReturnType<typeof cookies>>
 
@@ -29,6 +30,9 @@ export function setSessionCookie(cookieStore: CookieStore, token: string) {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
+    // Le cookie meurt avec le jeton : sinon le navigateur garderait, une fois
+    // le JWT expiré, un cookie que / prendrait pour une session ouverte.
+    expires: jwtExpiresAt(token) ?? undefined,
     ...sessionCookieScope(),
   })
 }

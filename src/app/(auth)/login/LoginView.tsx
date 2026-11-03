@@ -4,27 +4,66 @@ import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { AuthLayout } from '@/components/layout/AuthLayout'
 import { Button } from '@/components/ui/Button'
-import { Field, Input } from '@/components/ui/Field'
+import { Field, fieldErrorProps, Input } from '@/components/ui/Field'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { safeRedirectTarget } from '@/lib/redirect'
 import type { AuthUser } from '@/lib/types'
 
 type Mode = 'login' | 'register'
 
+// Même minimum que l'API (RegisterDto) : refusé ici, il n'aboutirait qu'à un
+// message générique.
+const MIN_PASSWORD_LENGTH = 8
+
+interface FieldErrors {
+  email?: string
+  password?: string
+}
+
+function validate(mode: Mode, email: string, password: string): FieldErrors {
+  const errors: FieldErrors = {}
+  if (!email.trim()) errors.email = 'Enter your email.'
+  if (!password) errors.password = 'Enter your password.'
+  else if (mode === 'register' && password.length < MIN_PASSWORD_LENGTH) {
+    errors.password = `Use at least ${MIN_PASSWORD_LENGTH} characters.`
+  }
+  return errors
+}
+
 export default function LoginView() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = safeRedirectTarget(searchParams.get('redirect'))
+  // Posé par le proxy ou par une page dont l'appel à l'API a reçu un 401.
+  const sessionExpired = searchParams.get('reason') === 'expired'
   const [mode, setMode] = useState<Mode>('login')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [invite, setInvite] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
+  // Les règles changent d'un mode à l'autre (longueur du mot de passe) : les
+  // erreurs affichées pour l'autre mode ne valent plus.
+  function switchMode(next: Mode) {
+    setMode(next)
+    setFieldErrors({})
+    setError(null)
+  }
+
   async function submit() {
     setError(null)
+    const errors = validate(mode, email, password)
+    setFieldErrors(errors)
+    if (errors.email || errors.password) {
+      // Le focus va au premier champ à corriger, que le lecteur d'écran
+      // annonce avec son message d'erreur.
+      document.getElementById(errors.email ? 'sn-email' : 'sn-pw')?.focus()
+      return
+    }
+
     setSubmitting(true)
     try {
       // Passe par nos propres routes /api/auth/* (et non le backend
@@ -70,7 +109,13 @@ export default function LoginView() {
 
       router.push(redirectTo)
     } catch {
-      setError("Couldn't log in. Check your email and password.")
+      // Générique dans les deux cas : préciser « e-mail inconnu » ou « déjà
+      // utilisé » dirait à un tiers quels comptes existent.
+      setError(
+        mode === 'login'
+          ? "Couldn't log in. Check your email and password."
+          : "Couldn't create your account. Check your details and try again.",
+      )
     } finally {
       setSubmitting(false)
     }
@@ -82,19 +127,28 @@ export default function LoginView() {
       title="Your workouts plan and data, in one place."
       description=" "
     >
+      {sessionExpired && (
+        <p role="status" className="panel-flat rounded-md px-3.5 py-2.5 mb-5 text-sm text-text/80">
+          Your session has expired. Log in again to pick up where you left off.
+        </p>
+      )}
       <div className="mb-6">
         <SegmentedControl
           name="authmode"
           ariaLabel="Login or register"
           value={mode}
-          onChange={(v) => setMode(v as Mode)}
+          onChange={(v) => switchMode(v as Mode)}
           options={[
             { value: 'login', label: 'Log in' },
             { value: 'register', label: 'Register' },
           ]}
         />
       </div>
+      {/* noValidate : les champs restent marqués required pour les lecteurs
+          d'écran, mais la validation est la nôtre — les bulles du navigateur
+          suivent la langue de son interface, pas celle de la page. */}
       <form
+        noValidate
         onSubmit={(e) => {
           e.preventDefault()
           submit()
@@ -102,32 +156,43 @@ export default function LoginView() {
         className="grid gap-3"
       >
         {mode === 'register' && (
-          <Field label="Full name" htmlFor="sn-name">
-            <Input id="sn-name" placeholder="Jakob Ingebrigsten" value={name} onChange={(e) => setName(e.target.value)} />
+          <Field label="Full name (optional)" htmlFor="sn-name">
+            <Input
+              id="sn-name"
+              autoComplete="name"
+              placeholder="Jakob Ingebrigsten"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
           </Field>
         )}
-        <Field label="Email" htmlFor="sn-email">
+        <Field label="Email" htmlFor="sn-email" error={fieldErrors.email}>
           <Input
             id="sn-email"
             type="email"
+            required
             autoComplete="email"
             placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            {...fieldErrorProps('sn-email', fieldErrors.email)}
           />
         </Field>
-        <Field label="Password" htmlFor="sn-pw">
+        <Field label="Password" htmlFor="sn-pw" error={fieldErrors.password}>
           <Input
             id="sn-pw"
             type="password"
+            required
+            minLength={mode === 'register' ? MIN_PASSWORD_LENGTH : undefined}
             autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            {...fieldErrorProps('sn-pw', fieldErrors.password)}
           />
         </Field>
         {mode === 'register' && (
-          <Field label="Coach invite code" htmlFor="sn-invite">
+          <Field label="Coach invite code (optional)" htmlFor="sn-invite">
             <Input
               id="sn-invite"
               placeholder="e.g. RUN-2C4F"
@@ -136,7 +201,11 @@ export default function LoginView() {
             />
           </Field>
         )}
-        {error && <p className="text-sm text-danger">{error}</p>}
+        {error && (
+          <p role="alert" className="text-sm text-danger">
+            {error}
+          </p>
+        )}
         <Button type="submit" block disabled={submitting}>
           {submitting ? '…' : mode === 'login' ? 'Log in' : 'Create account'}
         </Button>
@@ -147,7 +216,7 @@ export default function LoginView() {
           href="#"
           onClick={(e) => {
             e.preventDefault()
-            setMode(mode === 'login' ? 'register' : 'login')
+            switchMode(mode === 'login' ? 'register' : 'login')
           }}
           className="text-accent hover:text-accent-700"
         >

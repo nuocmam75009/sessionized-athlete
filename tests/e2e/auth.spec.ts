@@ -78,7 +78,32 @@ test.describe('Contrôle d’accès', () => {
     await signInAs(context, USERS.athlete, -60)
     await page.goto('/dashboard')
 
-    await expect(page).toHaveURL('/login?redirect=%2Fdashboard')
+    await expect(page).toHaveURL('/login?redirect=%2Fdashboard&reason=expired')
+    await expect(page.getByRole('status')).toHaveText(/Your session has expired/)
     expect((await context.cookies()).find((c) => c.name === SESSION_COOKIE_NAME)).toBeUndefined()
+  })
+
+  // Compte inconnu de l'API simulée : son jeton, non expiré, passe le proxy
+  // mais l'API le refuse — comme un jeton révoqué ou signé avec un ancien secret.
+  const revoked = { ...USERS.athlete, id: 'cmuserrevoked00000000000a' }
+
+  test('T20 — jeton refusé par l’API au rendu d’une page : /login, puis retour sur la page', async ({ page, context }) => {
+    await signInAs(context, revoked)
+    await page.goto('/dashboard?month=2026-10')
+
+    await expect(page).toHaveURL('/login?redirect=%2Fdashboard%3Fmonth%3D2026-10&reason=expired')
+    await expect(page.getByRole('status')).toHaveText(/Your session has expired/)
+
+    await logIn(page, USERS.athlete.email, PASSWORD)
+    await expect(page).toHaveURL('/dashboard?month=2026-10')
+  })
+
+  test('T20 — jeton refusé par l’API pendant que la page est ouverte : /login', async ({ page, context }) => {
+    // La page d'import ne charge rien côté serveur : c'est son appel client à
+    // /api/workouts qui reçoit le 401.
+    await signInAs(context, revoked)
+    await page.goto('/activities/upload')
+
+    await expect(page).toHaveURL('/login?redirect=%2Factivities%2Fupload&reason=expired')
   })
 })

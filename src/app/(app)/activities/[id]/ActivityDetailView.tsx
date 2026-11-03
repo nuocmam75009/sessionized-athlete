@@ -12,6 +12,7 @@ import { RouteMap, type RoutePoint } from '@/components/ui/RouteMap'
 import { Stat } from '@/components/ui/Stat'
 import { thClass, tdClass } from '@/components/ui/table'
 import { activityLabelStyle, formatActivity, lapIntensityStyle } from '@/lib/activity-format'
+import { clientFetch } from '@/lib/client-fetch'
 import { workoutTargets } from '@/lib/plan-format'
 import { formatDateLabel, formatDistance, formatDuration, formatPace } from '@/lib/utils'
 import type { Activity, Workout } from '@/lib/types'
@@ -32,7 +33,7 @@ export function ActivityDetailView({
 
   useEffect(() => {
     let cancelled = false
-    fetch(`/api/activities/${activity.id}/track`)
+    clientFetch(`/api/activities/${activity.id}/track`)
       .then((res) => (res.ok ? res.json() : []))
       .then((data: RoutePoint[]) => {
         if (!cancelled) setTrackPoints(data)
@@ -48,7 +49,7 @@ export function ActivityDetailView({
 
   useEffect(() => {
     let cancelled = false
-    fetch(`/api/activities/${activity.id}/route`)
+    clientFetch(`/api/activities/${activity.id}/route`)
       .then((res) => (res.ok ? res.json() : []))
       .then((data: RoutePoint[]) => {
         if (!cancelled) setGpxRoutePoints(data)

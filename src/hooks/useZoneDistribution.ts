@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { clientFetch } from '@/lib/client-fetch'
 import type { ZoneDistribution } from '@/lib/types'
 
 // Cache module : revenir sur une semaine déjà consultée ne redéclenche pas de
@@ -29,7 +30,7 @@ export function useZoneDistribution(from: string, to: string): ZoneDistributionS
     const controller = new AbortController()
     const params = new URLSearchParams({ from, to })
 
-    fetch(`/api/activities/hr-zones?${params.toString()}`, { signal: controller.signal })
+    clientFetch(`/api/activities/hr-zones?${params.toString()}`, { signal: controller.signal })
       .then(async (res) => {
         // Message affiché tel quel dans le récapitulatif : rédigé ici plutôt
         // que repris de l'API, dont les textes sont en français.

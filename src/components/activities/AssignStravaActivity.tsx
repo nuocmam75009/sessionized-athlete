@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { formatActivity } from '@/lib/activity-format'
+import { clientFetch } from '@/lib/client-fetch'
 import { formatDateLabel } from '@/lib/utils'
 import type { Activity } from '@/lib/types'
 
@@ -22,7 +23,7 @@ export function AssignStravaActivity({ workoutId, candidates }: { workoutId: str
     setAssigningId(activityId)
     setError(null)
     try {
-      const res = await fetch(`/api/activities/${activityId}`, {
+      const res = await clientFetch(`/api/activities/${activityId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ workoutId }),
@@ -84,7 +85,11 @@ export function AssignStravaActivity({ workoutId, candidates }: { workoutId: str
           )
         })}
       </div>
-      {error && <p className="text-sm text-danger mt-2">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-danger mt-2">
+          {error}
+        </p>
+      )}
     </div>
   )
 }

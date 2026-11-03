@@ -1,12 +1,14 @@
 import { afterAll, afterEach, beforeAll, vi } from 'vitest'
 import { cookieJar } from '../integration/support/cookies'
 import { backend } from '../integration/support/backend'
+import { resetRequestHeaders } from '../integration/support/request-headers'
 
-// Hors d'une vraie requête Next, cookies() lève une erreur : on le remplace
-// par un faux magasin de cookies que chaque test remplit et inspecte.
+// Hors d'une vraie requête Next, cookies() et headers() lèvent une erreur : on
+// les remplace par de faux magasins que chaque test remplit et inspecte.
 vi.mock('next/headers', async () => {
   const { cookieStore } = await import('../integration/support/cookies')
-  return { cookies: async () => cookieStore }
+  const { requestHeaders } = await import('../integration/support/request-headers')
+  return { cookies: async () => cookieStore, headers: async () => requestHeaders }
 })
 
 // 'error' : toute requête vers une route que le test n'a pas déclarée fait
@@ -15,5 +17,6 @@ beforeAll(() => backend.listen({ onUnhandledFrame: 'error' }))
 afterEach(() => {
   backend.resetHandlers()
   cookieJar.reset()
+  resetRequestHeaders()
 })
 afterAll(() => backend.close())

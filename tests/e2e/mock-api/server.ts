@@ -35,6 +35,9 @@ export const USERS = {
   uploader: { id: 'cmuseruploader0000000000a', email: 'uploader@test.dev', role: 'ATHLETE', firstName: 'Uma', lastName: 'Loader' },
   duplicate: { id: 'cmuserduplicate000000000a', email: 'duplicate@test.dev', role: 'ATHLETE', firstName: 'Dan', lastName: 'Twice' },
   strava: { id: 'cmuserstrava000000000000a', email: 'strava@test.dev', role: 'ATHLETE', firstName: 'Sam', lastName: 'Strava' },
+  // Connecté à Strava, mais tokens inutilisables (clé de chiffrement changée,
+  // accès retiré depuis Strava) : la synchronisation répond 409.
+  stravaRevoked: { id: 'cmuserrevokedstrava00000a', email: 'strava-revoked@test.dev', role: 'ATHLETE', firstName: 'Rae', lastName: 'Revoked' },
   other: { id: 'cmuserother0000000000000a', email: 'other@test.dev', role: 'ATHLETE', firstName: 'Otto', lastName: 'Other' },
   coach: { id: 'cmusercoach0000000000000a', email: 'coach@test.dev', role: 'COACH', firstName: 'Cleo', lastName: 'Coach' },
 } satisfies Record<string, MockUser>
@@ -161,7 +164,7 @@ const workoutsByAthlete: Record<string, Workout[]> = {
 }
 
 const uploadedHashes = new Set<string>()
-const stravaConnected = new Set<string>([USERS.strava.id])
+const stravaConnected = new Set<string>([USERS.strava.id, USERS.stravaRevoked.id])
 let idCounter = 0
 
 function nextId(prefix: string): string {
@@ -280,6 +283,15 @@ async function route(req: IncomingMessage, res: ServerResponse) {
 
   if (method === 'GET' && path === '/strava/status') return send(res, 200, { connected: stravaConnected.has(user.id) })
   if (method === 'POST' && path === '/strava/sync') {
+    // T21 : même corps que StravaReconnectRequiredException côté API.
+    if (user.id === USERS.stravaRevoked.id) {
+      return send(res, 409, {
+        statusCode: 409,
+        error: 'Conflict',
+        code: 'STRAVA_RECONNECT_REQUIRED',
+        message: 'Connexion Strava à renouveler : token illisible',
+      })
+    }
     // T17 : la synchronisation fait apparaître une sortie Strava du jour.
     const already = ownActivities().some((a) => a.source === 'STRAVA')
     if (stravaConnected.has(user.id) && !already) {

@@ -19,7 +19,9 @@ export default async function ProfilePage({
       user={user}
       coach={coach.status === 200 ? coach.data : null}
       stravaConnected={strava.data?.connected ?? false}
-      stravaBanner={stravaParam === 'connected' || stravaParam === 'error' ? stravaParam : null}
+      stravaBanner={
+        stravaParam === 'connected' || stravaParam === 'error' || stravaParam === 'reconnect' ? stravaParam : null
+      }
     />
   )
 }

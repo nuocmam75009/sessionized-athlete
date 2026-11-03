@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { Field, Input } from '@/components/ui/Field'
 import { RadioOption } from '@/components/ui/RadioOption'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
+import { clientFetch } from '@/lib/client-fetch'
 import { setUnit, useSessionState } from '@/lib/session-store'
 import { APP_LOCALE } from '@/lib/utils'
 import type { CoachAssignment, UserProfile } from '@/lib/types'
@@ -35,7 +36,9 @@ export function ProfileView({
   user: UserProfile | null
   coach: CoachAssignment | null
   stravaConnected: boolean
-  stravaBanner: 'connected' | 'error' | null
+  // reconnect : posé par le tableau de bord quand l'API ne peut plus utiliser
+  // la connexion Strava enregistrée (409).
+  stravaBanner: 'connected' | 'error' | 'reconnect' | null
 }) {
   const session = useSessionState()
   const [notify, setNotify] = useState<NotifyPref>('new-plan')
@@ -45,8 +48,11 @@ export function ProfileView({
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const [stravaConnected, setStravaConnected] = useState(initialStravaConnected)
   const [stravaBusy, setStravaBusy] = useState(false)
+  const [stravaError, setStravaError] = useState<string | null>(null)
   const [stravaSync, setStravaSync] = useState<StravaSyncState>('idle')
   const router = useRouter()
+  // Une fois Strava déconnecté, il n'y a plus rien à renouveler.
+  const needsReconnect = stravaBanner === 'reconnect' && stravaConnected
 
   // Première connexion Strava : l'import initial peut porter sur des mois
   // d'historique et prendre un certain temps, contrairement aux resynchros
@@ -55,7 +61,7 @@ export function ProfileView({
     if (stravaBanner !== 'connected') return
     let cancelled = false
     setStravaSync('syncing')
-    fetch('/api/strava/sync', { method: 'POST' })
+    clientFetch('/api/strava/sync', { method: 'POST' })
       .then((res) => {
         if (cancelled) return
         setStravaSync(res.ok ? 'done' : 'error')
@@ -71,22 +77,29 @@ export function ProfileView({
 
   async function connectStrava() {
     setStravaBusy(true)
+    setStravaError(null)
+    // Sert aussi à reconnecter : les nouveaux tokens remplacent ceux devenus
+    // inutilisables.
     try {
-      const res = await fetch('/api/strava/authorize')
+      const res = await clientFetch('/api/strava/authorize')
       if (!res.ok) throw new Error('authorize failed')
       const { url } = await res.json()
       window.location.href = url
     } catch {
+      setStravaError("Couldn't start the Strava connection. Try again.")
       setStravaBusy(false)
     }
   }
 
   async function disconnectStrava() {
     setStravaBusy(true)
+    setStravaError(null)
     try {
-      const res = await fetch('/api/strava/disconnect', { method: 'DELETE' })
+      const res = await clientFetch('/api/strava/disconnect', { method: 'DELETE' })
       if (!res.ok) throw new Error('disconnect failed')
       setStravaConnected(false)
+    } catch {
+      setStravaError("Couldn't disconnect Strava. Try again.")
     } finally {
       setStravaBusy(false)
     }
@@ -95,7 +108,7 @@ export function ProfileView({
   async function save() {
     setSaveState('saving')
     try {
-      const res = await fetch('/api/users/me', {
+      const res = await clientFetch('/api/users/me', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ firstName, lastName, email }),
@@ -109,7 +122,11 @@ export function ProfileView({
   return (
     <div>
       <h1>Profile</h1>
-      {!user && <p className="text-danger mb-4">Couldn&apos;t load your profile.</p>}
+      {!user && (
+        <p role="alert" className="text-danger mb-4">
+          Couldn&apos;t load your profile. Refresh the page to try again.
+        </p>
+      )}
       <div className="grid gap-8 max-w-[560px] mt-5">
         <section>
           <h4 className="mb-3">Account</h4>
@@ -177,10 +194,17 @@ export function ProfileView({
           <div className="flex gap-2 items-center mb-2">
             <Badge variant="accent">Garmin Connect · Connected</Badge>
           </div>
-          <div className="flex gap-2 items-center">
-            <Badge variant={stravaConnected ? 'accent' : 'neutral'}>
-              Strava · {stravaConnected ? 'Connected' : 'Not connected'}
+          <div className="flex flex-wrap gap-2 items-center">
+            <Badge variant={stravaConnected && !needsReconnect ? 'accent' : 'neutral'}>
+              Strava · {needsReconnect ? 'Expired' : stravaConnected ? 'Connected' : 'Not connected'}
             </Badge>
+            {/* autoFocus : l'athlète arrive ici depuis le tableau de bord pour
+                cette seule action ; le focus amène aussi le bouton à l'écran. */}
+            {needsReconnect && (
+              <Button onClick={connectStrava} disabled={stravaBusy} autoFocus>
+                {stravaBusy ? 'Redirecting…' : 'Reconnect Strava'}
+              </Button>
+            )}
             {stravaConnected ? (
               <Button variant="ghost" onClick={disconnectStrava} disabled={stravaBusy}>
                 {stravaBusy ? 'Disconnecting…' : 'Disconnect'}
@@ -191,14 +215,25 @@ export function ProfileView({
               </Button>
             )}
           </div>
+          {needsReconnect && (
+            <p role="alert" className="text-sm text-danger mt-2 max-w-[60ch]">
+              Your Strava connection has expired — new Strava activities aren&apos;t being imported. Reconnect Strava
+              to resume, or disconnect it.
+            </p>
+          )}
+          {stravaError && (
+            <p role="alert" className="text-sm text-danger mt-2">
+              {stravaError}
+            </p>
+          )}
           {stravaBanner === 'connected' && stravaSync === 'syncing' && (
-            <div className="flex items-center gap-2 mt-2 text-sm text-text/70">
+            <div role="status" className="flex items-center gap-2 mt-2 text-sm text-text/70">
               <span className="w-4 h-4 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
               Importing your Strava activities… this may take a moment.
             </div>
           )}
           {stravaBanner === 'connected' && stravaSync === 'done' && (
-            <p className="text-sm text-success mt-2">
+            <p role="status" className="text-sm text-success mt-2">
               Strava activities imported.{' '}
               <Link href="/dashboard" className="text-accent hover:text-accent-700">
                 View my calendar →
@@ -206,12 +241,14 @@ export function ProfileView({
             </p>
           )}
           {stravaBanner === 'connected' && stravaSync === 'error' && (
-            <p className="text-sm text-danger mt-2">
+            <p role="alert" className="text-sm text-danger mt-2">
               Account connected, but importing your activities failed. Try again from the calendar.
             </p>
           )}
           {stravaBanner === 'error' && (
-            <p className="text-sm text-danger mt-2">Couldn&apos;t connect Strava. Try again.</p>
+            <p role="alert" className="text-sm text-danger mt-2">
+              Couldn&apos;t connect Strava. Try again.
+            </p>
           )}
         </section>
 
@@ -219,8 +256,16 @@ export function ProfileView({
           <Button className="w-fit" onClick={save} disabled={saveState === 'saving'}>
             {saveState === 'saving' ? 'Saving…' : 'Save changes'}
           </Button>
-          {saveState === 'saved' && <span className="text-sm text-success">Saved.</span>}
-          {saveState === 'error' && <span className="text-sm text-danger">Couldn&apos;t save changes.</span>}
+          {saveState === 'saved' && (
+            <span role="status" className="text-sm text-success">
+              Saved.
+            </span>
+          )}
+          {saveState === 'error' && (
+            <span role="alert" className="text-sm text-danger">
+              Couldn&apos;t save changes. Try again.
+            </span>
+          )}
         </div>
       </div>
     </div>

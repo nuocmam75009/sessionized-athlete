@@ -13,7 +13,9 @@ export default async function CoachesPage() {
       </div>
       <h1>Find your coach</h1>
       {status !== 200 ? (
-        <p className="text-danger mb-4">Couldn&apos;t load coaches.</p>
+        <p role="alert" className="text-danger mb-4">
+          Couldn&apos;t load coaches. Refresh the page to try again.
+        </p>
       ) : (
         <p className="text-text/50 mt-2 mb-8 max-w-[52ch]">
           {coaches.length} {coaches.length === 1 ? 'coach' : 'coaches'} available — browse and pick the one that fits

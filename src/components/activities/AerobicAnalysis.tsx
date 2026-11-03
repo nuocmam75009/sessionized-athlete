@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Stat } from '@/components/ui/Stat'
 import { thClass, tdClass } from '@/components/ui/table'
+import { clientFetch } from '@/lib/client-fetch'
 import { formatDuration, formatPace } from '@/lib/utils'
 import type { AerobicAnalysis as Analysis, AerobicRejection, DecouplingRating } from '@/lib/types'
 
@@ -46,7 +47,7 @@ export function AerobicAnalysis({ activityId }: { activityId: string }) {
   useEffect(() => {
     let cancelled = false
 
-    fetch(`/api/activities/${activityId}/analysis`)
+    clientFetch(`/api/activities/${activityId}/analysis`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data: Analysis | null) => {
         if (!cancelled) setAnalysis(data)

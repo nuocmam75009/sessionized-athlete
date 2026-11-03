@@ -1,6 +1,6 @@
 # Tests du front athlète
 
-Mise en œuvre du plan de tests (identifiants T01–T19). Chaque test porte l'identifiant du cas qu'il couvre dans son nom, pour retrouver un cas du plan dans le code et dans les rapports d'exécution.
+Mise en œuvre du plan de tests (identifiants T01–T21). Chaque test porte l'identifiant du cas qu'il couvre dans son nom, pour retrouver un cas du plan dans le code et dans les rapports d'exécution.
 
 ## Lancer les tests
 
@@ -21,7 +21,7 @@ Première installation de Playwright : `npx playwright install chromium`.
 | Unitaire | Vitest + Testing Library (jsdom) | `src/**/*.test.ts(x)`, à côté du code | Fonctions de `lib/`, composants client (`UploadView`, `LoginView`, `WorkoutModal`) |
 | Intégration | Vitest + MSW (Node) | `tests/integration/` | Route Handlers `/api/*` et `proxy.ts`, avec le backend NestJS simulé |
 | Système | Playwright | `tests/e2e/` | L'application buildée, de bout en bout dans Chromium |
-| Sécurité | Vitest + Playwright | `redirect.test.ts`, `activities-id.test.ts`, `proxy.test.ts`, `security.spec.ts`, `auth.spec.ts` | Redirection ouverte, traversée de chemin, IDOR, XSS stockée, session expirée |
+| Sécurité | Vitest + Playwright | `redirect.test.ts`, `activities-id.test.ts`, `proxy.test.ts`, `server-api.test.ts`, `security.spec.ts`, `auth.spec.ts` | Redirection ouverte, traversée de chemin, IDOR, XSS stockée, session expirée ou refusée par l'API |
 | Accessibilité | `@axe-core/playwright` | `tests/e2e/a11y.spec.ts` | Chaque page, thèmes clair et sombre, WCAG 2.1 A/AA |
 
 Les Server Components asynchrones (`dashboard/page.tsx`…) ne se testent pas avec Vitest. Leur logique est extraite dans `lib/` (ex. `parseMonthParam`) et la page entière est couverte par Playwright.
@@ -61,5 +61,7 @@ Les Server Components asynchrones (`dashboard/page.tsx`…) ne se testent pas av
 | T17 | Strava connecté → activités sur leur jour | Système (API simulée) | `calendar.spec.ts` |
 | T18 | 0 violation axe *serious*/*critical* | Système | `a11y.spec.ts` |
 | T19 | Charge (50 utilisateurs, `GET /activities`) | — | Hors périmètre du front : relève de l'API (k6) |
+| T20 | Jeton non expiré refusé par l'API (401) → `/login` | Unitaire, intégration, système | `LoginView.test.tsx`, `server-api.test.ts`, `proxy.test.ts`, `auth.spec.ts` |
+| T21 | Connexion Strava inutilisable (409) → redirection vers le bouton de reconnexion | Unitaire, système | `ProfileView.test.tsx`, `calendar.spec.ts` |
 
 **Limites de l'API simulée.** Elle fixe le contrat que le front attend, sans prouver le comportement réel du backend. Le contrôle d'accès réel (T14), le parsing d'un vrai `.fit` (jeu d'essai) et la charge (T19) se testent dans `sessionized-api` (Jest + Supertest, k6). T17 avec un vrai compte Strava relève de la recette.

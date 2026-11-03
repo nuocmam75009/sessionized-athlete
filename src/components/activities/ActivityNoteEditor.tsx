@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
-import { Field, inputClassName, Textarea } from '@/components/ui/Field'
+import { Field, fieldErrorProps, inputClassName, Textarea } from '@/components/ui/Field'
+import { clientFetch } from '@/lib/client-fetch'
 import type { Activity } from '@/lib/types'
 
 export function ActivityNoteEditor({ activity, onSaved }: { activity: Activity; onSaved: (activity: Activity) => void }) {
@@ -13,22 +14,25 @@ export function ActivityNoteEditor({ activity, onSaved }: { activity: Activity; 
   )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [difficultyError, setDifficultyError] = useState<string | null>(null)
 
   async function save() {
     const trimmedNote = athleteNote.trim()
     const difficultyValue = difficultyNote.trim() ? Number(difficultyNote) : null
     if (difficultyValue !== null && (!Number.isInteger(difficultyValue) || difficultyValue < 1 || difficultyValue > 10)) {
-      setError('Difficulty must be a whole number from 1 to 10.')
+      setDifficultyError('Difficulty must be a whole number from 1 to 10.')
+      document.getElementById('sn-edit-difficulty-note')?.focus()
       return
     }
 
     setSaving(true)
     setError(null)
+    setDifficultyError(null)
     try {
       const body: Record<string, string | number> = { athleteNote: trimmedNote }
       if (difficultyValue !== null) body.difficultyNote = difficultyValue
 
-      const res = await fetch(`/api/activities/${activity.id}`, {
+      const res = await clientFetch(`/api/activities/${activity.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -76,7 +80,7 @@ export function ActivityNoteEditor({ activity, onSaved }: { activity: Activity; 
             onChange={(e) => setAthleteNote(e.target.value)}
           />
         </Field>
-        <Field label="Difficulty (1–10)" htmlFor="sn-edit-difficulty-note">
+        <Field label="Difficulty (1–10)" htmlFor="sn-edit-difficulty-note" error={difficultyError}>
           <input
             id="sn-edit-difficulty-note"
             type="number"
@@ -85,7 +89,11 @@ export function ActivityNoteEditor({ activity, onSaved }: { activity: Activity; 
             step={1}
             className={`w-24 ${inputClassName}`}
             value={difficultyNote}
-            onChange={(e) => setDifficultyNote(e.target.value)}
+            onChange={(e) => {
+              setDifficultyNote(e.target.value)
+              setDifficultyError(null)
+            }}
+            {...fieldErrorProps('sn-edit-difficulty-note', difficultyError)}
           />
         </Field>
       </div>
@@ -96,7 +104,11 @@ export function ActivityNoteEditor({ activity, onSaved }: { activity: Activity; 
         <Button variant="ghost" onClick={() => setEditing(false)} disabled={saving}>
           Cancel
         </Button>
-        {error && <span className="text-sm text-danger">{error}</span>}
+        {error && (
+          <span role="alert" className="text-sm text-danger">
+            {error}
+          </span>
+        )}
       </div>
     </div>
   )

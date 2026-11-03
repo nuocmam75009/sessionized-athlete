@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server'
 import { describe, expect, it, vi } from 'vitest'
 import { POST } from '@/app/api/auth/login/route'
 import { SESSION_COOKIE_NAME } from '@/lib/auth-cookie'
-import { API_URL, backend, validToken } from './support/backend'
+import { API_URL, backend, makeJwt, validToken } from './support/backend'
 import { cookieJar } from './support/cookies'
 
 const credentials = { email: 'athlete@test.dev', password: 'Passw0rd!' }
@@ -40,6 +40,24 @@ describe('POST /api/auth/login', () => {
     const body = await res.json()
     expect(body).toEqual({ user })
     expect(JSON.stringify(body)).not.toContain(token)
+  })
+
+  it('T06 — le cookie expire en même temps que le JWT', async () => {
+    const exp = Math.floor(Date.now() / 1000) + 1800
+    const token = makeJwt({ ...user, exp })
+    backend.use(http.post(`${API_URL}/auth/login`, () => HttpResponse.json({ accessToken: token, user })))
+
+    await POST(loginRequest(credentials))
+
+    expect(cookieJar.get(SESSION_COOKIE_NAME)?.options.expires).toEqual(new Date(exp * 1000))
+  })
+
+  it('JWT sans exp : cookie de session (effacé à la fermeture du navigateur)', async () => {
+    backend.use(http.post(`${API_URL}/auth/login`, () => HttpResponse.json({ accessToken: makeJwt(user), user })))
+
+    await POST(loginRequest(credentials))
+
+    expect(cookieJar.get(SESSION_COOKIE_NAME)?.options.expires).toBeUndefined()
   })
 
   it('T01 — cookie Secure en production', async () => {

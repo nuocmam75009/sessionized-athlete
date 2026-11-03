@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server'
 import { describe, expect, it } from 'vitest'
 import nextConfig from '../../next.config'
 import { SESSION_COOKIE_NAME } from '@/lib/auth-cookie'
+import { REQUEST_PATH_HEADER } from '@/lib/session'
 import { config, proxy } from '@/proxy'
 import { makeJwt, validToken } from './support/backend'
 
@@ -37,12 +38,29 @@ describe('proxy — contrôle de session', () => {
     const target = redirectTarget(proxy(requestTo('/dashboard')))
     expect(target?.pathname).toBe('/login')
     expect(target?.searchParams.get('redirect')).toBe('/dashboard')
+    // Jamais connecté : pas de message « session expirée ».
+    expect(target?.searchParams.get('reason')).toBeNull()
+  })
+
+  it('garde la requête (?month=…) dans le chemin de retour', () => {
+    const target = redirectTarget(proxy(requestTo('/dashboard?month=2026-10')))
+    expect(target?.searchParams.get('redirect')).toBe('/dashboard?month=2026-10')
   })
 
   it('laisse passer un JWT valide', () => {
     const response = proxy(requestTo('/dashboard', validToken()))
     expect(redirectTarget(response)).toBeNull()
     expect(response.headers.get('x-middleware-next')).toBe('1')
+  })
+
+  // Les pages le lisent pour revenir au bon endroit après un 401 de l'API
+  // (voir server-api.test.ts).
+  it('transmet aux pages le chemin demandé, et écrase celui qu’enverrait le navigateur', () => {
+    const request = new NextRequest('http://localhost:3000/dashboard?month=2026-10', {
+      headers: { cookie: `${SESSION_COOKIE_NAME}=${validToken()}`, [REQUEST_PATH_HEADER]: '//evil.example' },
+    })
+    const response = proxy(request)
+    expect(response.headers.get(`x-middleware-request-${REQUEST_PATH_HEADER}`)).toBe('/dashboard?month=2026-10')
   })
 
   it('T06 — cookie présent mais JWT expiré → /login, cookie effacé', () => {
@@ -52,6 +70,7 @@ describe('proxy — contrôle de session', () => {
     const target = redirectTarget(response)
     expect(target?.pathname).toBe('/login')
     expect(target?.searchParams.get('redirect')).toBe('/dashboard')
+    expect(target?.searchParams.get('reason')).toBe('expired')
     expect(response.headers.get('set-cookie')).toMatch(new RegExp(`${SESSION_COOKIE_NAME}=;.*(Max-Age=0|Expires=Thu, 01 Jan 1970)`, 'i'))
   })
 

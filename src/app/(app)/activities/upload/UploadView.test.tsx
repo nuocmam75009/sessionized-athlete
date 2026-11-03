@@ -9,13 +9,17 @@ vi.mock('@/components/ui/RouteMap', () => ({ RouteMap: () => <div data-testid="r
 
 type UploadResponder = (body: FormData) => Response
 
-// Simule les deux Route Handlers appelés par la vue : la liste des séances au
-// montage, puis l'envoi du fichier.
-function stubApi(onUpload: UploadResponder = () => Response.json({ id: 'act-new' }, { status: 201 })) {
+// Simule les Route Handlers appelés par la vue : la liste des séances au
+// montage, puis l'envoi du .fit et, s'il y en a un, du .gpx.
+function stubApi(
+  onUpload: UploadResponder = () => Response.json({ id: 'act-new' }, { status: 201 }),
+  onGpx: () => Response = () => Response.json([], { status: 201 }),
+) {
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input)
     if (url === '/api/workouts') return Response.json([])
     if (url === '/api/activities/upload') return onUpload(init?.body as FormData)
+    if (url === '/api/activities/act-new/gpx') return onGpx()
     throw new Error(`Appel inattendu : ${url}`)
   })
   vi.stubGlobal('fetch', fetchMock)
@@ -139,7 +143,28 @@ describe('UploadView — envoi', () => {
     confirm()
 
     expect(await screen.findByText('Difficulty must be a whole number from 1 to 10.')).toBeInTheDocument()
+    // Le message est relié au champ, que le lecteur d'écran annonce invalide.
+    const field = screen.getByLabelText(/difficulty/i)
+    expect(field).toHaveAttribute('aria-invalid', 'true')
+    expect(field).toHaveAccessibleDescription('Difficulty must be a whole number from 1 to 10.')
+    expect(field).toHaveFocus()
     expect(fetchMock).not.toHaveBeenCalledWith('/api/activities/upload', expect.anything())
+  })
+
+  it('activité créée mais .gpx refusé : renvoie vers l’activité, pas vers un second envoi', async () => {
+    stubApi(undefined, () => new Response(null, { status: 400 }))
+    render(<UploadView />)
+    drop([fitFile(), new File(['<gpx/>'], 'trace.gpx')])
+    confirm()
+
+    expect(await screen.findByRole('alert')).toHaveTextContent("Activity saved, but the .gpx route couldn't be attached.")
+    expect(screen.getByRole('link', { name: /add it from the activity page/i })).toHaveAttribute(
+      'href',
+      '/activities/act-new',
+    )
+    // Renvoyer le .fit serait refusé comme doublon (409).
+    expect(screen.queryByRole('button', { name: 'Confirm & save' })).not.toBeInTheDocument()
+    expect(push).not.toHaveBeenCalled()
   })
 
   it.each(['1', '10'])('accepte la difficulté %s', async (value) => {

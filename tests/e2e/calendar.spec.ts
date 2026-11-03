@@ -42,4 +42,33 @@ test.describe('Calendrier', () => {
     await expect(modal.getByText('Run', { exact: true })).toBeVisible()
     await expect(modal.getByRole('link', { name: 'View full breakdown' })).toBeVisible()
   })
+
+  test('T21 — connexion Strava inutilisable (409) : redirection sur le bouton de reconnexion', async ({
+    page,
+    context,
+  }) => {
+    await signInAs(context, USERS.stravaRevoked)
+    await page.goto('/dashboard')
+
+    await expect(page).toHaveURL('/profile?strava=reconnect')
+    await expect(page.getByRole('alert').filter({ hasText: 'Your Strava connection has expired' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Reconnect Strava' })).toBeFocused()
+
+    // L'API simulée n'a pas de route d'autorisation : l'échec doit être dit.
+    const authorize = page.waitForResponse('**/api/strava/authorize')
+    await page.getByRole('button', { name: 'Reconnect Strava' }).click()
+    await authorize
+    await expect(page.getByText("Couldn't start the Strava connection. Try again.")).toBeVisible()
+  })
+
+  test('T21 — compte Strava sain : ni redirection ni alerte', async ({ page, context }) => {
+    await signInAs(context, USERS.strava)
+    await page.goto('/dashboard')
+
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(currentMonthLabel())
+    await expect(page).toHaveURL('/dashboard')
+    // Limité à <main> : Next ajoute hors du contenu un annonceur de navigation
+    // vide, lui aussi en role="alert".
+    await expect(page.getByRole('main').getByRole('alert')).toHaveCount(0)
+  })
 })

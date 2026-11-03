@@ -14,6 +14,7 @@ test.describe('Sécurité — accès aux activités', () => {
   test('T14 — activité d’un autre athlète : 404, rien n’est divulgué', async ({ page }) => {
     const response = await page.goto(`/activities/${OTHER_ATHLETE_ACTIVITY_ID}`)
     expect(response?.status()).toBe(404)
+    await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible()
     await expect(page.getByText('Note privée de Otto')).toHaveCount(0)
 
     const api = await page.request.get(`/api/activities/${OTHER_ATHLETE_ACTIVITY_ID}`)

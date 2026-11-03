@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Field, Input, Select } from '@/components/ui/Field'
+import { clientFetch } from '@/lib/client-fetch'
 import { formatPace } from '@/lib/utils'
 import { Specialty } from '@/lib/types'
 import type { AthleteProfile, AthleteProfileUpdate } from '@/lib/types'
@@ -33,7 +34,13 @@ function ZoneRow({ label, values }: { label: string; values: string[] }) {
   )
 }
 
-export function AthleteDataView({ athleteProfile }: { athleteProfile: AthleteProfile | null }) {
+export function AthleteDataView({
+  athleteProfile,
+  loadFailed,
+}: {
+  athleteProfile: AthleteProfile | null
+  loadFailed: boolean
+}) {
   const [age, setAge] = useState(athleteProfile?.age?.toString() ?? '')
   const [weightKg, setWeightKg] = useState(athleteProfile?.weightKg?.toString() ?? '')
   const [heightCm, setHeightCm] = useState(athleteProfile?.heightCm?.toString() ?? '')
@@ -53,7 +60,7 @@ export function AthleteDataView({ athleteProfile }: { athleteProfile: AthletePro
     }
 
     try {
-      const res = await fetch('/api/users/me/athlete-profile', {
+      const res = await clientFetch('/api/users/me/athlete-profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -70,6 +77,13 @@ export function AthleteDataView({ athleteProfile }: { athleteProfile: AthletePro
       <p className="text-text/50 mt-2 max-w-[52ch]">
         These physiological details help your coach fine-tune your sessions — target zones, load, recovery.
       </p>
+      {/* Sans ce message, un échec de chargement se lirait comme un profil
+          jamais rempli. */}
+      {loadFailed && (
+        <p role="alert" className="text-danger mt-4">
+          Couldn&apos;t load your athlete data. Refresh the page to try again.
+        </p>
+      )}
       <form
         onSubmit={(e) => {
           e.preventDefault()
@@ -124,8 +138,16 @@ export function AthleteDataView({ athleteProfile }: { athleteProfile: AthletePro
           <Button type="submit" className="w-fit" disabled={saveState === 'saving'}>
             {saveState === 'saving' ? 'Saving…' : 'Save changes'}
           </Button>
-          {saveState === 'saved' && <span className="text-sm text-success">Saved.</span>}
-          {saveState === 'error' && <span className="text-sm text-danger">Couldn&apos;t save changes.</span>}
+          {saveState === 'saved' && (
+            <span role="status" className="text-sm text-success">
+              Saved.
+            </span>
+          )}
+          {saveState === 'error' && (
+            <span role="alert" className="text-sm text-danger">
+              Couldn&apos;t save changes. Try again.
+            </span>
+          )}
         </div>
       </form>
 
