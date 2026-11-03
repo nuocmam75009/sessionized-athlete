@@ -55,7 +55,7 @@ describe('LoginView', () => {
     render(<LoginView />)
     submit('inconnu@test.dev', 'mauvais')
 
-    expect(await screen.findByText('Impossible de se connecter. Vérifie tes identifiants.')).toBeInTheDocument()
+    expect(await screen.findByText("Couldn't log in. Check your email and password.")).toBeInTheDocument()
     expect(navigation.push).not.toHaveBeenCalled()
   })
 

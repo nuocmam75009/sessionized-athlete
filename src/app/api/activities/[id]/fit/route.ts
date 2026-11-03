@@ -13,7 +13,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!token) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
-  if (!isValidId(id)) return NextResponse.json({ message: 'Identifiant invalide' }, { status: 400 })
+  if (!isValidId(id)) return NextResponse.json({ message: 'Invalid id' }, { status: 400 })
   const formData = await request.formData()
 
   // Ne pas fixer Content-Type ici : fetch doit générer lui-même la boundary

@@ -18,7 +18,7 @@ export function ActivityNoteEditor({ activity, onSaved }: { activity: Activity; 
     const trimmedNote = athleteNote.trim()
     const difficultyValue = difficultyNote.trim() ? Number(difficultyNote) : null
     if (difficultyValue !== null && (!Number.isInteger(difficultyValue) || difficultyValue < 1 || difficultyValue > 10)) {
-      setError('La difficulté doit être un entier entre 1 et 10.')
+      setError('Difficulty must be a whole number from 1 to 10.')
       return
     }
 
@@ -39,7 +39,7 @@ export function ActivityNoteEditor({ activity, onSaved }: { activity: Activity; 
       onSaved(updated)
       setEditing(false)
     } catch {
-      setError("Échec de l'enregistrement.")
+      setError("Couldn't save your note. Try again.")
     } finally {
       setSaving(false)
     }
@@ -48,17 +48,17 @@ export function ActivityNoteEditor({ activity, onSaved }: { activity: Activity; 
   if (!editing) {
     return (
       <div className="mb-6">
-        <h4 className="mb-3">Ta note</h4>
+        <h4 className="mb-3">Your note</h4>
         <p className="text-sm mb-1">
-          <span className="text-text/60">Difficulté : </span>
+          <span className="text-text/60">Difficulty: </span>
           {activity.difficultyNote != null ? `${activity.difficultyNote}/10` : '—'}
         </p>
         <p className="text-sm mb-3">
-          <span className="text-text/60">Ta note : </span>
+          <span className="text-text/60">Note: </span>
           {activity.athleteNote || '—'}
         </p>
         <Button variant="secondary" onClick={() => setEditing(true)}>
-          Éditer ma note
+          Edit note
         </Button>
       </div>
     )
@@ -66,7 +66,7 @@ export function ActivityNoteEditor({ activity, onSaved }: { activity: Activity; 
 
   return (
     <div className="mb-6 max-w-[420px]">
-      <h4 className="mb-3">Ta note</h4>
+      <h4 className="mb-3">Your note</h4>
       <div className="grid gap-3">
         <Field label="Athlete note" htmlFor="sn-edit-athlete-note">
           <Textarea
@@ -91,10 +91,10 @@ export function ActivityNoteEditor({ activity, onSaved }: { activity: Activity; 
       </div>
       <div className="flex gap-3 items-center mt-3">
         <Button onClick={save} disabled={saving}>
-          {saving ? 'Enregistrement…' : 'Enregistrer'}
+          {saving ? 'Saving…' : 'Save'}
         </Button>
         <Button variant="ghost" onClick={() => setEditing(false)} disabled={saving}>
-          Annuler
+          Cancel
         </Button>
         {error && <span className="text-sm text-danger">{error}</span>}
       </div>

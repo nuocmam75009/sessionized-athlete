@@ -322,6 +322,7 @@ export function tsbColor(tsb: number): string {
 - **Server Components par défaut** — `'use client'` uniquement si interaction nécessaire
 - **Commentaires** : en français
 - **Noms de variables/fonctions** : en anglais
+- **Textes de l'interface** : en anglais, dates formatées avec `APP_LOCALE` (`lib/utils.ts`) ; les messages d'erreur de l'API (en français) ne sont jamais affichés tels quels, le front rédige les siens selon le statut HTTP
 - **Pas de `console.log`** en production — utiliser les erreurs TypeScript
 
 ---

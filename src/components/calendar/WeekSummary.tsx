@@ -38,7 +38,7 @@ export function WeekSummary({ week, className = '' }: { week: WeekEntry; classNa
       </p>
 
       {summary.activityCount === 0 && summary.plannedCount === 0 ? (
-        <p className="text-text/60 text-sm">Aucune séance ni activité sur cette semaine.</p>
+        <p className="text-text/60 text-sm">No workouts or activities this week.</p>
       ) : (
         <>
           <Section title="Volume">

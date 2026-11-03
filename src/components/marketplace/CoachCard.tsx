@@ -1,6 +1,7 @@
 import { Avatar } from '@/components/ui/Avatar'
 import { Tilt } from '@/components/ui/Tilt'
 import type { CoachAssignment } from '@/lib/types'
+import { APP_LOCALE } from '@/lib/utils'
 
 function coachDisplayName(coach: CoachAssignment) {
   const { firstName, lastName, email } = coach.user
@@ -9,7 +10,7 @@ function coachDisplayName(coach: CoachAssignment) {
 }
 
 function memberSince(createdAt: string) {
-  return new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(new Date(createdAt))
+  return new Intl.DateTimeFormat(APP_LOCALE, { month: 'short', year: 'numeric' }).format(new Date(createdAt))
 }
 
 // La grille de coachs est le seul endroit où l'inclinaison au pointeur est
@@ -30,7 +31,7 @@ export function CoachCard({ coach }: { coach: CoachAssignment }) {
           </div>
         </div>
 
-        <div className="flex-1 text-sm text-text/55">Coach depuis {memberSince(coach.createdAt)}</div>
+        <div className="flex-1 text-sm text-text/55">Coach since {memberSince(coach.createdAt)}</div>
       </div>
     </Tilt>
   )

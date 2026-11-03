@@ -9,6 +9,7 @@ import { Field, Input } from '@/components/ui/Field'
 import { RadioOption } from '@/components/ui/RadioOption'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { setUnit, useSessionState } from '@/lib/session-store'
+import { APP_LOCALE } from '@/lib/utils'
 import type { CoachAssignment, UserProfile } from '@/lib/types'
 
 type NotifyPref = 'new-plan' | 'weekly' | 'none'
@@ -22,7 +23,7 @@ function coachName(coach: CoachAssignment) {
 }
 
 function assignedSince(createdAt: string) {
-  return new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(new Date(createdAt))
+  return new Intl.DateTimeFormat(APP_LOCALE, { month: 'short', year: 'numeric' }).format(new Date(createdAt))
 }
 
 export function ProfileView({
@@ -108,7 +109,7 @@ export function ProfileView({
   return (
     <div>
       <h1>Profile</h1>
-      {!user && <p className="text-danger mb-4">Impossible de charger le profil.</p>}
+      {!user && <p className="text-danger mb-4">Couldn&apos;t load your profile.</p>}
       <div className="grid gap-8 max-w-[560px] mt-5">
         <section>
           <h4 className="mb-3">Account</h4>
@@ -136,9 +137,9 @@ export function ProfileView({
             </div>
           ) : (
             <div>
-              <p className="m-0 text-text/50 mb-2">Aucun coach assigné.</p>
+              <p className="m-0 text-text/50 mb-2">No coach assigned.</p>
               <Link href="/coaches" className="text-sm text-accent hover:text-accent-700">
-                Trouver un coach →
+                Find a coach →
               </Link>
             </div>
           )}
@@ -182,35 +183,35 @@ export function ProfileView({
             </Badge>
             {stravaConnected ? (
               <Button variant="ghost" onClick={disconnectStrava} disabled={stravaBusy}>
-                {stravaBusy ? 'Déconnexion…' : 'Disconnect'}
+                {stravaBusy ? 'Disconnecting…' : 'Disconnect'}
               </Button>
             ) : (
               <Button variant="ghost" onClick={connectStrava} disabled={stravaBusy}>
-                {stravaBusy ? 'Redirection…' : 'Connect'}
+                {stravaBusy ? 'Redirecting…' : 'Connect'}
               </Button>
             )}
           </div>
           {stravaBanner === 'connected' && stravaSync === 'syncing' && (
             <div className="flex items-center gap-2 mt-2 text-sm text-text/70">
               <span className="w-4 h-4 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
-              Importation de vos activités Strava en cours… cela peut prendre quelques instants.
+              Importing your Strava activities… this may take a moment.
             </div>
           )}
           {stravaBanner === 'connected' && stravaSync === 'done' && (
             <p className="text-sm text-success mt-2">
-              Activités Strava importées.{' '}
+              Strava activities imported.{' '}
               <Link href="/dashboard" className="text-accent hover:text-accent-700">
-                Voir mon calendrier →
+                View my calendar →
               </Link>
             </p>
           )}
           {stravaBanner === 'connected' && stravaSync === 'error' && (
             <p className="text-sm text-danger mt-2">
-              Compte connecté, mais l&apos;import des activités a échoué. Réessaie depuis le calendrier.
+              Account connected, but importing your activities failed. Try again from the calendar.
             </p>
           )}
           {stravaBanner === 'error' && (
-            <p className="text-sm text-danger mt-2">Échec de la connexion Strava. Réessaie.</p>
+            <p className="text-sm text-danger mt-2">Couldn&apos;t connect Strava. Try again.</p>
           )}
         </section>
 
@@ -219,7 +220,7 @@ export function ProfileView({
             {saveState === 'saving' ? 'Saving…' : 'Save changes'}
           </Button>
           {saveState === 'saved' && <span className="text-sm text-success">Saved.</span>}
-          {saveState === 'error' && <span className="text-sm text-danger">Échec de l&apos;enregistrement.</span>}
+          {saveState === 'error' && <span className="text-sm text-danger">Couldn&apos;t save changes.</span>}
         </div>
       </div>
     </div>

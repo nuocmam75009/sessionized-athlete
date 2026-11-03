@@ -27,7 +27,7 @@ function MoonIcon() {
 export function ThemeToggle({ className = '' }: { className?: string }) {
   const { theme, toggle } = useTheme()
   const reduceMotion = useReducedMotion()
-  const nextLabel = theme === 'dark' ? 'Passer en thème clair' : 'Passer en thème sombre'
+  const nextLabel = theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'
 
   return (
     <button

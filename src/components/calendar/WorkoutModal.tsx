@@ -73,7 +73,7 @@ export function WorkoutModal({
 
       {!workout && unplannedActivities.length === 0 && (
         <div>
-          <p className="text-text/60 text-sm mb-4">Rien de prévu ce jour-là.</p>
+          <p className="text-text/60 text-sm mb-4">Nothing planned for this day.</p>
           <Link href="/activities/upload" className={buttonClassName('secondary')}>
             Log a run
           </Link>

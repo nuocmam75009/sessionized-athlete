@@ -16,6 +16,6 @@ describe('backendUrl', () => {
 
   it('échoue avec un message explicite si API_URL manque', () => {
     vi.stubEnv('API_URL', '')
-    expect(() => backendUrl('/activities')).toThrow(/API_URL n'est pas définie/)
+    expect(() => backendUrl('/activities')).toThrow(/API_URL is not set/)
   })
 })

@@ -1,5 +1,6 @@
 import { test as base, type BrowserContext } from '@playwright/test'
 import { SESSION_COOKIE_NAME } from '@/lib/auth-cookie'
+import { APP_LOCALE } from '@/lib/utils'
 import { makeToken, USERS } from './mock-api/server'
 
 type MockUser = (typeof USERS)[keyof typeof USERS]
@@ -36,11 +37,11 @@ export async function signInAs(context: BrowserContext, user: MockUser, expiresI
   ])
 }
 
-// Libellés calculés comme le fait l'app (en-US), pour le jour où tourne le test.
+// Libellés calculés comme le fait l'app (APP_LOCALE), pour le jour où tourne le test.
 export function currentMonthLabel(): string {
-  return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(new Date())
+  return new Intl.DateTimeFormat(APP_LOCALE, { month: 'long', year: 'numeric' }).format(new Date())
 }
 
 export function todayLabel(): string {
-  return new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date())
+  return new Intl.DateTimeFormat(APP_LOCALE, { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date())
 }

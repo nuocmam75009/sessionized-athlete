@@ -31,7 +31,7 @@ export function AssignStravaActivity({ workoutId, candidates }: { workoutId: str
       setOpen(false)
       router.refresh()
     } catch {
-      setError("Échec de l'assignation. Réessaie.")
+      setError("Couldn't assign the activity. Try again.")
     } finally {
       setAssigningId(null)
     }

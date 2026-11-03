@@ -9,6 +9,18 @@ interface FitFileUploadProps {
   onAttached: (activity: Activity) => void
 }
 
+// Message choisi d'après le statut plutôt que repris de l'API (rédigée en
+// français) : 409 pour un fichier déjà rattaché, ici ou à une autre activité ;
+// 400 pour un fichier illisible, sans tours, ou dont l'heure de départ ne
+// correspond pas à l'activité.
+function attachErrorMessage(status: number): string {
+  if (status === 409) return 'This .fit file is already attached, to this activity or another one.'
+  if (status === 400) {
+    return "This .fit file can't be attached: it is unreadable, has no laps, or doesn't match this activity's start time."
+  }
+  return "Couldn't attach the .fit file. Try again."
+}
+
 // Rattache le .fit de la montre à une activité importée de Strava : l'API
 // remplace ses laps par ceux du fichier, avec l'intensité (travail, récup,
 // échauffement) et les métriques de foulée que Strava ne donne pas.
@@ -28,20 +40,13 @@ export function FitFileUpload({ activityId, onAttached }: FitFileUploadProps) {
       const formData = new FormData()
       formData.append('file', file)
       const res = await fetch(`/api/activities/${activityId}/fit`, { method: 'POST', body: formData })
-      const body = await res.json().catch(() => null)
-      if (!res.ok) {
-        // L'API refuse avec des messages précis (fichier déjà rattaché, déjà
-        // importé sur une autre activité, horodatage qui ne correspond pas) :
-        // ils valent mieux qu'un message générique.
-        const message = Array.isArray(body?.message) ? body.message.join(', ') : body?.message
-        throw new Error(message ?? 'Échec du rattachement du fichier .fit.')
-      }
+      if (!res.ok) throw new Error(attachErrorMessage(res.status))
 
       const refreshed = await fetch(`/api/activities/${activityId}`)
-      if (!refreshed.ok) throw new Error("Fichier rattaché, mais l'activité n'a pas pu être rechargée.")
+      if (!refreshed.ok) throw new Error("File attached, but the activity couldn't be reloaded. Refresh the page.")
       onAttached(await refreshed.json())
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Échec du rattachement du fichier .fit.')
+      setError(err instanceof Error ? err.message : "Couldn't attach the .fit file. Try again.")
     } finally {
       setUploading(false)
     }
@@ -50,12 +55,12 @@ export function FitFileUpload({ activityId, onAttached }: FitFileUploadProps) {
   return (
     <div className="mb-6">
       <p className="text-sm text-text/60 mb-2 max-w-[62ch]">
-        Les laps venus de Strava ne disent pas ce qui est effort et ce qui est récupération. Attache le .fit de ta
-        montre pour les obtenir.
+        Laps imported from Strava don&apos;t tell work from recovery. Attach the .fit file from your watch to get
+        them.
       </p>
       <input ref={fileInputRef} type="file" accept=".fit" className="hidden" onChange={onFileSelected} />
       <Button variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-        {uploading ? 'Import…' : 'Attacher le fichier .fit'}
+        {uploading ? 'Uploading…' : 'Attach .fit file'}
       </Button>
       {error && <p className="text-sm text-danger mt-2">{error}</p>}
     </div>

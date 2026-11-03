@@ -74,7 +74,7 @@ describe('WorkoutModal', () => {
 
   it('indique un jour sans rien de prévu', () => {
     render(<WorkoutModal entry={dayEntry()} onClose={vi.fn()} />)
-    expect(screen.getByText('Rien de prévu ce jour-là.')).toBeInTheDocument()
+    expect(screen.getByText('Nothing planned for this day.')).toBeInTheDocument()
   })
 
   it('se ferme avec Échap et place le focus sur le bouton de fermeture', () => {

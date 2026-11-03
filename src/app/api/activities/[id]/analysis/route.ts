@@ -10,7 +10,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (!token) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
-  if (!isValidId(id)) return NextResponse.json({ message: 'Identifiant invalide' }, { status: 400 })
+  if (!isValidId(id)) return NextResponse.json({ message: 'Invalid id' }, { status: 400 })
 
   const backendRes = await fetch(backendUrl(`/activities/${id}/analysis`), {
     headers: { Authorization: `Bearer ${token}` },

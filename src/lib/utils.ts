@@ -36,9 +36,15 @@ export function tsbColor(tsb: number): string {
   return 'text-success'
 }
 
+// Langue unique de l'interface, reprise par <html lang>. Toutes les dates
+// passent par elle plutôt que par la locale du navigateur : sinon un visiteur
+// francophone lirait des dates en français au milieu de textes en anglais, et
+// le rendu serveur différerait de celui du client.
+export const APP_LOCALE = 'en-US'
+
 // Convertit un ISO datetime en "Tue, Aug 4"
 export function formatDateLabel(iso: string): string {
-  return new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(iso))
+  return new Intl.DateTimeFormat(APP_LOCALE, { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(iso))
 }
 
 // Identifiant transmis tel quel dans une URL du backend (cuid Prisma : lettres

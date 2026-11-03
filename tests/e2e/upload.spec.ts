@@ -26,7 +26,7 @@ test.describe('Import .fit', () => {
     await expect(page.getByRole('dialog', { name: todayLabel() }).locator(`a[href="/activities/${id}"]`)).toBeVisible()
   })
 
-  test('T10 — même .fit deux fois : 409 « Cette activité a déjà été importée » affiché', async ({ page, context }) => {
+  test('T10 — même .fit deux fois : 409, doublon signalé', async ({ page, context }) => {
     await signInAs(context, USERS.duplicate)
     const buffer = fitFileBuffer()
     await uploadFit(page, 'doublon.fit', buffer)
@@ -36,7 +36,7 @@ test.describe('Import .fit', () => {
     await uploadFit(page, 'doublon.fit', buffer)
 
     expect((await response).status()).toBe(409)
-    await expect(page.getByText('Cette activité a déjà été importée')).toBeVisible()
+    await expect(page.getByText('This activity has already been uploaded.')).toBeVisible()
     await expect(page).toHaveURL('/activities/upload')
   })
 
@@ -51,7 +51,7 @@ test.describe('Import .fit', () => {
     await uploadFit(page, 'setup.fit', exe)
 
     expect((await response).status()).toBe(400)
-    await expect(page.getByText('Fichier .fit invalide ou corrompu')).toBeVisible()
+    await expect(page.getByText('This .fit file is invalid or corrupted.')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Confirm & save' })).toBeEnabled()
     expect(pageErrors).toEqual([])
   })

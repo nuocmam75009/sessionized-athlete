@@ -45,26 +45,26 @@ describe('UploadView — sélection des fichiers', () => {
   it('T11 — refuse un .gpx sans .fit', () => {
     render(<UploadView />)
     drop([new File(['<gpx/>'], 'trace.gpx')])
-    expect(screen.getByText(/fichier \.fit est nécessaire/i)).toBeInTheDocument()
+    expect(screen.getByText(/a \.fit file is required/i)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Confirm & save' })).not.toBeInTheDocument()
   })
 
   it('T12 — refuse trois fichiers', () => {
     render(<UploadView />)
     drop([fitFile('a.fit'), new File(['<gpx/>'], 'b.gpx'), new File(['x'], 'c.gpx')])
-    expect(screen.getByText(/au maximum deux fichiers/i)).toBeInTheDocument()
+    expect(screen.getByText(/at most two files/i)).toBeInTheDocument()
   })
 
   it('refuse deux .fit', () => {
     render(<UploadView />)
     drop([fitFile('a.fit'), fitFile('b.fit')])
-    expect(screen.getByText('Un seul fichier .fit à la fois.')).toBeInTheDocument()
+    expect(screen.getByText('Only one .fit file at a time.')).toBeInTheDocument()
   })
 
   it('refuse une extension hors .fit/.gpx', () => {
     render(<UploadView />)
     drop([new File(['MZ'], 'setup.exe')])
-    expect(screen.getByText('Formats acceptés : .fit et .gpx.')).toBeInTheDocument()
+    expect(screen.getByText('Accepted formats: .fit and .gpx.')).toBeInTheDocument()
   })
 
   it('accepte un .fit seul, extension insensible à la casse', () => {
@@ -99,23 +99,25 @@ describe('UploadView — envoi', () => {
     expect(sent?.get('workoutId')).toBe('wk-42')
   })
 
-  it('T10 — affiche le message de doublon renvoyé par l’API (409)', async () => {
+  it('T10 — signale le doublon (409) sans proposer de réessayer', async () => {
     stubApi(() => Response.json({ statusCode: 409, message: 'Cette activité a déjà été importée' }, { status: 409 }))
     render(<UploadView />)
     drop([fitFile()])
     confirm()
 
-    expect(await screen.findByText('Cette activité a déjà été importée')).toBeInTheDocument()
+    expect(await screen.findByText('This activity has already been uploaded.')).toBeInTheDocument()
+    // Le texte de l'API (en français) n'est pas repris dans l'interface.
+    expect(screen.queryByText('Cette activité a déjà été importée')).not.toBeInTheDocument()
     expect(push).not.toHaveBeenCalled()
   })
 
-  it('T13 — affiche le refus de l’API pour un fichier corrompu (400), sans planter', async () => {
+  it('T13 — signale un fichier corrompu (400), sans planter', async () => {
     stubApi(() => Response.json({ statusCode: 400, message: 'Fichier .fit invalide ou corrompu' }, { status: 400 }))
     render(<UploadView />)
     drop([fitFile('setup.fit')])
     confirm()
 
-    expect(await screen.findByText('Fichier .fit invalide ou corrompu')).toBeInTheDocument()
+    expect(await screen.findByText('This .fit file is invalid or corrupted.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Confirm & save' })).toBeEnabled()
   })
 
@@ -125,7 +127,7 @@ describe('UploadView — envoi', () => {
     drop([fitFile()])
     confirm()
 
-    expect(await screen.findByText("Échec de l'envoi. Réessaie.")).toBeInTheDocument()
+    expect(await screen.findByText('Upload failed. Try again.')).toBeInTheDocument()
   })
 
   // Valeurs limites de la difficulté (1–10, entier).
@@ -136,7 +138,7 @@ describe('UploadView — envoi', () => {
     fireEvent.change(screen.getByLabelText(/difficulty/i), { target: { value } })
     confirm()
 
-    expect(await screen.findByText('La difficulté doit être un entier entre 1 et 10.')).toBeInTheDocument()
+    expect(await screen.findByText('Difficulty must be a whole number from 1 to 10.')).toBeInTheDocument()
     expect(fetchMock).not.toHaveBeenCalledWith('/api/activities/upload', expect.anything())
   })
 

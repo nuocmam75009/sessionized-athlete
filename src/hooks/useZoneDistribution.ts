@@ -31,11 +31,10 @@ export function useZoneDistribution(from: string, to: string): ZoneDistributionS
 
     fetch(`/api/activities/hr-zones?${params.toString()}`, { signal: controller.signal })
       .then(async (res) => {
-        const body = await res.json().catch(() => null)
-        if (!res.ok) {
-          throw new Error(body?.message ?? `Erreur ${res.status}`)
-        }
-        return body as ZoneDistribution
+        // Message affiché tel quel dans le récapitulatif : rédigé ici plutôt
+        // que repris de l'API, dont les textes sont en français.
+        if (!res.ok) throw new Error(`Couldn't load heart rate zones (HTTP ${res.status}).`)
+        return (await res.json()) as ZoneDistribution
       })
       .then((data) => {
         cache.set(cacheKey, data)
@@ -43,7 +42,7 @@ export function useZoneDistribution(from: string, to: string): ZoneDistributionS
       })
       .catch((err: unknown) => {
         if (controller.signal.aborted) return
-        setState({ status: 'error', message: err instanceof Error ? err.message : 'Erreur inattendue' })
+        setState({ status: 'error', message: err instanceof Error ? err.message : "Couldn't load heart rate zones." })
       })
 
     return () => controller.abort()

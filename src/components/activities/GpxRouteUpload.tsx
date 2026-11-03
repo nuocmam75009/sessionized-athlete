@@ -35,7 +35,7 @@ export function GpxRouteUpload({ activityId, hasRoute, onUploaded }: GpxRouteUpl
       if (!routeRes.ok) throw new Error('route fetch failed')
       onUploaded(await routeRes.json())
     } catch {
-      setError("Échec de l'import du tracé .gpx.")
+      setError("Couldn't upload the .gpx route. Try again.")
     } finally {
       setUploading(false)
     }
@@ -45,7 +45,7 @@ export function GpxRouteUpload({ activityId, hasRoute, onUploaded }: GpxRouteUpl
     <div className="mb-6">
       <input ref={fileInputRef} type="file" accept=".gpx" className="hidden" onChange={onFileSelected} />
       <Button variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-        {uploading ? 'Import…' : hasRoute ? 'Remplacer le tracé .gpx' : 'Attacher un tracé .gpx'}
+        {uploading ? 'Uploading…' : hasRoute ? 'Replace .gpx route' : 'Attach .gpx route'}
       </Button>
       {error && <p className="text-sm text-danger mt-2">{error}</p>}
     </div>

@@ -10,7 +10,7 @@ async function logIn(page: Page, email: string, password: string) {
   await page.getByRole('button', { name: 'Log in', exact: true }).click()
 }
 
-const GENERIC_ERROR = 'Impossible de se connecter. Vérifie tes identifiants.'
+const GENERIC_ERROR = "Couldn't log in. Check your email and password."
 
 test.describe('Connexion', () => {
   test('T01 — identifiants valides : cookie HttpOnly posé, redirection /dashboard', async ({ page, context }) => {

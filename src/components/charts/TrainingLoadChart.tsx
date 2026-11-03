@@ -13,6 +13,7 @@ import {
 } from 'recharts'
 import type { TooltipContentProps } from 'recharts'
 import type { TrainingLoadPoint } from '@/lib/types'
+import { APP_LOCALE } from '@/lib/utils'
 
 // Un seul axe : condition, fatigue et fraîcheur sont toutes les trois en TSS,
 // la fraîcheur étant la différence des deux autres. Les superposer sur deux
@@ -26,13 +27,17 @@ const SERIES = [
 
 const AXIS_TICK = { fill: 'var(--color-text)', fontSize: 11, opacity: 0.45 }
 
+// "Aug 4" plutôt que "04/08" : en anglais, l'ordre jour/mois se lirait 8 avril.
 function formatDayTick(date: string): string {
-  const [, month, day] = date.split('-')
-  return `${day}/${month}`
+  return new Date(`${date}T00:00:00Z`).toLocaleDateString(APP_LOCALE, {
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  })
 }
 
 function formatDayLabel(date: string): string {
-  return new Date(`${date}T00:00:00Z`).toLocaleDateString(undefined, {
+  return new Date(`${date}T00:00:00Z`).toLocaleDateString(APP_LOCALE, {
     weekday: 'short',
     day: 'numeric',
     month: 'short',

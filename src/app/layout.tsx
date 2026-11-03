@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { AmbientBackdrop } from "@/components/layout/AmbientBackdrop";
 import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme";
+import { APP_LOCALE } from "@/lib/utils";
 import "./globals.css";
 
 // Une grotesque neutre pour toute l'interface : sur un thème sombre aux traits
@@ -21,7 +22,7 @@ const monoUi = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "Sessionized",
-  description: "Ton plan, de ton coach, chaque jour.",
+  description: "Your plan, from your coach, every day.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -30,7 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     // avant que React n'hydrate, donc l'attribut diffère forcément du HTML rendu
     // par le serveur — qui, lui, ne peut pas connaître le choix du visiteur.
     <html
-      lang="fr"
+      lang={APP_LOCALE}
       suppressHydrationWarning
       className={`${sansUi.variable} ${monoUi.variable} h-full antialiased`}
     >

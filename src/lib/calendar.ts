@@ -1,6 +1,6 @@
 import { findLinkedActivityId } from './plan-format'
 import { sportKindLabel, toSportKind, type SportKind } from './sport'
-import { formatDateLabel, isSameCalendarDay } from './utils'
+import { APP_LOCALE, formatDateLabel, isSameCalendarDay } from './utils'
 import type { Activity, Workout } from './types'
 
 export type DayStatus = 'upcoming' | 'pending' | 'missed' | 'done' | 'unplanned' | 'empty'
@@ -60,7 +60,7 @@ export function getMonthGridDays(monthStart: Date): Date[] {
 }
 
 export function formatMonthLabel(monthStart: Date): string {
-  return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(monthStart)
+  return new Intl.DateTimeFormat(APP_LOCALE, { month: 'long', year: 'numeric' }).format(monthStart)
 }
 
 export function toDateParam(date: Date): string {
@@ -139,7 +139,7 @@ function buildDayEntry(date: Date, workouts: Workout[], activities: Activity[], 
   return {
     dateParam: toDateParam(date),
     dateLabel: formatDateLabel(date.toISOString()),
-    weekdayLabel: new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(date),
+    weekdayLabel: new Intl.DateTimeFormat(APP_LOCALE, { weekday: 'short' }).format(date),
     dayNumber: date.getDate(),
     isToday,
     isInCurrentMonth: date.getMonth() === monthStart.getMonth() && date.getFullYear() === monthStart.getFullYear(),
@@ -263,7 +263,7 @@ function buildWeekSummary(days: DayEntry[]): WeekSummary {
 
 // "Aug 4 – Aug 10" — libellé de la semaine, titre de son récapitulatif.
 export function formatWeekRangeLabel(startDateParam: string, endDateParam: string): string {
-  const formatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' })
+  const formatter = new Intl.DateTimeFormat(APP_LOCALE, { month: 'short', day: 'numeric' })
   return `${formatter.format(fromDateParam(startDateParam))} – ${formatter.format(fromDateParam(endDateParam))}`
 }
 
@@ -272,7 +272,7 @@ export function formatWeekRangeLabel(startDateParam: string, endDateParam: strin
 export function formatWeekShortLabel(startDateParam: string, endDateParam: string): string {
   const start = fromDateParam(startDateParam)
   const end = fromDateParam(endDateParam)
-  const formatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' })
+  const formatter = new Intl.DateTimeFormat(APP_LOCALE, { month: 'short', day: 'numeric' })
   if (start.getMonth() === end.getMonth()) return `${formatter.format(start)}–${end.getDate()}`
   return `${formatter.format(start)}–${formatter.format(end)}`
 }

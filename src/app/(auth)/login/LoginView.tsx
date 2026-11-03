@@ -61,7 +61,7 @@ export default function LoginView() {
       if (user.role === 'COACH') {
         const coachAppUrl = process.env.NEXT_PUBLIC_COACH_APP_URL
         if (!coachAppUrl) {
-          setError("L'app coach n'est pas configurée dans cet environnement.")
+          setError("The coach app isn't configured in this environment.")
           return
         }
         window.location.href = `${coachAppUrl}${redirectTo}`
@@ -70,7 +70,7 @@ export default function LoginView() {
 
       router.push(redirectTo)
     } catch {
-      setError('Impossible de se connecter. Vérifie tes identifiants.')
+      setError("Couldn't log in. Check your email and password.")
     } finally {
       setSubmitting(false)
     }

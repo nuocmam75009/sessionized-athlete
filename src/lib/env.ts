@@ -9,6 +9,6 @@
 // les Route Handlers sans que la variable soit définie.
 export function backendUrl(path: string): string {
   const base = process.env.API_URL
-  if (!base) throw new Error("API_URL n'est pas définie (voir .env.example)")
+  if (!base) throw new Error('API_URL is not set (see .env.example)')
   return `${base.replace(/\/+$/, '')}${path}`
 }

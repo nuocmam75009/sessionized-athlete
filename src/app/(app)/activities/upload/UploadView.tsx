@@ -10,6 +10,15 @@ import type { UploadedActivity, Workout } from '@/lib/types'
 
 type Stage = 'idle' | 'parsed'
 
+// Message choisi d'après le statut plutôt que repris de l'API : ses textes sont
+// en français, l'interface en anglais. Le statut suffit à distinguer les refus
+// où « réessaie » serait faux — un doublon échouerait à nouveau.
+function uploadErrorMessage(status: number): string {
+  if (status === 409) return 'This activity has already been uploaded.'
+  if (status === 400) return 'This .fit file is invalid or corrupted.'
+  return 'Upload failed. Try again.'
+}
+
 export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -53,7 +62,7 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
     resetSelection()
 
     if (list.length > 2) {
-      setUploadError('Dépose au maximum deux fichiers : un .fit et un .gpx.')
+      setUploadError('Drop at most two files: one .fit and one .gpx.')
       return
     }
 
@@ -63,24 +72,24 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
       const name = file.name.toLowerCase()
       if (name.endsWith('.fit')) {
         if (fitFile) {
-          setUploadError('Un seul fichier .fit à la fois.')
+          setUploadError('Only one .fit file at a time.')
           return
         }
         fitFile = file
       } else if (name.endsWith('.gpx')) {
         if (gpxFile) {
-          setUploadError('Un seul fichier .gpx à la fois.')
+          setUploadError('Only one .gpx file at a time.')
           return
         }
         gpxFile = file
       } else {
-        setUploadError('Formats acceptés : .fit et .gpx.')
+        setUploadError('Accepted formats: .fit and .gpx.')
         return
       }
     }
 
     if (!fitFile && gpxFile) {
-      setUploadError('Un fichier .fit est nécessaire pour créer l’activité — le .gpx seul ne suffit pas ici.')
+      setUploadError('A .fit file is required to create the activity — a .gpx alone is not enough here.')
       return
     }
 
@@ -123,7 +132,7 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
     const trimmedNote = athleteNote.trim()
     const difficultyValue = difficultyNote.trim() ? Number(difficultyNote) : null
     if (difficultyValue !== null && (!Number.isInteger(difficultyValue) || difficultyValue < 1 || difficultyValue > 10)) {
-      setUploadError('La difficulté doit être un entier entre 1 et 10.')
+      setUploadError('Difficulty must be a whole number from 1 to 10.')
       return
     }
 
@@ -137,12 +146,7 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
       if (difficultyValue !== null) formData.append('difficultyNote', String(difficultyValue))
       const res = await fetch('/api/activities/upload', { method: 'POST', body: formData })
       if (!res.ok) {
-        // L'API refuse avec des messages précis (doublon, fichier corrompu) :
-        // ils valent mieux qu'un « réessaie » qui, sur un doublon, échouerait
-        // à nouveau.
-        const body = await res.json().catch(() => null)
-        const message = Array.isArray(body?.message) ? body.message.join(', ') : body?.message
-        setUploadError(message ?? "Échec de l'envoi. Réessaie.")
+        setUploadError(uploadErrorMessage(res.status))
         return
       }
       const activity: UploadedActivity = await res.json()
@@ -156,7 +160,7 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
 
       router.push('/dashboard')
     } catch {
-      setUploadError("Échec de l'envoi. Réessaie.")
+      setUploadError('Upload failed. Try again.')
     } finally {
       setUploading(false)
     }
@@ -201,7 +205,7 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
             </svg>
             <div className="font-semibold">Drag your .fit and .gpx files here, or click to browse</div>
             <div className="text-text/45 text-[13px] mt-1.5 max-w-[46ch] mx-auto">
-              Dépose le .fit et le .gpx ensemble pour associer le tracé, ou un seul fichier à la fois.
+              Drop the .fit and .gpx together to attach the route, or the .fit on its own.
             </div>
           </div>
           {uploadError && <p className="text-sm text-danger mt-3 max-w-[600px]">{uploadError}</p>}
@@ -223,7 +227,7 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
                   <path d="M128,8A96.11,96.11,0,0,0,32,104c0,43.13,26.36,74.34,52.29,99.28A280.34,280.34,0,0,0,123.3,235a8,8,0,0,0,9.4,0,280.34,280.34,0,0,0,39-31.72C199.64,178.34,226,147.13,226,104A96.11,96.11,0,0,0,128,8Zm0,208.32C112,203,48,150.72,48,104a80,80,0,0,1,160,0C208,150.72,144,203,128,216.32ZM128,64a40,40,0,1,0,40,40A40,40,0,0,0,128,64Zm0,64a24,24,0,1,1,24-24A24,24,0,0,1,128,128Z" />
                 </svg>
                 <div className="text-text/45 text-[13px] max-w-[36ch] text-center">
-                  Ajoute un .gpx pour prévisualiser le tracé — sinon la carte sera calculée après envoi.
+                  Add a .gpx to preview the route — otherwise the map is built after upload.
                 </div>
               </div>
             )}
@@ -236,8 +240,7 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
                 {' '}+ <span className="font-semibold">{selectedGpxFile.name}</span>
               </>
             )}{' '}
-            prêt{selectedGpxFile ? 's' : ''} à être envoyé{selectedGpxFile ? 's' : ''}. Distance, durée, FC et
-            dénivelé seront calculés par le serveur après l&apos;envoi.
+            ready to upload. Distance, duration, heart rate and elevation are calculated by the server once uploaded.
           </p>
 
           <div className="grid gap-3 max-w-[420px] mb-5">
@@ -245,7 +248,7 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
               <Textarea
                 id="sn-athlete-note"
                 maxLength={2000}
-                placeholder="Jambes lourdes mais bonnes sensations…"
+                placeholder="Heavy legs, but felt good…"
                 value={athleteNote}
                 onChange={(e) => setAthleteNote(e.target.value)}
               />
@@ -278,7 +281,7 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
           </div>
           <div className="flex gap-3 items-center">
             <Button onClick={confirm} disabled={uploading}>
-              {uploading ? 'Envoi…' : 'Confirm & save'}
+              {uploading ? 'Uploading…' : 'Confirm & save'}
             </Button>
             <Button variant="ghost" onClick={discard} disabled={uploading}>
               Discard

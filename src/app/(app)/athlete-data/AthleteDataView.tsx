@@ -125,7 +125,7 @@ export function AthleteDataView({ athleteProfile }: { athleteProfile: AthletePro
             {saveState === 'saving' ? 'Saving…' : 'Save changes'}
           </Button>
           {saveState === 'saved' && <span className="text-sm text-success">Saved.</span>}
-          {saveState === 'error' && <span className="text-sm text-danger">Échec de l&apos;enregistrement.</span>}
+          {saveState === 'error' && <span className="text-sm text-danger">Couldn&apos;t save changes.</span>}
         </div>
       </form>
 
