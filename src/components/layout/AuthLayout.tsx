@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { LegalLinks } from '@/components/layout/LegalLinks'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 
 interface AuthLayoutProps {
@@ -90,6 +91,8 @@ export function AuthLayout({ eyebrow, title, description, children }: AuthLayout
 
       <div className="px-8 md:px-14 py-16 flex flex-col justify-center border-t md:border-t-0 md:border-l border-divider">
         <div className="panel w-full max-w-[380px] rounded-xl p-7 md:p-8">{children}</div>
+        {/* Lisibles avant de créer un compte : c'est là qu'on les cherche. */}
+        <LegalLinks className="mt-6 max-w-[380px]" />
       </div>
     </div>
   )

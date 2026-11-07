@@ -45,6 +45,43 @@ export function Field({ label, htmlFor, error, children }: FieldProps) {
   )
 }
 
+interface CheckboxFieldProps {
+  id: string
+  checked: boolean
+  onChange: (checked: boolean) => void
+  required?: boolean
+  error?: string | null
+  children: ReactNode
+}
+
+// Case à cocher, libellé à droite. Mêmes règles d'erreur que Field : message
+// annoncé, case marquée invalide et reliée à son message.
+export function CheckboxField({ id, checked, onChange, required, error, children }: CheckboxFieldProps) {
+  return (
+    <div className="grid gap-1.5">
+      <div className="flex items-start gap-2.5">
+        <input
+          id={id}
+          type="checkbox"
+          checked={checked}
+          required={required}
+          onChange={(e) => onChange(e.target.checked)}
+          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-accent"
+          {...fieldErrorProps(id, error)}
+        />
+        <label htmlFor={id} className="text-[13px] leading-snug text-text/70">
+          {children}
+        </label>
+      </div>
+      {error && (
+        <p id={fieldErrorId(id)} role="alert" className="text-sm text-danger">
+          {error}
+        </p>
+      )}
+    </div>
+  )
+}
+
 export function Input({ className = '', ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return <input className={`${inputClassName} ${className}`} {...props} />
 }

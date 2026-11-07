@@ -1,9 +1,10 @@
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 import { MonthCalendar } from '@/components/calendar/MonthCalendar'
 import { MonthSportBreakdown } from '@/components/calendar/MonthSportBreakdown'
+import { StravaSyncButton } from '@/components/calendar/StravaSyncButton'
 import { TrainingLoadPanel } from '@/components/training/TrainingLoadPanel'
 import { Reveal } from '@/components/ui/Reveal'
+import { PendingHint } from '@/components/ui/PendingHint'
 import { Stat } from '@/components/ui/Stat'
 import {
   buildMonthEntries,
@@ -22,7 +23,7 @@ import type { Activity, TrainingLoadSeries, Workout } from '@/lib/types'
 const LOAD_WINDOW_DAYS = 90
 
 const MONTH_NAV_LINK =
-  'rounded-sm px-3 py-1.5 text-text/60 transition-colors hover:bg-text/[0.06] hover:text-text'
+  'inline-flex items-center gap-1.5 rounded-sm px-3 py-1.5 text-text/60 transition-colors hover:bg-text/[0.06] hover:text-text'
 
 export default async function DashboardPage({
   searchParams,
@@ -33,22 +34,6 @@ export default async function DashboardPage({
   const monthStart = parseMonthParam(month)
   const currentMonthStart = getMonthStart(new Date())
   const isCurrentMonth = monthStart.getTime() === currentMonthStart.getTime()
-
-  const { data: strava } = await serverApiFetchStatus<{ connected: boolean }>('/strava/status')
-  let stravaSyncFailed = false
-  if (strava?.connected) {
-    // Sync avant de charger les activités pour que les runs Strava tout
-    // juste apparus atterrissent sur leur case dès ce chargement — pas de
-    // sélection manuelle.
-    const { status } = await serverApiFetchStatus('/strava/sync', { method: 'POST' })
-    // 409 : connexion inutilisable (token illisible, accès retiré depuis
-    // Strava). Seul l'athlète peut la réparer : il est envoyé sur le bouton de
-    // reconnexion du profil, qui propose aussi de déconnecter Strava — sans
-    // cette issue, chaque visite du tableau de bord le renverrait là.
-    if (status === 409) redirect('/profile?strava=reconnect')
-    // Toute autre erreur est une panne passagère : signalée, sans bloquer.
-    stravaSyncFailed = status < 200 || status >= 300
-  }
 
   // La charge suit la navigation du calendrier : sur le mois courant elle va
   // jusqu'à maintenant, sur un mois passé elle s'arrête à sa dernière heure.
@@ -61,10 +46,13 @@ export default async function DashboardPage({
     to: loadTo.toISOString(),
   })
 
-  const [workoutsRes, activitiesRes, { data: trainingLoad }] = await Promise.all([
+  // /strava/status ne lit que notre base, sans appeler Strava : la
+  // synchronisation, elle, n'a lieu qu'à la demande (StravaSyncButton).
+  const [workoutsRes, activitiesRes, { data: trainingLoad }, { data: strava }] = await Promise.all([
     serverApiFetchStatus<Workout[]>('/workouts'),
     serverApiFetchStatus<Activity[]>('/activities'),
     serverApiFetchStatus<TrainingLoadSeries>(`/training-load?${loadQuery.toString()}`),
+    serverApiFetchStatus<{ connected: boolean }>('/strava/status'),
   ])
   const workouts = workoutsRes.data
   const activities = activitiesRes.data
@@ -88,21 +76,30 @@ export default async function DashboardPage({
           </div>
           <h1 className="mb-0">{formatMonthLabel(monthStart)}</h1>
         </div>
-        {/* Navigation de mois groupée dans un même boîtier : trois liens nus
-            côte à côte se lisaient comme du texte, pas comme un contrôle. */}
-        <nav className="flex items-center gap-1 rounded-md border border-divider bg-surface/50 p-1 text-[13px]">
-          <Link href={`/dashboard?month=${toMonthParam(prevMonth)}`} className={MONTH_NAV_LINK}>
-            ‹ Previous
-          </Link>
-          {!isCurrentMonth && (
-            <Link href="/dashboard" className={`${MONTH_NAV_LINK} text-accent hover:text-accent-700`}>
-              This month
+        <div className="flex items-center justify-end gap-3 flex-wrap">
+          {/* key : un message de synchronisation ne survit pas au changement de mois. */}
+          {strava?.connected && <StravaSyncButton key={toMonthParam(monthStart)} />}
+          {/* Navigation de mois groupée dans un même boîtier : trois liens nus
+              côte à côte se lisaient comme du texte, pas comme un contrôle. */}
+          <nav className="flex items-center gap-1 rounded-md border border-divider bg-surface/50 p-1 text-[13px]">
+            {/* Changer de mois relance quatre appels à l'API : le point signale
+                que le clic a été pris en compte. */}
+            <Link href={`/dashboard?month=${toMonthParam(prevMonth)}`} className={MONTH_NAV_LINK}>
+              ‹ Previous
+              <PendingHint />
             </Link>
-          )}
-          <Link href={`/dashboard?month=${toMonthParam(nextMonth)}`} className={MONTH_NAV_LINK}>
-            Next ›
-          </Link>
-        </nav>
+            {!isCurrentMonth && (
+              <Link href="/dashboard" className={`${MONTH_NAV_LINK} text-accent hover:text-accent-700`}>
+                This month
+                <PendingHint />
+              </Link>
+            )}
+            <Link href={`/dashboard?month=${toMonthParam(nextMonth)}`} className={MONTH_NAV_LINK}>
+              Next ›
+              <PendingHint />
+            </Link>
+          </nav>
+        </div>
       </div>
 
       {/* Ni le calendrier ni les totaux ne passent par Reveal : ils sont au-
@@ -111,12 +108,6 @@ export default async function DashboardPage({
           plus grand élément de la page, c'est lui que le navigateur mesure pour
           le LCP — le décaler d'une hydratation plus une demi-seconde d'animation
           se payait directement sur la métrique. */}
-      {stravaSyncFailed && (
-        <p role="alert" className="panel-flat rounded-md px-4 py-3 mb-4 text-sm text-danger">
-          Couldn&apos;t sync with Strava — your latest Strava activities may be missing. Refresh the page to try
-          again.
-        </p>
-      )}
       {calendarFailed && (
         <p role="alert" className="panel-flat rounded-md px-4 py-3 mb-4 text-sm text-danger">
           Couldn&apos;t load all your workouts and activities — the calendar may be incomplete. Refresh the page to

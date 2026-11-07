@@ -110,7 +110,7 @@ describe('LoginView — messages d’erreur', () => {
   it('inscription : mot de passe trop court refusé avant l’API', () => {
     const fetchMock = stubLogin(Response.json(athleteUser))
     render(<LoginView />)
-    fireEvent.click(screen.getByRole('link', { name: 'Create an account' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Create an account' }))
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'new@test.dev' } })
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'court' } })
     fireEvent.click(screen.getByRole('button', { name: 'Create account' }))
@@ -122,12 +122,61 @@ describe('LoginView — messages d’erreur', () => {
   it('inscription refusée par l’API : message propre à l’inscription, annoncé', async () => {
     stubLogin(Response.json({ message: 'Un compte existe déjà avec cet email' }, { status: 409 }))
     render(<LoginView />)
-    fireEvent.click(screen.getByRole('link', { name: 'Create an account' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Create an account' }))
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'pris@test.dev' } })
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'Passw0rd!' } })
+    fireEvent.click(screen.getByRole('checkbox', { name: /health data/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Create account' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't create your account.")
     expect(navigation.push).not.toHaveBeenCalled()
+  })
+
+  it('le passage à l’inscription est un bouton, pas un lien vers « # »', () => {
+    render(<LoginView />)
+    expect(screen.queryByRole('link', { name: 'Create an account' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Create an account' }))
+    expect(screen.getByRole('button', { name: 'Create account' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Log in' }))
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+  })
+
+  it('inscription sans consentement aux données de santé : refusée avant l’API, annoncée', () => {
+    const fetchMock = stubLogin(Response.json(athleteUser))
+    render(<LoginView />)
+    fireEvent.click(screen.getByRole('button', { name: 'Create an account' }))
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'new@test.dev' } })
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'Passw0rd!' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }))
+
+    const consent = screen.getByRole('checkbox', { name: /health data/ })
+    expect(consent).toBeRequired()
+    expect(consent).toHaveAttribute('aria-invalid', 'true')
+    expect(consent).toHaveAccessibleDescription(/Tick this box to create your account/)
+    expect(consent).toHaveFocus()
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('inscription avec consentement : envoyée, sans champ inconnu de l’API', async () => {
+    const fetchMock = stubLogin(Response.json(athleteUser))
+    render(<LoginView />)
+    fireEvent.click(screen.getByRole('button', { name: 'Create an account' }))
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'new@test.dev' } })
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'Passw0rd!' } })
+    fireEvent.click(screen.getByRole('checkbox', { name: /health data/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }))
+
+    await waitFor(() => expect(navigation.push).toHaveBeenCalledWith('/dashboard'))
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit]
+    expect(url).toBe('/api/auth/register')
+    expect(Object.keys(JSON.parse(String(init.body)))).not.toContain('healthConsent')
+  })
+
+  it('le lien vers la politique de confidentialité s’ouvre dans un nouvel onglet, et le dit', () => {
+    render(<LoginView />)
+    fireEvent.click(screen.getByRole('button', { name: 'Create an account' }))
+    const link = screen.getByRole('link', { name: 'privacy policy (opens in a new tab)' })
+    expect(link).toHaveAttribute('href', '/privacy')
+    expect(link).toHaveAttribute('target', '_blank')
   })
 })

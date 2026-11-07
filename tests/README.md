@@ -58,10 +58,12 @@ Les Server Components asynchrones (`dashboard/page.tsx`…) ne se testent pas av
 | T14 | Activité d'un autre athlète → 404 | Intégration, système | `activities-id.test.ts`, `security.spec.ts` |
 | T15 | `..%2Fusers%2Fme` → 400 | Unitaire, intégration, système | `utils.test.ts`, `activities-id.test.ts`, `security.spec.ts` |
 | T16 | XSS stockée dans le titre d'une séance | Unitaire, système | `WorkoutModal.test.tsx`, `calendar.spec.ts` |
-| T17 | Strava connecté → activités sur leur jour | Système (API simulée) | `calendar.spec.ts` |
+| T17 | Strava connecté → aucune sync au chargement ; « Sync Strava » → activités sur leur jour | Unitaire, système (API simulée) | `StravaSyncButton.test.tsx`, `calendar.spec.ts` |
 | T18 | 0 violation axe *serious*/*critical* | Système | `a11y.spec.ts` |
 | T19 | Charge (50 utilisateurs, `GET /activities`) | — | Hors périmètre du front : relève de l'API (k6) |
 | T20 | Jeton non expiré refusé par l'API (401) → `/login` | Unitaire, intégration, système | `LoginView.test.tsx`, `server-api.test.ts`, `proxy.test.ts`, `auth.spec.ts` |
-| T21 | Connexion Strava inutilisable (409) → redirection vers le bouton de reconnexion | Unitaire, système | `ProfileView.test.tsx`, `calendar.spec.ts` |
+| T21 | Connexion Strava inutilisable (409) au clic sur « Sync Strava » → redirection vers le bouton de reconnexion | Unitaire, système | `StravaSyncButton.test.tsx`, `ProfileView.test.tsx`, `calendar.spec.ts` |
+| T22 | `.fit` rattaché à une activité Strava : succès, 409, 400, autre erreur, rechargement en échec | Unitaire | `FitFileUpload.test.tsx` |
+| T23 | Pages légales sans compte, liens sur chaque écran, consentement aux données de santé à l'inscription | Unitaire, système | `legal-pages.test.tsx`, `LoginView.test.tsx`, `legal.spec.ts`, `a11y.spec.ts` |
 
 **Limites de l'API simulée.** Elle fixe le contrat que le front attend, sans prouver le comportement réel du backend. Le contrôle d'accès réel (T14), le parsing d'un vrai `.fit` (jeu d'essai) et la charge (T19) se testent dans `sessionized-api` (Jest + Supertest, k6). T17 avec un vrai compte Strava relève de la recette.

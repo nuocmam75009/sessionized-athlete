@@ -8,8 +8,8 @@ import { clientFetch } from '@/lib/client-fetch'
 import { formatDateLabel } from '@/lib/utils'
 import type { Activity } from '@/lib/types'
 
-// Assignation manuelle : le sync Strava automatique (POST /strava/sync,
-// déclenché à chaque chargement du dashboard) ne lie qu'une seule activité
+// Assignation manuelle : le sync Strava (POST /strava/sync, déclenché par le
+// bouton « Sync Strava » du calendrier) ne lie qu'une seule activité
 // par workout du jour — si plusieurs activités Strava tombent le même jour,
 // ou si le workout a été créé après coup par le coach, l'activité reste
 // orpheline (workoutId null) et doit être assignée ici.

@@ -306,7 +306,8 @@ async function route(req: IncomingMessage, res: ServerResponse) {
         }),
       )
     }
-    return send(res, 201, { imported: already ? 0 : 1 })
+    // Même forme que StravaService.syncActivities côté API.
+    return send(res, 201, { importedCount: already ? 0 : 1 })
   }
 
   if (method === 'GET' && path === '/workouts') return send(res, 200, workoutsByAthlete[user.id] ?? [])

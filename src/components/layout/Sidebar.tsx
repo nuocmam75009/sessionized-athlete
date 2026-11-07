@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
+import { PendingHint } from '@/components/ui/PendingHint'
 
 export type SidebarIconProps = { className?: string }
 export type SidebarIcon = (props: SidebarIconProps) => React.JSX.Element
@@ -122,6 +123,8 @@ function SidebarItem({ label, icon: Icon, active, collapsed, showPill = true, hr
     return (
       <Link href={href} onClick={onNavigate} aria-current={active ? 'page' : undefined} className={className}>
         {content}
+        {/* En absolu sur le bord droit : visible aussi quand la barre est repliée. */}
+        <PendingHint className="absolute right-2 top-1/2 z-10 -translate-y-1/2" />
       </Link>
     )
   }

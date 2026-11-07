@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { AuthLayout } from '@/components/layout/AuthLayout'
 import { Button } from '@/components/ui/Button'
-import { Field, fieldErrorProps, Input } from '@/components/ui/Field'
+import { CheckboxField, Field, fieldErrorProps, Input } from '@/components/ui/Field'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { safeRedirectTarget } from '@/lib/redirect'
 import type { AuthUser } from '@/lib/types'
@@ -18,14 +19,27 @@ const MIN_PASSWORD_LENGTH = 8
 interface FieldErrors {
   email?: string
   password?: string
+  consent?: string
 }
 
-function validate(mode: Mode, email: string, password: string): FieldErrors {
+// Ordre du formulaire : le focus va au premier champ en erreur dans cet ordre.
+const FIELD_IDS: Record<keyof FieldErrors, string> = {
+  email: 'sn-email',
+  password: 'sn-pw',
+  consent: 'sn-consent',
+}
+
+function validate(mode: Mode, email: string, password: string, healthConsent: boolean): FieldErrors {
   const errors: FieldErrors = {}
   if (!email.trim()) errors.email = 'Enter your email.'
   if (!password) errors.password = 'Enter your password.'
   else if (mode === 'register' && password.length < MIN_PASSWORD_LENGTH) {
     errors.password = `Use at least ${MIN_PASSWORD_LENGTH} characters.`
+  }
+  // Fréquence cardiaque, poids, séances : des données de santé (art. 9 du
+  // RGPD), traitées sur la base d'un consentement explicite.
+  if (mode === 'register' && !healthConsent) {
+    errors.consent = 'Tick this box to create your account: Sessionized needs your health data to work.'
   }
   return errors
 }
@@ -41,6 +55,7 @@ export default function LoginView() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [invite, setInvite] = useState('')
+  const [healthConsent, setHealthConsent] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -55,12 +70,13 @@ export default function LoginView() {
 
   async function submit() {
     setError(null)
-    const errors = validate(mode, email, password)
+    const errors = validate(mode, email, password, healthConsent)
     setFieldErrors(errors)
-    if (errors.email || errors.password) {
+    const firstInvalid = (Object.keys(FIELD_IDS) as Array<keyof FieldErrors>).find((field) => errors[field])
+    if (firstInvalid) {
       // Le focus va au premier champ à corriger, que le lecteur d'écran
       // annonce avec son message d'erreur.
-      document.getElementById(errors.email ? 'sn-email' : 'sn-pw')?.focus()
+      document.getElementById(FIELD_IDS[firstInvalid])?.focus()
       return
     }
 
@@ -201,6 +217,30 @@ export default function LoginView() {
             />
           </Field>
         )}
+        {mode === 'register' && (
+          // L'accord n'est pas transmis à l'API, qui n'a pas encore de champ pour
+          // le conserver : la case empêche seulement de créer un compte sans lui.
+          <CheckboxField
+            id="sn-consent"
+            required
+            checked={healthConsent}
+            onChange={setHealthConsent}
+            error={fieldErrors.consent}
+          >
+            I agree that Sessionized processes my health data (heart rate, weight, training activities) to run
+            the service, as described in the{' '}
+            {/* Nouvel onglet : suivre le lien ici ferait perdre la saisie en cours. */}
+            <Link
+              href="/privacy"
+              target="_blank"
+              aria-label="privacy policy (opens in a new tab)"
+              className="text-accent underline hover:text-accent-700"
+            >
+              privacy policy
+            </Link>
+            .
+          </CheckboxField>
+        )}
         {error && (
           <p role="alert" className="text-sm text-danger">
             {error}
@@ -212,16 +252,14 @@ export default function LoginView() {
       </form>
       <p className="text-[13px] mt-5 text-text/45">
         {mode === 'login' ? 'New here?' : 'Already have an account?'}{' '}
-        <a
-          href="#"
-          onClick={(e) => {
-            e.preventDefault()
-            switchMode(mode === 'login' ? 'register' : 'login')
-          }}
-          className="text-accent hover:text-accent-700"
+        {/* Un bouton et non un lien : il change de mode sans quitter la page. */}
+        <button
+          type="button"
+          onClick={() => switchMode(mode === 'login' ? 'register' : 'login')}
+          className="text-accent hover:text-accent-700 cursor-pointer"
         >
           {mode === 'login' ? 'Create an account' : 'Log in'}
-        </a>
+        </button>
       </p>
     </AuthLayout>
   )

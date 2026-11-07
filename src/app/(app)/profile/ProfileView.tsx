@@ -36,8 +36,8 @@ export function ProfileView({
   user: UserProfile | null
   coach: CoachAssignment | null
   stravaConnected: boolean
-  // reconnect : posé par le tableau de bord quand l'API ne peut plus utiliser
-  // la connexion Strava enregistrée (409).
+  // reconnect : posé par le bouton de synchronisation du calendrier quand l'API
+  // ne peut plus utiliser la connexion Strava enregistrée (409).
   stravaBanner: 'connected' | 'error' | 'reconnect' | null
 }) {
   const session = useSessionState()
@@ -56,7 +56,7 @@ export function ProfileView({
 
   // Première connexion Strava : l'import initial peut porter sur des mois
   // d'historique et prendre un certain temps, contrairement aux resynchros
-  // incrémentales déclenchées ensuite à chaque chargement du dashboard.
+  // incrémentales que l'athlète déclenche ensuite depuis le calendrier.
   useEffect(() => {
     if (stravaBanner !== 'connected') return
     let cancelled = false

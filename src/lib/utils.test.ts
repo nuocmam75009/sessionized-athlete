@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { formatDistance, formatDuration, formatPace, isSameCalendarDay, isValidId, paceColor, tsbColor } from './utils'
+import {
+  formatDistance,
+  formatDuration,
+  formatLegalDate,
+  formatPace,
+  isSameCalendarDay,
+  isValidId,
+  paceColor,
+  tsbColor,
+} from './utils'
 
 describe('formatPace', () => {
   it('formate des secondes/km en minutes et secondes', () => {
@@ -82,5 +91,15 @@ describe('isSameCalendarDay', () => {
 
   it('distingue deux jours consécutifs, y compris à minuit', () => {
     expect(isSameCalendarDay(new Date(2026, 7, 4, 23, 59), new Date(2026, 7, 5, 0, 0))).toBe(false)
+  })
+})
+
+describe('formatLegalDate', () => {
+  it('écrit la date en toutes lettres, dans la langue de l’interface', () => {
+    expect(formatLegalDate('2026-11-07')).toBe('November 7, 2026')
+  })
+
+  it('ne recule pas d’un jour selon le fuseau du serveur', () => {
+    expect(formatLegalDate('2026-01-01')).toBe('January 1, 2026')
   })
 })

@@ -10,6 +10,8 @@ const PAGES: Array<{ path: string; authenticated: boolean }> = [
   { path: '/profile', authenticated: true },
   { path: '/athlete-data', authenticated: true },
   { path: '/coaches', authenticated: true },
+  { path: '/legal', authenticated: false },
+  { path: '/privacy', authenticated: false },
 ]
 
 // Les animations d'entrée (Reveal, modales) démarrent à opacity 0 : axe

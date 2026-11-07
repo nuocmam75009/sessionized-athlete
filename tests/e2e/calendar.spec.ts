@@ -31,13 +31,22 @@ test.describe('Calendrier', () => {
     expect(dialogs).toEqual([])
   })
 
-  test('T17 — compte Strava connecté : la sortie Strava du jour apparaît sur sa case', async ({ page, context }) => {
+  test('T17 — compte Strava connecté : « Sync Strava » fait apparaître la sortie du jour sur sa case', async ({
+    page,
+    context,
+  }) => {
     await signInAs(context, USERS.strava)
     await page.goto('/dashboard')
 
-    // La synchronisation a lieu côté serveur avant le chargement des activités :
-    // la sortie est là dès le premier rendu, sans action de l'athlète.
-    await page.getByRole('button').filter({ hasText: 'Unplanned' }).filter({ hasText: 'Run' }).click()
+    // Pas de synchronisation au chargement : seul l'athlète la déclenche. Seul
+    // ce test synchronise ce compte, l'API simulée n'a donc pas encore la sortie.
+    const stravaRun = page.getByRole('button').filter({ hasText: 'Unplanned' }).filter({ hasText: 'Run' })
+    await expect(stravaRun).toHaveCount(0)
+
+    await page.getByRole('button', { name: 'Sync Strava' }).click()
+    await expect(page.getByRole('status').filter({ hasText: '1 new activity imported.' })).toBeVisible()
+
+    await stravaRun.click()
     const modal = page.getByRole('dialog', { name: todayLabel() })
     await expect(modal.getByText('Run', { exact: true })).toBeVisible()
     await expect(modal.getByRole('link', { name: 'View full breakdown' })).toBeVisible()
@@ -49,6 +58,10 @@ test.describe('Calendrier', () => {
   }) => {
     await signInAs(context, USERS.stravaRevoked)
     await page.goto('/dashboard')
+    // Le 409 n'apparaît qu'à la synchronisation, plus au chargement.
+    await expect(page).toHaveURL('/dashboard')
+
+    await page.getByRole('button', { name: 'Sync Strava' }).click()
 
     await expect(page).toHaveURL('/profile?strava=reconnect')
     await expect(page.getByRole('alert').filter({ hasText: 'Your Strava connection has expired' })).toBeVisible()
@@ -70,5 +83,13 @@ test.describe('Calendrier', () => {
     // Limité à <main> : Next ajoute hors du contenu un annonceur de navigation
     // vide, lui aussi en role="alert".
     await expect(page.getByRole('main').getByRole('alert')).toHaveCount(0)
+  })
+
+  test('compte sans Strava : pas de bouton de synchronisation', async ({ page, context }) => {
+    await signInAs(context, USERS.athlete)
+    await page.goto('/dashboard')
+
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(currentMonthLabel())
+    await expect(page.getByRole('button', { name: 'Sync Strava' })).toHaveCount(0)
   })
 })

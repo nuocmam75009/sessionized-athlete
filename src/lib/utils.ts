@@ -47,6 +47,13 @@ export function formatDateLabel(iso: string): string {
   return new Intl.DateTimeFormat(APP_LOCALE, { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(iso))
 }
 
+// Convertit une date "2026-11-07" en "November 7, 2026". Lue en UTC : sans
+// heure, la chaîne désigne minuit UTC, qui tombe la veille à l'ouest de
+// Greenwich.
+export function formatLegalDate(isoDate: string): string {
+  return new Intl.DateTimeFormat(APP_LOCALE, { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(isoDate))
+}
+
 // Identifiant transmis tel quel dans une URL du backend (cuid Prisma : lettres
 // et chiffres). Tout autre caractère est refusé : une fois concaténé, un
 // segment "../users/me" — que Next décode depuis "..%2Fusers%2Fme" — ferait

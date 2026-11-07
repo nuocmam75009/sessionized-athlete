@@ -4,8 +4,35 @@ import { useEffect, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, useReducedMotion } from 'motion/react'
 
+// Éléments atteignables au clavier, dans l'ordre du document.
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
+// Tab et Maj+Tab bouclent sur les éléments de la modale au lieu de partir vers
+// la page masquée derrière, comme le prévoit le motif « dialogue modal » de
+// l'ARIA APG. Un focus sorti de la modale (clic sur le fond) y est ramené.
+function trapFocus(e: KeyboardEvent, panel: HTMLElement) {
+  const focusables = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE))
+  if (focusables.length === 0) return
+  const first = focusables[0]
+  const last = focusables[focusables.length - 1]
+  const active = document.activeElement
+
+  if (!panel.contains(active)) {
+    e.preventDefault()
+    first.focus()
+  } else if (e.shiftKey && active === first) {
+    e.preventDefault()
+    last.focus()
+  } else if (!e.shiftKey && active === last) {
+    e.preventDefault()
+    first.focus()
+  }
+}
+
 // Coquille commune aux modales du calendrier : portal sur <body>, fermeture au
-// clic sur le backdrop ou via Escape, focus initial sur le bouton de fermeture.
+// clic sur le backdrop ou via Escape, focus initial sur le bouton de fermeture,
+// focus maintenu dans la modale puis rendu à l'élément qui l'a ouverte.
 // Rendue uniquement après une interaction — jamais pendant le SSR, d'où l'accès
 // direct à document.body.
 //
@@ -24,13 +51,26 @@ export function Modal({
   children: ReactNode
 }) {
   const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
   const reduceMotion = useReducedMotion()
 
+  // À l'ouverture seulement, et non à chaque nouvelle identité de onClose : un
+  // parent qui la recrée à chaque rendu ramènerait sinon le focus sur le
+  // bouton de fermeture en pleine saisie. À la fermeture, le focus revient à
+  // l'élément d'origine (en général le jour cliqué du calendrier) : sans cela,
+  // un utilisateur au clavier repartirait du début de la page.
   useEffect(() => {
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
     closeButtonRef.current?.focus()
+    return () => {
+      if (opener?.isConnected) opener.focus()
+    }
+  }, [])
 
+  useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()
+      else if (e.key === 'Tab' && panelRef.current) trapFocus(e, panelRef.current)
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
@@ -50,6 +90,7 @@ export function Modal({
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg/80 backdrop-blur-md [perspective:1200px]"
     >
       <motion.div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label={label}
