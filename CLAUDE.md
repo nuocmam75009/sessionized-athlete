@@ -1,352 +1,92 @@
 @AGENTS.md
 
-# Sessionized — contexte projet pour Claude Code
+# Sessionized — front athlète, contexte pour Claude Code
 
-Ce fichier est destiné à Claude Code. Lis-le intégralement avant de générer du code.
+Lis ce fichier avant de générer du code. Il décrit l'état réel du dépôt au 08/11/2026.
 
 ---
 
 ## Vue d'ensemble
 
-Sessionized est une plateforme de coaching sportif (course à pied) en deux interfaces web distinctes :
+Sessionized est une plateforme de coaching sportif (course à pied) :
 
-- **sessionized-athlete** : app Next.js pour l'athlète
-- **sessionized-coach** : app Next.js pour le coach
-- **sessionized-api** : backend NestJS commun aux deux frontends
+- **sessionized-athlete** (ce dépôt) : app Next.js de l'athlète ;
+- **sessionized-api** : backend NestJS, documenté dans `sessionized-api/README.md` ;
+- **sessionized-coach** : app Next.js du coach, hors du périmètre du projet présenté.
 
-Ce fichier est utilisé dans les deux projets frontend. Le backend est documenté dans `sessionized-api/README.md`.
-
----
-
-## Stack frontend
+## Stack
 
 | Élément | Choix |
 |---|---|
-| Framework | Next.js 14+ (App Router) |
-| Langage | TypeScript strict |
-| Style | Tailwind CSS |
+| Framework | Next.js 16 (App Router, `proxy.ts` à la place de `middleware.ts`) |
+| Langage | TypeScript strict, React 19 |
+| Style | Tailwind CSS 4, jetons de thème dans `src/app/globals.css` (clair et sombre) |
+| Animations | `motion` (framer-motion) |
 | Graphes | Recharts |
-| Auth | JWT stocké en httpOnly cookie |
-| API | REST, appelée côté serveur uniquement — `API_URL` (ex: `http://localhost:3001`) |
-| Temps réel | WebSocket natif (notifications warnings) |
-| Icônes | Tabler Icons (`@tabler/icons-react`) |
+| Carte | Leaflet + MapLibre (tuiles OpenFreeMap) |
+| Tests | Vitest, Testing Library, MSW, Playwright, axe-core |
 
----
+Il n'y a ni WebSocket, ni chat (retiré le 03/11/2026), ni bibliothèque d'icônes : les icônes sont des SVG en ligne.
 
-## Deux apps, un seul backend
+## Appels à l'API : le navigateur ne l'appelle jamais
 
-Les deux apps Next.js sont des projets **séparés** — deux repos GitHub distincts, deux déploiements Vercel distincts. Elles partagent le même backend NestJS via des appels REST.
+Pattern BFF : le JWT reste dans un cookie `HttpOnly` (`sessionized_athlete_token`), que seul le serveur Next lit.
 
-```
-sessionized-athlete/   → athlete.sessionized.app  (Vercel)
-sessionized-coach/     → coach.sessionized.app    (Vercel)
-sessionized-api/       → api.sessionized.app      (Hetzner VPS)
-```
+- **Server Components** : `serverApiFetch()` / `serverApiFetchStatus()` de `lib/server-api.ts`, qui transmettent le cookie en `Authorization: Bearer`. Un 401 renvoie vers `/login?reason=expired`.
+- **Composants client** : `clientFetch('/api/...')` (`lib/client-fetch.ts`) vers un Route Handler de `src/app/api/`, qui relaie vers l'API.
+- **Route Handlers** : URL construite avec `backendUrl()` de `lib/env.ts`. Tout segment dynamique est validé par `isValidId()` avant d'être concaténé.
+- **Messages d'erreur** : ceux de l'API sont en français et ne sont jamais affichés tels quels. Les routes `/api/auth/*` les traduisent (`lib/auth-errors.ts`).
 
----
+## Sécurité
 
-## Identité visuelle
+- `src/proxy.ts` : session exigée sur `/dashboard`, `/activities`, `/profile`, `/coaches` et `/athlete-data` (JWT absent ou expiré → `/login`). Une Content-Security-Policy avec nonce est posée sur toutes les pages.
+- `lib/security-headers.ts` : la CSP et les en-têtes fixes (posés par `next.config.ts`). **Une nouvelle origine externe doit y être ajoutée et justifiée.**
+- Le layout racine applique le nonce (en-tête `x-nonce`) à son script de thème. Tout nouveau `<script>` inline doit porter ce nonce.
+- La déconnexion (`/api/auth/logout`) fait révoquer le jeton par l'API avant d'effacer le cookie.
+- `lib/redirect.ts` : `safeRedirectTarget()` pour tout paramètre `?redirect=`.
 
-| App | Couleur principale | Usage |
-|---|---|---|
-| Athlète | Bleu `#185FA5` | Accents, boutons primaires, graphes CTL |
-| Coach | Vert `#0F6E56` | Accents, boutons primaires, sidebar active |
-
-Les deux apps ont la même structure de composants et de layout — seules la couleur et les routes changent.
-
----
-
-## Authentification
-
-- L'utilisateur se connecte avec email + mot de passe
-- Le backend renvoie un JWT contenant `{ sub, role, email }`
-- Le rôle est soit `ATHLETE` soit `COACH`
-- Le JWT est stocké en **httpOnly cookie** (jamais dans localStorage)
-- Un middleware Next.js vérifie le cookie sur chaque route protégée
-- Si le cookie est absent ou expiré → redirect vers `/login`
-
-```typescript
-// Exemple de middleware Next.js
-// middleware.ts à la racine du projet
-import { NextRequest, NextResponse } from 'next/server'
-
-export function middleware(request: NextRequest) {
-  const token = request.cookies.get('sessionized_token')
-  if (!token) return NextResponse.redirect(new URL('/login', request.url))
-  return NextResponse.next()
-}
-
-export const config = {
-  matcher: ['/dashboard/:path*', '/activities/:path*', '/plan/:path*'],
-}
-```
-
----
-
-## Structure des dossiers (identique dans les deux apps)
+## Arborescence
 
 ```
 src/
 ├── app/
-│   ├── (auth)/
-│   │   └── login/
-│   │       └── page.tsx
-│   ├── dashboard/
-│   │   └── page.tsx
-│   ├── activities/
-│   │   ├── page.tsx          ← historique
-│   │   └── [id]/
-│   │       └── page.tsx      ← analyse détaillée
-│   ├── plan/
-│   │   └── page.tsx
-│   ├── layout.tsx
-│   └── globals.css
-├── components/
-│   ├── ui/                   ← composants génériques (Button, Badge, Card...)
-│   ├── charts/               ← wrappers Recharts (TrainingLoadChart, LapChart...)
-│   ├── warnings/             ← WarningBadge, WarningBlock
-│   └── layout/               ← Sidebar, TopBar
-├── lib/
-│   ├── server-api.ts         ← appels à l'API depuis les Server Components (cookie → Bearer)
-│   ├── env.ts                ← backendUrl() : URL de l'API, côté serveur uniquement
-│   ├── types.ts              ← interfaces TypeScript partagées
-│   └── utils.ts              ← formatPace(), formatDuration(), etc.
-└── hooks/
-    ├── useAuth.ts
-    ├── useActivity.ts
-    └── useWebSocket.ts
+│   ├── (app)/                 pages connectées (layout : barre latérale, consentement santé, lien d'évitement)
+│   │   ├── dashboard/         calendrier du mois, récapitulatif de semaine, charge d'entraînement
+│   │   ├── activities/[id]/   détail d'une activité (laps, carte, zones FC, réponse aérobie)
+│   │   ├── activities/upload/ import .fit / .gpx, rattachement à une séance
+│   │   ├── athlete-data/      zones et données physiologiques
+│   │   ├── profile/           compte, Strava, export et suppression des données
+│   │   └── coaches/           coach suivi
+│   ├── (auth)/login/          connexion et inscription (consentement santé)
+│   ├── (legal)/               mentions légales, politique de confidentialité
+│   └── api/                   Route Handlers (BFF)
+├── components/                ui/, layout/, calendar/, activities/, charts/, account/, training/
+├── hooks/                     useAuth, useTheme, useZoneDistribution
+├── lib/                       server-api, client-fetch, env, auth-cookie, auth-errors,
+│                              security-headers, jwt, redirect, calendar, types, utils…
+└── proxy.ts
+tests/
+├── integration/               Route Handlers et proxy, backend simulé (MSW)
+└── e2e/                       Playwright sur le build de production, API simulée (mock-api/)
 ```
 
----
+## Conventions
 
-## Types TypeScript principaux
-
-Utilise toujours ces interfaces — ne les réinvente pas.
-
-```typescript
-// lib/types.ts
-
-export type Role = 'ATHLETE' | 'COACH'
-export type ActivitySource = 'FIT' | 'COROS'
-export type WarningSeverity = 'INFO' | 'WARNING' | 'CRITICAL'
-export type WarningType = 'INTENSITY' | 'LOAD' | 'PATTERN' | 'RECOVERY'
-export type SessionType = 'INTERVALS' | 'TEMPO' | 'EASY' | 'LONG' | 'RACE' | 'OTHER'
-
-export interface User {
-  id: string
-  email: string
-  role: Role
-}
-
-export interface AthleteProfile {
-  id: string
-  userId: string
-  coachId?: string
-  ftp?: number
-  vo2max?: number
-  maxHr?: number
-}
-
-export interface Activity {
-  id: string
-  athleteId: string
-  plannedSessionId?: string
-  source: ActivitySource
-  startedAt: string
-  durationS: number
-  distanceM: number
-  avgPaceSecPerKm: number
-  avgHr?: number
-  tss?: number
-  laps: Lap[]
-  warnings: Warning[]
-}
-
-export interface Lap {
-  id: string
-  activityId: string
-  lapIndex: number
-  distanceM: number
-  paceSecPerKm: number
-  avgHr?: number
-  maxHr?: number
-  cadence?: number
-  power?: number
-  source: ActivitySource
-}
-
-export interface PlannedLap {
-  id: string
-  sessionId: string
-  lapIndex: number
-  distanceM: number
-  targetPaceMin: number   // sec/km
-  targetPaceMax: number   // sec/km
-  targetHrMin?: number
-  targetHrMax?: number
-}
-
-export interface PlannedSession {
-  id: string
-  athleteId: string
-  coachId: string
-  scheduledAt: string
-  type: SessionType
-  title: string
-  notes?: string
-  laps: PlannedLap[]
-}
-
-export interface Warning {
-  id: string
-  activityId: string
-  lapId?: string
-  athleteId: string
-  type: WarningType
-  severity: WarningSeverity
-  message: string
-  detail: string
-  suggestion: string
-  seenByAthlete: boolean
-  seenByCoach: boolean
-  createdAt: string
-}
-
-export interface TrainingLoad {
-  id: string
-  athleteId: string
-  date: string
-  ctl: number
-  atl: number
-  tsb: number
-  weeklyTss: number
-}
-```
-
----
-
-## Appels API
-
-Le navigateur n'appelle **jamais** l'API NestJS en direct (pattern BFF) :
-
-- **Server Components** : `serverApiFetchStatus()` / `serverApiFetch()` de `lib/server-api.ts`, qui lisent le cookie httpOnly et le transmettent en `Authorization: Bearer`.
-- **Composants client** : `fetch('/api/...')` vers un Route Handler de `src/app/api/`, qui relaie vers l'API.
-- **Route Handlers** : URL du backend construite avec `backendUrl()` de `lib/env.ts` (jamais `process.env` directement). Valider tout segment dynamique avec `isValidId()` avant de le concaténer.
-
-```typescript
-// src/app/api/workouts/route.ts
-const backendRes = await fetch(backendUrl('/workouts'), {
-  headers: { Authorization: `Bearer ${token}` },
-})
-```
-
----
-
-## Utilitaires à toujours utiliser
-
-```typescript
-// lib/utils.ts
-
-// Convertit des secondes/km en "4'05"/km"
-export function formatPace(secPerKm: number): string {
-  const min = Math.floor(secPerKm / 60)
-  const sec = secPerKm % 60
-  return `${min}'${String(sec).padStart(2, '0')}"/km`
-}
-
-// Convertit des secondes en "52'34""
-export function formatDuration(seconds: number): string {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = seconds % 60
-  if (h > 0) return `${h}h${String(m).padStart(2, '0')}'`
-  return `${m}'${String(s).padStart(2, '0')}"`
-}
-
-// Convertit des mètres en "8,4 km"
-export function formatDistance(meters: number): string {
-  return `${(meters / 1000).toFixed(1)} km`
-}
-
-// Couleur du delta allure
-export function paceColor(delta: number): string {
-  if (delta < -10) return 'text-red-600'
-  if (delta < -5) return 'text-orange-500'
-  return 'text-green-600'
-}
-
-// Couleur du TSB
-export function tsbColor(tsb: number): string {
-  if (tsb < -20) return 'text-red-600'
-  if (tsb < 0) return 'text-orange-500'
-  return 'text-green-600'
-}
-```
-
----
-
-## Pages de l'app athlète (sessionized-athlete)
-
-| Route | Description |
-|---|---|
-| `/login` | Connexion email + mot de passe |
-| `/dashboard` | CTL/ATL/TSB chart, dernières séances, warnings actifs |
-| `/activities` | Historique de toutes les activités |
-| `/activities/[id]` | Analyse détaillée — laps, graphes, warnings |
-| `/activities/upload` | Upload fichier `.fit` + association à une séance planifiée |
-| `/plan` | Calendrier des séances prescrites par le coach |
-
----
-
-## Pages de l'app coach (sessionized-coach)
-
-| Route | Description |
-|---|---|
-| `/login` | Connexion email + mot de passe |
-| `/dashboard` | Vue globale — liste athlètes avec TSB, warnings non lus, revenus |
-| `/athletes` | Liste des athlètes encadrés |
-| `/athletes/[id]` | Fiche athlète — historique, warnings, graphe charge, note privée |
-| `/athletes/[id]/activities/[activityId]` | Analyse séance d'un athlète |
-| `/plan` | Calendrier de planification |
-| `/plan/new` | Formulaire création séance avec laps cibles |
-| `/revenue` | Dashboard Stripe — abonnements, revenus, commission |
-
----
-
-## Conventions de code
-
-- **Composants** : PascalCase, un composant par fichier
-- **Hooks** : camelCase préfixé `use` (ex: `useActivity`)
-- **Fonctions utilitaires** : camelCase dans `lib/utils.ts`
-- **Pas de `any`** — TypeScript strict activé
-- **Server Components par défaut** — `'use client'` uniquement si interaction nécessaire
-- **Commentaires** : en français
-- **Noms de variables/fonctions** : en anglais
-- **Textes de l'interface** : en anglais, dates formatées avec `APP_LOCALE` (`lib/utils.ts`) ; les messages d'erreur de l'API (en français) ne sont jamais affichés tels quels, le front rédige les siens selon le statut HTTP
-- **Pas de `console.log`** en production — utiliser les erreurs TypeScript
-
----
-
-## Composants UI prioritaires à créer en premier
-
-Dans cet ordre :
-
-1. `components/layout/Sidebar.tsx` — navigation latérale
-2. `components/ui/Badge.tsx` — badges warning (INFO / WARNING / CRITICAL)
-3. `components/charts/TrainingLoadChart.tsx` — graphe CTL/ATL/TSB (Recharts)
-4. `components/charts/LapChart.tsx` — graphe allure par lap vs cible
-5. `components/warnings/WarningBlock.tsx` — bloc warning avec message et suggestion
-
----
+- Composants en PascalCase, un par fichier ; hooks préfixés `use` ; pas de `any`.
+- Server Components par défaut, `'use client'` seulement si une interaction l'exige.
+- Commentaires en français ; noms de variables et de fonctions en anglais.
+- Interface en anglais, dates formatées avec `APP_LOCALE` (`lib/utils.ts`).
+- Chaque page déclare `metadata.title` (modèle `%s · Sessionized`).
+- Accessibilité : texte secondaire à 60 % d'opacité au minimum (`text-text/60`), en dessous le contraste AA n'est pas atteint. Toute nouvelle page est ajoutée à l'audit axe (`tests/e2e/a11y.spec.ts`).
+- Les tests portent l'identifiant du cas du plan de tests (`T01`…) dans leur nom (voir `tests/README.md`).
+- Messages de commit : Conventional Commits, en français.
 
 ## Variables d'environnement
 
-Liste complète et commentée dans `.env.example`. Aucun secret dans le front, et aucun secret ne doit porter le préfixe `NEXT_PUBLIC_` (copié dans le bundle navigateur au build).
+Liste commentée dans `.env.example`. Aucun secret dans le front, et rien de secret ne porte le préfixe `NEXT_PUBLIC_` (copié dans le bundle au build).
 
 ```env
 API_URL=http://localhost:3001                     # serveur uniquement, lue à l'exécution
 COOKIE_DOMAIN=                                    # serveur uniquement, vide recommandé
 NEXT_PUBLIC_COACH_APP_URL=http://localhost:3002   # publique, figée au build
 ```
-
-En production : `API_URL=https://api.sessionized.app`, `NEXT_PUBLIC_COACH_APP_URL=https://coach.sessionized.app`.
