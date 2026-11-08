@@ -31,6 +31,10 @@ export interface UserProfile extends User {
   firstName: string | null
   lastName: string | null
   createdAt: string
+  // Date du consentement aux données de santé (art. 9 du RGPD). null : athlète
+  // inscrit avant que la case existe, à qui l'accord reste à demander. Absent
+  // de la réponse de PATCH, et d'une API antérieure au champ.
+  healthDataConsentAt?: string | null
   athleteProfile: AthleteProfile | null
 }
 

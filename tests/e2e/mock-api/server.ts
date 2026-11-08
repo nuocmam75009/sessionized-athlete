@@ -39,6 +39,13 @@ export const USERS = {
   // accès retiré depuis Strava) : la synchronisation répond 409.
   stravaRevoked: { id: 'cmuserrevokedstrava00000a', email: 'strava-revoked@test.dev', role: 'ATHLETE', firstName: 'Rae', lastName: 'Revoked' },
   other: { id: 'cmuserother0000000000000a', email: 'other@test.dev', role: 'ATHLETE', firstName: 'Otto', lastName: 'Other' },
+  // Inscrits avant la case de consentement : aucune date d'accord. Le premier
+  // consent pendant T24 ; le second n'y répond jamais, pour l'audit axe de
+  // l'écran de consentement (T18), qui tourne en parallèle.
+  legacy: { id: 'cmuserlegacy000000000000a', email: 'legacy@test.dev', role: 'ATHLETE', firstName: 'Leo', lastName: 'Legacy' },
+  legacyAudit: { id: 'cmuserlegacyaudit0000000a', email: 'legacy-audit@test.dev', role: 'ATHLETE', firstName: 'Lia', lastName: 'Legacy' },
+  // Supprime son compte pendant T25 : à ne pas réutiliser ailleurs.
+  deleter: { id: 'cmuserdeleter00000000000a', email: 'deleter@test.dev', role: 'ATHLETE', firstName: 'Del', lastName: 'Eter' },
   coach: { id: 'cmusercoach0000000000000a', email: 'coach@test.dev', role: 'COACH', firstName: 'Cleo', lastName: 'Coach' },
 } satisfies Record<string, MockUser>
 
@@ -165,6 +172,14 @@ const workoutsByAthlete: Record<string, Workout[]> = {
 
 const uploadedHashes = new Set<string>()
 const stravaConnected = new Set<string>([USERS.strava.id, USERS.stravaRevoked.id])
+// Date du consentement aux données de santé, comme User.healthDataConsentAt :
+// tous les athlètes l'ont donné, sauf le compte « legacy ».
+const healthDataConsentAt = new Map<string, string>(
+  Object.values(USERS)
+    .filter((u) => u.role === 'ATHLETE' && u.id !== USERS.legacy.id && u.id !== USERS.legacyAudit.id)
+    .map((u) => [u.id, '2026-11-01T08:00:00.000Z']),
+)
+const deletedUsers = new Set<string>()
 let idCounter = 0
 
 function nextId(prefix: string): string {
@@ -181,7 +196,13 @@ function send(res: ServerResponse, status: number, body: object | null) {
 
 // Erreurs au format des exceptions NestJS.
 function error(res: ServerResponse, status: number, message: string) {
-  const labels: Record<number, string> = { 400: 'Bad Request', 401: 'Unauthorized', 404: 'Not Found', 409: 'Conflict' }
+  const labels: Record<number, string> = {
+    400: 'Bad Request',
+    401: 'Unauthorized',
+    403: 'Forbidden',
+    404: 'Not Found',
+    409: 'Conflict',
+  }
   send(res, status, { statusCode: status, message, error: labels[status] ?? 'Error' })
 }
 
@@ -246,7 +267,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
 
   if (method === 'POST' && path === '/auth/login') {
     const { email, password } = (await toWebRequest(req).json()) as { email?: string; password?: string }
-    const user = Object.values(USERS).find((u) => u.email === email)
+    const user = Object.values(USERS).find((u) => u.email === email && !deletedUsers.has(u.id))
     // Même réponse que le compte existe ou non (voir AuthService.login).
     if (!user || password !== PASSWORD) return error(res, 401, 'Identifiants invalides')
     return send(res, 200, { accessToken: makeToken(user), user: { sub: user.id, email: user.email, role: user.role } })
@@ -265,6 +286,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
       firstName: user.firstName,
       lastName: user.lastName,
       createdAt: todayAt(0, 0, -30),
+      healthDataConsentAt: healthDataConsentAt.get(user.id) ?? null,
       athleteProfile: {
         id: `profile-${user.id}`,
         coachId: null,
@@ -278,6 +300,56 @@ async function route(req: IncomingMessage, res: ServerResponse) {
       },
     })
   }
+  // Droits RGPD (T24, T25), réservés aux athlètes comme dans UsersController.
+  if (path === '/users/me/health-consent' || path === '/users/me/export' || (method === 'DELETE' && path === '/users/me')) {
+    if (user.role !== 'ATHLETE') return error(res, 403, 'Forbidden resource')
+
+    if (method === 'POST' && path === '/users/me/health-consent') {
+      const { healthDataConsent } = (await toWebRequest(req).json()) as { healthDataConsent?: unknown }
+      if (healthDataConsent !== true) {
+        return error(res, 400, 'Le consentement au traitement des données de santé doit valoir true')
+      }
+      // Un consentement déjà donné garde sa date d'origine.
+      if (!healthDataConsentAt.has(user.id)) healthDataConsentAt.set(user.id, new Date().toISOString())
+      return send(res, 200, { healthDataConsentAt: healthDataConsentAt.get(user.id) })
+    }
+
+    if (method === 'GET' && path === '/users/me/export') {
+      res.writeHead(200, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Content-Disposition': `attachment; filename="sessionized-export-${new Date().toISOString().slice(0, 10)}.json"`,
+        'Cache-Control': 'no-store',
+      })
+      res.end(
+        JSON.stringify({
+          format: 'sessionized-export/1',
+          exportedAt: new Date().toISOString(),
+          account: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+            healthDataConsentAt: healthDataConsentAt.get(user.id) ?? null,
+          },
+          activities: ownActivities(),
+        }),
+      )
+      return
+    }
+
+    if (method === 'DELETE' && path === '/users/me') {
+      const { password } = (await toWebRequest(req).json()) as { password?: unknown }
+      if (typeof password !== 'string' || !password) return error(res, 400, 'password should not be empty')
+      // 403 et non 401 : la session reste valide (PersonalDataService).
+      if (password !== PASSWORD) return error(res, 403, 'Mot de passe incorrect')
+      deletedUsers.add(user.id)
+      res.writeHead(204)
+      res.end()
+      return
+    }
+  }
+
   if (method === 'GET' && path === '/users/me/coach') return error(res, 404, 'Aucun coach assigné')
   if (method === 'GET' && path === '/users/coaches') return send(res, 200, [])
 

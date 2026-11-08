@@ -2,8 +2,12 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, signInAs, test } from './fixtures'
 import { ATHLETE_ACTIVITY_ID, USERS } from './mock-api/server'
 
-const PAGES: Array<{ path: string; authenticated: boolean }> = [
+// as : compte qui ouvre la page, quand l'écran audité en dépend (par défaut,
+// USERS.athlete). Il figure dans le titre du test, qui doit rester unique.
+const PAGES: Array<{ path: string; authenticated: boolean; as?: 'legacyAudit' }> = [
   { path: '/login', authenticated: false },
+  // Écran de consentement aux données de santé, à la place du tableau de bord.
+  { path: '/dashboard', authenticated: true, as: 'legacyAudit' },
   { path: '/dashboard', authenticated: true },
   { path: '/activities/upload', authenticated: true },
   { path: `/activities/${ATHLETE_ACTIVITY_ID}`, authenticated: true },
@@ -24,9 +28,9 @@ for (const colorScheme of ['dark', 'light'] as const) {
   test.describe(`T18 — accessibilité, thème ${colorScheme}`, () => {
     test.use({ colorScheme })
 
-    for (const { path, authenticated } of PAGES) {
-      test(`${path} : aucune violation axe « serious » ou « critical »`, async ({ page, context }) => {
-        if (authenticated) await signInAs(context, USERS.athlete)
+    for (const { path, authenticated, as } of PAGES) {
+      test(`${path}${as ? ` (${as})` : ''} : aucune violation axe « serious » ou « critical »`, async ({ page, context }) => {
+        if (authenticated) await signInAs(context, USERS[as ?? 'athlete'])
         await page.goto(path)
         await page.waitForLoadState('networkidle')
 

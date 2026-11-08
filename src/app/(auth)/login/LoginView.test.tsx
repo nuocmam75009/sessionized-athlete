@@ -157,7 +157,7 @@ describe('LoginView — messages d’erreur', () => {
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  it('inscription avec consentement : envoyée, sans champ inconnu de l’API', async () => {
+  it('T24 — inscription avec consentement : l’accord est transmis à l’API, qui le date', async () => {
     const fetchMock = stubLogin(Response.json(athleteUser))
     render(<LoginView />)
     fireEvent.click(screen.getByRole('button', { name: 'Create an account' }))
@@ -169,7 +169,14 @@ describe('LoginView — messages d’erreur', () => {
     await waitFor(() => expect(navigation.push).toHaveBeenCalledWith('/dashboard'))
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit]
     expect(url).toBe('/api/auth/register')
-    expect(Object.keys(JSON.parse(String(init.body)))).not.toContain('healthConsent')
+    expect(JSON.parse(String(init.body))).toMatchObject({ role: 'ATHLETE', healthDataConsent: true })
+  })
+
+  it('T25 — après la suppression du compte, l’écran de connexion le confirme', () => {
+    navigation.search = 'reason=deleted'
+    render(<LoginView />)
+
+    expect(screen.getByRole('status')).toHaveTextContent('Your account and all its data have been deleted.')
   })
 
   it('le lien vers la politique de confidentialité s’ouvre dans un nouvel onglet, et le dit', () => {

@@ -20,4 +20,4 @@ export const HOSTS = {
 
 // Date affichée en tête des deux pages : à changer à chaque modification de
 // leur contenu.
-export const LEGAL_LAST_UPDATED = '2026-11-07'
+export const LEGAL_LAST_UPDATED = '2026-11-08'

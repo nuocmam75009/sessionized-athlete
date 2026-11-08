@@ -283,7 +283,9 @@
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.11em;
-    color: color-mix(in srgb, var(--color-text) 52%, transparent);
+    /* 62 % et non 52 % : à 52 %, le thème clair tombait à 3,7:1, sous le
+       4,5:1 qu'exige un texte de cette taille (WCAG 1.4.3, relevé par T18). */
+    color: color-mix(in srgb, var(--color-text) 62%, transparent);
   }
   h1,
   h2,

@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { HealthConsentLabel } from '@/components/account/HealthConsentLabel'
 import { AuthLayout } from '@/components/layout/AuthLayout'
 import { Button } from '@/components/ui/Button'
 import { CheckboxField, Field, fieldErrorProps, Input } from '@/components/ui/Field'
@@ -50,6 +50,8 @@ export default function LoginView() {
   const redirectTo = safeRedirectTarget(searchParams.get('redirect'))
   // Posé par le proxy ou par une page dont l'appel à l'API a reçu un 401.
   const sessionExpired = searchParams.get('reason') === 'expired'
+  // Posé après la suppression du compte, depuis le profil.
+  const accountDeleted = searchParams.get('reason') === 'deleted'
   const [mode, setMode] = useState<Mode>('login')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -104,6 +106,8 @@ export default function LoginView() {
                   password,
                   inviteCode: invite,
                   role: 'ATHLETE',
+                  // validate() a déjà refusé l'envoi sans la case cochée.
+                  healthDataConsent: true,
                 }),
               })
             })()
@@ -146,6 +150,11 @@ export default function LoginView() {
       {sessionExpired && (
         <p role="status" className="panel-flat rounded-md px-3.5 py-2.5 mb-5 text-sm text-text/80">
           Your session has expired. Log in again to pick up where you left off.
+        </p>
+      )}
+      {accountDeleted && (
+        <p role="status" className="panel-flat rounded-md px-3.5 py-2.5 mb-5 text-sm text-text/80">
+          Your account and all its data have been deleted.
         </p>
       )}
       <div className="mb-6">
@@ -218,8 +227,8 @@ export default function LoginView() {
           </Field>
         )}
         {mode === 'register' && (
-          // L'accord n'est pas transmis à l'API, qui n'a pas encore de champ pour
-          // le conserver : la case empêche seulement de créer un compte sans lui.
+          // Transmis à l'API, qui refuse un compte athlète sans lui et en
+          // conserve la date (healthDataConsentAt) comme preuve.
           <CheckboxField
             id="sn-consent"
             required
@@ -227,18 +236,7 @@ export default function LoginView() {
             onChange={setHealthConsent}
             error={fieldErrors.consent}
           >
-            I agree that Sessionized processes my health data (heart rate, weight, training activities) to run
-            the service, as described in the{' '}
-            {/* Nouvel onglet : suivre le lien ici ferait perdre la saisie en cours. */}
-            <Link
-              href="/privacy"
-              target="_blank"
-              aria-label="privacy policy (opens in a new tab)"
-              className="text-accent underline hover:text-accent-700"
-            >
-              privacy policy
-            </Link>
-            .
+            <HealthConsentLabel />
           </CheckboxField>
         )}
         {error && (

@@ -74,7 +74,9 @@ export default function PrivacyPolicyPage() {
         </li>
         <li>
           <strong>Processing your health data</strong>: your explicit consent, given when you create your account.
-          You can withdraw it at any time by asking us to delete your account.
+          We record the date you gave it. Sessionized can&apos;t plan or analyse your training without these data,
+          so you withdraw your consent by deleting your account from your profile. Withdrawing it doesn&apos;t make
+          the processing done before unlawful.
         </li>
         <li>
           <strong>Importing your Strava activities</strong>: your request, when you connect Strava. You can
@@ -107,8 +109,13 @@ export default function PrivacyPolicyPage() {
 
       <h2 className="mt-10 mb-3">How long we keep it</h2>
       <p>
-        Your data is kept while your account is active. When you ask us to delete your account, all your data
-        (profile, activities, files, GPS tracks, notes, Strava tokens) is deleted within one month.
+        Your data is kept while your account is active. When you delete your account from your profile, all your
+        data (profile, activities, files, GPS tracks, notes, training plans, Strava tokens) is erased at once. If
+        you write to us instead, we delete it within one month.
+      </p>
+      <p className="mt-4">
+        Our database host keeps a short restore history to recover from an incident. Erased data disappears from
+        it once that history window has passed.
       </p>
 
       <h2 className="mt-10 mb-3">Cookies and local storage</h2>
@@ -137,9 +144,22 @@ export default function PrivacyPolicyPage() {
       <h2 className="mt-10 mb-3">Your rights</h2>
       <p>
         You can access, correct, delete or export your data, object to or limit its processing, and withdraw your
-        consent. Most of your profile can be corrected directly in the app. For anything else, write to{' '}
-        {PUBLISHER.email}: we answer within one month.
+        consent. Three of these rights work directly in the app, from <strong>Your data</strong> in your profile:
       </p>
+      <ul className="list-disc pl-5 grid gap-2 mt-3">
+        <li>
+          <strong>Access and portability</strong>: <em>Download my data</em> gives you a copy of everything we hold
+          about you, in a machine-readable file (JSON) that includes your original .fit and .gpx files.
+        </li>
+        <li>
+          <strong>Erasure</strong>: <em>Delete my account</em> erases your account and all its data. We ask for
+          your password first.
+        </li>
+        <li>
+          <strong>Correction</strong>: your name, email and training profile can be edited in the app.
+        </li>
+      </ul>
+      <p className="mt-4">For anything else, write to {PUBLISHER.email}: we answer within one month.</p>
       <p className="mt-4">
         If you think your rights aren&apos;t respected, you can lodge a complaint with the CNIL, the French data
         protection authority (cnil.fr).

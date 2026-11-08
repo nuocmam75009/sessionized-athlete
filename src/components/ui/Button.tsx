@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes } from 'react'
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost'
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant
@@ -28,6 +28,9 @@ const variants: Record<ButtonVariant, string> = {
     'border border-divider bg-surface/60 px-4 py-2.5 shadow-[var(--panel-inset-flat)] ' +
     'hover:border-accent/45 hover:bg-surface-2 hover:text-accent-800 active:bg-surface',
   ghost: 'text-accent px-2.5 py-2.5 hover:bg-accent/12 hover:text-accent-700 active:bg-accent/20',
+  // Action irréversible : bordé plutôt que plein, pour ne pas attirer l'œil
+  // comme le bouton principal d'un écran.
+  danger: 'border border-danger/50 text-danger px-4 py-2.5 hover:bg-danger/10 active:bg-danger/15',
 }
 
 export function buttonClassName(variant: ButtonVariant = 'primary', block = false, className = '') {

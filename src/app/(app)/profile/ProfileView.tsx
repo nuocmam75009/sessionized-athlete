@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { AccountDataActions } from '@/components/account/AccountDataActions'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Field, Input } from '@/components/ui/Field'
@@ -10,7 +11,7 @@ import { RadioOption } from '@/components/ui/RadioOption'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { clientFetch } from '@/lib/client-fetch'
 import { setUnit, useSessionState } from '@/lib/session-store'
-import { APP_LOCALE } from '@/lib/utils'
+import { APP_LOCALE, formatLegalDate } from '@/lib/utils'
 import type { CoachAssignment, UserProfile } from '@/lib/types'
 
 type NotifyPref = 'new-plan' | 'weekly' | 'none'
@@ -267,6 +268,25 @@ export function ProfileView({
             </span>
           )}
         </div>
+
+        {/* Après le bouton d'enregistrement : ces actions ne font pas partie
+            du formulaire, et la suppression doit rester à l'écart. */}
+        <section className="border-t border-divider pt-6">
+          <h4 className="mb-3">Your data</h4>
+          <p className="text-sm text-text/80 mb-3 max-w-[60ch]">
+            {user?.healthDataConsentAt && (
+              <>You agreed to the processing of your health data on {formatLegalDate(user.healthDataConsentAt)}. </>
+            )}
+            How we use your data and for how long: see the{' '}
+            {/* Souligné : au milieu d'une phrase, la couleur seule ne
+                distingue pas un lien (WCAG 1.4.1). */}
+            <Link href="/privacy" className="text-accent underline hover:text-accent-700">
+              privacy policy
+            </Link>
+            .
+          </p>
+          <AccountDataActions />
+        </section>
       </div>
     </div>
   )

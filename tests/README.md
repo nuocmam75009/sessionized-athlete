@@ -1,6 +1,6 @@
 # Tests du front athlète
 
-Mise en œuvre du plan de tests (identifiants T01–T21). Chaque test porte l'identifiant du cas qu'il couvre dans son nom, pour retrouver un cas du plan dans le code et dans les rapports d'exécution.
+Mise en œuvre du plan de tests (identifiants T01–T25). Chaque test porte l'identifiant du cas qu'il couvre dans son nom, pour retrouver un cas du plan dans le code et dans les rapports d'exécution.
 
 ## Lancer les tests
 
@@ -34,7 +34,7 @@ Les Server Components asynchrones (`dashboard/page.tsx`…) ne se testent pas av
   - le **build de production** du front (`next build && next start`) sur le port **3100**, branché sur cette API.
 
   En local, un serveur déjà lancé sur ces ports est réutilisé. En CI (`CI=1`), tout est reconstruit.
-- **Comptes de test** (mot de passe `Passw0rd!`) : `athlete@`, `uploader@`, `duplicate@`, `strava@`, `other@` et `coach@test.dev`. Il y a un compte par scénario, pour que les tests parallèles ne se gênent pas.
+- **Comptes de test** (mot de passe `Passw0rd!`) : `athlete@`, `uploader@`, `duplicate@`, `strava@`, `strava-revoked@`, `other@`, `legacy@` et `legacy-audit@` (sans consentement aux données de santé), `deleter@` (supprimé par T25) et `coach@test.dev`. Il y a un compte par scénario, pour que les tests parallèles ne se gênent pas.
 - **Réseau** : toute requête hors de `localhost` est bloquée pendant les tests système (`tests/e2e/fixtures.ts`).
 - **Recette manuelle sur données fictives** : lancer `npm run mock-api`, puis `API_URL=http://localhost:4010 npm run dev`.
 
@@ -65,5 +65,7 @@ Les Server Components asynchrones (`dashboard/page.tsx`…) ne se testent pas av
 | T21 | Connexion Strava inutilisable (409) au clic sur « Sync Strava » → redirection vers le bouton de reconnexion | Unitaire, système | `StravaSyncButton.test.tsx`, `ProfileView.test.tsx`, `calendar.spec.ts` |
 | T22 | `.fit` rattaché à une activité Strava : succès, 409, 400, autre erreur, rechargement en échec | Unitaire | `FitFileUpload.test.tsx` |
 | T23 | Pages légales sans compte, liens sur chaque écran, consentement aux données de santé à l'inscription | Unitaire, système | `legal-pages.test.tsx`, `LoginView.test.tsx`, `legal.spec.ts`, `a11y.spec.ts` |
+| T24 | Consentement transmis à l'API à l'inscription ; compte créé avant la case bloqué sur l'écran de consentement jusqu'à son accord | Unitaire, intégration, système | `LoginView.test.tsx`, `HealthConsentGate.test.tsx`, `users-me-privacy.test.ts`, `privacy-rights.spec.ts`, `a11y.spec.ts` |
+| T25 | Export des données en JSON ; suppression du compte avec mot de passe (403 si faux), cookie effacé, connexion refusée ensuite | Unitaire, intégration, système | `AccountDataActions.test.tsx`, `LoginView.test.tsx`, `users-me-privacy.test.ts`, `privacy-rights.spec.ts` |
 
 **Limites de l'API simulée.** Elle fixe le contrat que le front attend, sans prouver le comportement réel du backend. Le contrôle d'accès réel (T14), le parsing d'un vrai `.fit` (jeu d'essai) et la charge (T19) se testent dans `sessionized-api` (Jest + Supertest, k6). T17 avec un vrai compte Strava relève de la recette.
