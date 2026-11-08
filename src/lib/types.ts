@@ -308,37 +308,6 @@ export type AerobicAnalysis =
   | { eligible: false; reason: AerobicRejection }
   | AerobicAnalysisResult
 
-// --- Chat (namespace WebSocket /chat + REST /chat/conversations) ---
-// `id` sur ChatUserSummary n'est pas listé explicitement dans le contrat
-// fourni (seulement firstName/lastName/email) mais est nécessaire pour
-// `recipientUserId` côté `typing` — supposé présent comme tout autre objet
-// user renvoyé par l'API. À corriger si le champ réel diffère.
-export interface ChatUserSummary {
-  id: string
-  firstName: string | null
-  lastName: string | null
-  email: string
-}
-
-export interface ChatMessage {
-  id: string
-  conversationId: string
-  senderId: string
-  content: string
-  createdAt: string
-  readAt: string | null
-}
-
-export interface ChatConversation {
-  id: string
-  coach: {
-    id: string // coachProfileId — c'est le targetId attendu par POST /chat/conversations
-    user: ChatUserSummary
-  }
-  messages: ChatMessage[] // messages[0] = dernier message (aperçu liste)
-  updatedAt: string
-}
-
 // Valeurs = noms des membres : un enum numérique par défaut sérialise
 // Specialty.TRAIL en 0, alors que le backend (AthleteSpecialty côté Prisma)
 // attend la chaîne "TRAIL" dans le JSON.

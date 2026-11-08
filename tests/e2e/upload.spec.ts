@@ -4,6 +4,8 @@ import type { Page } from '@playwright/test'
 
 async function uploadFit(page: Page, name: string, buffer: Buffer) {
   await page.goto('/activities/upload')
+  // Actif une fois la page hydratée (useHydrated) : avant, le choix serait perdu.
+  await expect(page.locator('input[type=file]')).toBeEnabled()
   await page.locator('input[type=file]').setInputFiles({ name, mimeType: 'application/octet-stream', buffer })
   await page.getByRole('button', { name: 'Confirm & save' }).click()
 }

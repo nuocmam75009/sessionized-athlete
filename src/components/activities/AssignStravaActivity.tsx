@@ -69,7 +69,7 @@ export function AssignStravaActivity({ workoutId, candidates }: { workoutId: str
             >
               <div className="text-sm min-w-0">
                 <div className="font-medium truncate">{activity.sport ?? 'Activity'}</div>
-                <div className="metric text-text/45 text-[12px] mt-0.5">
+                <div className="metric text-text/60 text-[12px] mt-0.5">
                   {formatDateLabel(activity.startedAt)} · {actual.distance} · {actual.duration}
                 </div>
               </div>

@@ -7,13 +7,16 @@ import { AuthLayout } from '@/components/layout/AuthLayout'
 import { Button } from '@/components/ui/Button'
 import { CheckboxField, Field, fieldErrorProps, Input } from '@/components/ui/Field'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
+import { useHydrated } from '@/hooks/useHydrated'
+import type { AuthFailure } from '@/lib/auth-errors'
 import { safeRedirectTarget } from '@/lib/redirect'
 import type { AuthUser } from '@/lib/types'
 
 type Mode = 'login' | 'register'
 
-// Même minimum que l'API (RegisterDto) : refusé ici, il n'aboutirait qu'à un
-// message générique.
+// Même minimum que l'API (RegisterDto) : refusé ici sans aller-retour. Les
+// autres règles de la politique de mots de passe sont vérifiées par l'API,
+// dont les raisons de refus s'affichent sur le champ.
 const MIN_PASSWORD_LENGTH = 8
 
 interface FieldErrors {
@@ -61,6 +64,7 @@ export default function LoginView() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const hydrated = useHydrated()
 
   // Les règles changent d'un mode à l'autre (longueur du mot de passe) : les
   // erreurs affichées pour l'autre mode ne valent plus.
@@ -111,7 +115,22 @@ export default function LoginView() {
                 }),
               })
             })()
-      if (!res.ok) throw new Error('auth failed')
+      if (!res.ok) {
+        const failure = (await res.json().catch(() => null)) as AuthFailure | null
+        // Compte ou IP temporairement bloqués : le délai est dit, sans rien
+        // révéler sur l'existence du compte (même réponse pour tous).
+        if (res.status === 429 && failure?.message) {
+          setError(failure.message)
+          return
+        }
+        // Mot de passe refusé à l'inscription : chaque raison, sur le champ.
+        if (mode === 'register' && failure?.reasons?.length) {
+          setFieldErrors({ password: failure.reasons.join(' ') })
+          document.getElementById(FIELD_IDS.password)?.focus()
+          return
+        }
+        throw new Error('auth failed')
+      }
 
       const { user }: { user: AuthUser } = await res.json()
 
@@ -123,7 +142,9 @@ export default function LoginView() {
           setError("The coach app isn't configured in this environment.")
           return
         }
-        window.location.href = `${coachAppUrl}${redirectTo}`
+        // Autre application, sur une autre origine : navigation complète, que
+        // le routeur de Next ne sait pas faire.
+        window.location.assign(new URL(redirectTo, coachAppUrl).toString())
         return
       }
 
@@ -244,11 +265,11 @@ export default function LoginView() {
             {error}
           </p>
         )}
-        <Button type="submit" block disabled={submitting}>
+        <Button type="submit" block disabled={submitting || !hydrated}>
           {submitting ? '…' : mode === 'login' ? 'Log in' : 'Create account'}
         </Button>
       </form>
-      <p className="text-[13px] mt-5 text-text/45">
+      <p className="text-[13px] mt-5 text-text/60">
         {mode === 'login' ? 'New here?' : 'Already have an account?'}{' '}
         {/* Un bouton et non un lien : il change de mode sans quitter la page. */}
         <button

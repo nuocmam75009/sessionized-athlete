@@ -53,7 +53,7 @@ describe('AccountDataActions', () => {
       const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
       stubApi({
         onExport: () =>
-          new Response('{"format":"sessionized-export/1"}', {
+          new Response('{"format":"sessionized-export/2"}', {
             headers: { 'Content-Disposition': 'attachment; filename="sessionized-export-2026-11-08.json"' },
           }),
       })

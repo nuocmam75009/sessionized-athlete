@@ -1,6 +1,6 @@
 'use client'
 
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useTheme } from '@/hooks/useTheme'
 
 function SunIcon() {
@@ -26,7 +26,6 @@ function MoonIcon() {
 // on est en sombre), c'est la convention la plus répandue.
 export function ThemeToggle({ className = '' }: { className?: string }) {
   const { theme, toggle } = useTheme()
-  const reduceMotion = useReducedMotion()
   const nextLabel = theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'
 
   return (
@@ -35,16 +34,18 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
       onClick={toggle}
       aria-label={nextLabel}
       title={nextLabel}
-      className={`group relative inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md text-text/50 transition-colors hover:bg-text/[0.07] hover:text-accent cursor-pointer ${className}`}
+      className={`group relative inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md text-text/60 transition-colors hover:bg-text/[0.07] hover:text-accent cursor-pointer ${className}`}
     >
       {/* mode="wait" pour que l'icône sortante ait fini de pivoter avant que la
           suivante entre : les deux superposées à mi-course forment une bouillie. */}
       <AnimatePresence initial={false} mode="wait">
         <motion.span
           key={theme}
-          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, rotate: -70, scale: 0.6 }}
-          animate={reduceMotion ? { opacity: 1 } : { opacity: 1, rotate: 0, scale: 1 }}
-          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, rotate: 70, scale: 0.6 }}
+          // Rotation et zoom neutralisés par MotionProvider si l'utilisateur
+          // a demandé moins d'animations ; le fondu reste.
+          initial={{ opacity: 0, rotate: -70, scale: 0.6 }}
+          animate={{ opacity: 1, rotate: 0, scale: 1 }}
+          exit={{ opacity: 0, rotate: 70, scale: 0.6 }}
           transition={{ duration: 0.22, ease: [0.16, 0.84, 0.24, 1] }}
           className="absolute inline-flex"
         >

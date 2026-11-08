@@ -80,7 +80,7 @@ describe('GET /api/users/me/export', () => {
   beforeEach(() => cookieJar.reset({ [SESSION_COOKIE_NAME]: token }))
 
   it('T25 — relaie le fichier en téléchargement, sans cache', async () => {
-    const exported = { format: 'sessionized-export/1', account: { email: 'athlete@test.dev' }, activities: [] }
+    const exported = { format: 'sessionized-export/2', account: { email: 'athlete@test.dev' }, activities: [] }
     backend.use(http.get(`${API_URL}/users/me/export`, () => HttpResponse.json(exported)))
 
     const res = await exportData()

@@ -28,7 +28,7 @@ export function MonthSportBreakdown({ bySport }: { bySport: SportBreakdown[] }) 
 
   return (
     <div className="mt-6 max-w-[720px]">
-      <h4 className="mb-4 pb-2 border-b border-divider">Hours by sport</h4>
+      <h2 className="section-title mb-4 pb-2 border-b border-divider">Hours by sport</h2>
       <div className="flex flex-col sm:flex-row gap-6 items-start">
         <div style={{ width: CHART_SIZE_PX, height: CHART_SIZE_PX }} className="shrink-0">
           <SportHoursChart bySport={byHours} />

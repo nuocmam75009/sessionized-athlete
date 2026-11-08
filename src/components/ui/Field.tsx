@@ -31,7 +31,7 @@ export function fieldErrorProps(htmlFor: string, error: string | null | undefine
 export function Field({ label, htmlFor, error, children }: FieldProps) {
   return (
     <div className="grid gap-1.5">
-      <label htmlFor={htmlFor} className="block text-[11px] uppercase tracking-[0.08em] text-text/50">
+      <label htmlFor={htmlFor} className="block text-[11px] uppercase tracking-[0.08em] text-text/60">
         {label}
       </label>
       {children}

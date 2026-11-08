@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { setSessionCookie } from '@/lib/auth-cookie'
+import { loginFailure } from '@/lib/auth-errors'
 import { backendUrl } from '@/lib/env'
 
 // Le backend NestJS renvoie le JWT dans le corps ({ accessToken, user }),
@@ -17,7 +18,10 @@ export async function POST(request: NextRequest) {
   })
 
   if (!backendRes.ok) {
-    return NextResponse.json({ message: 'Invalid credentials' }, { status: backendRes.status })
+    const body: unknown = await backendRes.json().catch(() => null)
+    return NextResponse.json(loginFailure(backendRes.status, body, backendRes.headers.get('Retry-After')), {
+      status: backendRes.status,
+    })
   }
 
   const { accessToken, user } = await backendRes.json()

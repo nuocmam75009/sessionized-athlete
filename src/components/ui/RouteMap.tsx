@@ -71,6 +71,11 @@ export function RouteMap({ gpxData, points, onStats, className }: RouteMapProps)
       // Pont Leaflet ↔ MapLibre : les tuiles vectorielles sont rendues au WebGL
       // dans le tilePane, sous les calques Leaflet habituels (tracé, marqueurs).
       const { maplibreGL } = await import('@maplibre/maplibre-gl-leaflet')
+      // Worker servi depuis public/ (scripts/copy-maplibre-worker.mjs) : le
+      // chemin que MapLibre déduit de son propre fichier n'existe plus une
+      // fois le module regroupé par Next.
+      const maplibre = await import('maplibre-gl')
+      maplibre.setWorkerUrl('/maplibre/maplibre-gl-worker.mjs')
 
       if (cancelled || !containerRef.current) return
 
@@ -149,5 +154,7 @@ export function RouteMap({ gpxData, points, onStats, className }: RouteMapProps)
     }
   }, [gpxData, points, onStats, theme])
 
-  return <div ref={containerRef} className={className ?? 'w-full h-[220px] rounded-md'} />
+  // relative z-0 : contexte d'empilement propre. Sans lui, les calques de
+  // Leaflet (z-index 400 et plus) passaient au-dessus du menu mobile ouvert.
+  return <div ref={containerRef} className={`relative z-0 ${className ?? 'w-full h-[220px] rounded-md'}`} />
 }

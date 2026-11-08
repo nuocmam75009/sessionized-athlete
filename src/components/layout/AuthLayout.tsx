@@ -85,7 +85,7 @@ export function AuthLayout({ eyebrow, title, description, children }: AuthLayout
           <h1 className="text-4xl md:text-[3.4rem] max-w-[10ch] bg-linear-to-b from-text to-text/45 bg-clip-text text-transparent">
             {title}
           </h1>
-          <p className="text-[15px] text-text/55 max-w-[42ch] mt-5 leading-relaxed">{description}</p>
+          <p className="text-[15px] text-text/60 max-w-[42ch] mt-5 leading-relaxed">{description}</p>
         </div>
       </div>
 

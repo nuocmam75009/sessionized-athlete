@@ -39,8 +39,8 @@ export function TrainingLoadPanel({ series }: { series: TrainingLoadSeries }) {
   if (series.activityCount === 0 || series.points.length === 0) {
     return (
       <section className="panel rounded-lg px-6 py-5">
-        <h4 className="mb-2">Training load</h4>
-        <p className="text-[13px] text-text/50 max-w-[52ch]">
+        <h2 className="section-title mb-2">Training load</h2>
+        <p className="text-[13px] text-text/60 max-w-[52ch]">
           Fitness, fatigue and form appear once you have imported a few activities — connect Strava
           or upload a .fit file to get started.
         </p>
@@ -57,8 +57,8 @@ export function TrainingLoadPanel({ series }: { series: TrainingLoadSeries }) {
   return (
     <section className="panel rounded-lg px-6 py-5">
       <div className="flex items-baseline justify-between gap-4 flex-wrap mb-5">
-        <h4 className="mb-0">Training load</h4>
-        <span className="text-[11px] uppercase tracking-[0.11em] text-text/40">
+        <h2 className="section-title mb-0">Training load</h2>
+        <span className="text-[11px] uppercase tracking-[0.11em] text-text/60">
           Estimated · {activityCount} activities
         </span>
       </div>
@@ -67,7 +67,7 @@ export function TrainingLoadPanel({ series }: { series: TrainingLoadSeries }) {
         <Stat label="Fitness (CTL)" value={current.ctl.toFixed(1)} />
         <Stat label="Fatigue (ATL)" value={current.atl.toFixed(1)} />
         <div>
-          <div className="text-[10px] uppercase tracking-[0.11em] text-text/45">Form (TSB)</div>
+          <div className="text-[10px] uppercase tracking-[0.11em] text-text/60">Form (TSB)</div>
           <div className="metric mt-1.5 font-semibold leading-none text-[26px]">
             {signed(current.tsb)}
           </div>
@@ -81,7 +81,7 @@ export function TrainingLoadPanel({ series }: { series: TrainingLoadSeries }) {
 
       <TrainingLoadChart points={series.points} />
 
-      <p className="text-[12px] text-text/45 mt-4 max-w-[64ch]">
+      <p className="text-[12px] text-text/60 mt-4 max-w-[64ch]">
         {band.hint}. Fitness is a 42-day average of your session load, fatigue a 7-day one, and form
         the gap between them.
         {!current.settled &&

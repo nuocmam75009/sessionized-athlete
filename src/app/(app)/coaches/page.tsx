@@ -1,6 +1,9 @@
+import type { Metadata } from 'next'
 import { CoachCard } from '@/components/marketplace/CoachCard'
 import { serverApiFetchStatus } from '@/lib/server-api'
 import type { CoachAssignment } from '@/lib/types'
+
+export const metadata: Metadata = { title: 'Coaches' }
 
 export default async function CoachesPage() {
   const { status, data } = await serverApiFetchStatus<CoachAssignment[]>('/users/coaches')
@@ -17,7 +20,7 @@ export default async function CoachesPage() {
           Couldn&apos;t load coaches. Refresh the page to try again.
         </p>
       ) : (
-        <p className="text-text/50 mt-2 mb-8 max-w-[52ch]">
+        <p className="text-text/60 mt-2 mb-8 max-w-[52ch]">
           {coaches.length} {coaches.length === 1 ? 'coach' : 'coaches'} available — browse and pick the one that fits
           your goal.
         </p>

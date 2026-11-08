@@ -44,11 +44,13 @@ test.describe('Droits RGPD', () => {
       format: string
       account: { email: string }
     }
-    expect(exported.format).toBe('sessionized-export/1')
+    expect(exported.format).toBe('sessionized-export/2')
     expect(exported.account.email).toBe(USERS.athlete.email)
   })
 
   test('T25 — suppression : mot de passe exigé, puis compte effacé et session fermée', async ({ page, context }) => {
+    // Parcours complet en trois écrans, deux appels à l'API.
+    test.slow()
     await signInAs(context, USERS.deleter)
     await page.goto('/profile')
 

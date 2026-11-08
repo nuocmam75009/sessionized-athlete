@@ -6,7 +6,7 @@ import { THEME_STORAGE_KEY } from '@/lib/theme'
 import { formatLegalDate } from '@/lib/utils'
 
 export const metadata: Metadata = {
-  title: 'Privacy policy · Sessionized',
+  title: 'Privacy policy',
 }
 
 // Ce que l'app athlète collecte réellement, d'après le schéma de l'API. À tenir

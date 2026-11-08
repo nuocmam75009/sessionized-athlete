@@ -27,13 +27,14 @@ export function WeekSummary({ week, className = '' }: { week: WeekEntry; classNa
           Week summary
         </div>
         {week.containsToday && (
-          <span className="text-[9px] uppercase tracking-[0.11em] text-text/40 rounded-sm px-2 py-1 ring-1 ring-inset ring-divider">
+          <span className="text-[9px] uppercase tracking-[0.11em] text-text/60 rounded-sm px-2 py-1 ring-1 ring-inset ring-divider">
             This week
           </span>
         )}
       </div>
-      <h3 className="mb-1">{week.label}</h3>
-      <p className="text-sm text-text/50 mb-6">
+      {/* h2 : première section sous le h1 du mois ; taille d'un h3. */}
+      <h2 className="mb-1 text-[1.2rem] leading-[1.2] tracking-[-0.02em]">{week.label}</h2>
+      <p className="text-sm text-text/60 mb-6">
         {summary.activeDays} active day{summary.activeDays === 1 ? '' : 's'} out of 7
       </p>
 
@@ -123,9 +124,9 @@ export function WeekSummary({ week, className = '' }: { week: WeekEntry; classNa
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="mb-6 last:mb-0">
-      {/* Le style d'étiquette (capitales sourdes) vient de globals.css — h4 ne
-          sert jamais de titre de contenu dans l'app. */}
-      <h4 className="mb-3 pb-2 border-b border-divider">{title}</h4>
+      {/* Style d'étiquette (capitales sourdes) de .section-title, globals.css ;
+          h3 sous le h2 de la semaine. */}
+      <h3 className="section-title mb-3 pb-2 border-b border-divider">{title}</h3>
       {children}
     </section>
   )
@@ -167,7 +168,7 @@ function DayRow({ day }: { day: DayEntry }) {
           {day.weekdayLabel} {day.dayNumber}
         </span>
         {dotClass && (
-          <span className="flex items-center gap-1.5 text-[9px] uppercase tracking-[0.1em] text-text/45">
+          <span className="flex items-center gap-1.5 text-[9px] uppercase tracking-[0.1em] text-text/60">
             <span className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />
             {label}
           </span>
@@ -177,7 +178,7 @@ function DayRow({ day }: { day: DayEntry }) {
       {day.workout && <div className="text-sm mb-1">{day.workout.title}</div>}
 
       {day.activities.length === 0 ? (
-        <div className="text-sm text-text/40">No activity recorded</div>
+        <div className="text-sm text-text/60">No activity recorded</div>
       ) : (
         <div className="grid gap-1">
           {day.activities.map((activity) => (

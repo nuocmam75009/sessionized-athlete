@@ -22,7 +22,7 @@ const SPECIALTY_LABELS: Record<Specialty, string> = {
 function ZoneRow({ label, values }: { label: string; values: string[] }) {
   return (
     <div>
-      <span className="block text-[11px] uppercase tracking-[0.08em] text-text/50 mb-2">{label}</span>
+      <span className="block text-[11px] uppercase tracking-[0.08em] text-text/60 mb-2">{label}</span>
       <div className="flex flex-wrap gap-2">
         {values.map((v, i) => (
           <div key={i} className="metric min-w-14 px-3 py-1.5 text-[13px] text-center panel-flat rounded-md">
@@ -74,7 +74,7 @@ export function AthleteDataView({
   return (
     <div>
       <h1>Athlete Data</h1>
-      <p className="text-text/50 mt-2 max-w-[52ch]">
+      <p className="text-text/60 mt-2 max-w-[52ch]">
         These physiological details help your coach fine-tune your sessions — target zones, load, recovery.
       </p>
       {/* Sans ce message, un échec de chargement se lirait comme un profil

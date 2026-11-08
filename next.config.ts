@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { STATIC_SECURITY_HEADERS } from "./src/lib/security-headers";
 
 const nextConfig: NextConfig = {
   // Produit .next/standalone : un serveur Node minimal avec les seules
@@ -8,6 +9,13 @@ const nextConfig: NextConfig = {
   // besoin, et avec Next 16.3 l'adaptateur Vercel n'écrit plus
   // .next/next-server.js.nft.json, que l'étape standalone lit ensuite (ENOENT).
   output: process.env.VERCEL ? undefined : 'standalone',
+  // Pas d'en-tête X-Powered-By : inutile d'annoncer le framework.
+  poweredByHeader: false,
+  // En-têtes fixes sur toutes les réponses ; la CSP, qui dépend d'un nonce par
+  // requête, est posée par le proxy (src/proxy.ts).
+  async headers() {
+    return [{ source: '/:path*', headers: STATIC_SECURITY_HEADERS }];
+  },
   async redirects() {
     return [
       { source: '/plan', destination: '/dashboard', permanent: false },

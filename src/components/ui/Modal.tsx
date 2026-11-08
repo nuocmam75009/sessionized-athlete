@@ -107,7 +107,7 @@ export function Modal({
             type="button"
             aria-label="Close"
             onClick={onClose}
-            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-sm text-text/50 transition-colors hover:bg-text/[0.07] hover:text-text cursor-pointer"
+            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-sm text-text/60 transition-colors hover:bg-text/[0.07] hover:text-text cursor-pointer"
           >
             <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
               <path d="M5 5l10 10M15 5L5 15" />

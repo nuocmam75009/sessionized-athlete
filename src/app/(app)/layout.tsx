@@ -14,11 +14,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
+      {/* Lien d'évitement (RGAA 12.7) : premier élément atteint au clavier,
+          il saute la navigation. Invisible tant qu'il n'a pas le focus. */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-surface focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-text focus:ring-2 focus:ring-accent"
+      >
+        Skip to content
+      </a>
       <AthleteSidebar />
       {/* Les pages sont cadrées à 920px par défaut (confort de lecture d'une
           colonne). Une page qui a besoin de plus — le dashboard et ses deux
           colonnes calendrier + récapitulatif — pose data-wide sur sa racine. */}
-      <main className="flex-1 px-6 md:px-10 py-10 w-full max-w-[920px] has-data-wide:max-w-none">
+      <main id="main-content" tabIndex={-1} className="flex-1 outline-none px-6 md:px-10 py-10 w-full max-w-[920px] has-data-wide:max-w-none">
         {needsHealthConsent ? <HealthConsentGate /> : children}
         <footer className="mt-16 border-t border-divider pt-4">
           <LegalLinks />

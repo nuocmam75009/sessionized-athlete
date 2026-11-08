@@ -111,7 +111,7 @@ export function ActivityDetailView({
 
       {mapPoints && mapPoints.length > 0 && (
         <>
-          <h4 className="mb-3">Route</h4>
+          <h2 className="section-title mb-3">Route</h2>
           <RouteMap points={mapPoints} className="w-full h-[280px] rounded-lg mb-7 border border-divider" />
         </>
       )}
@@ -129,7 +129,7 @@ export function ActivityDetailView({
 
       {laps.length > 0 && (
         <>
-          <h4 className="mb-3">Laps</h4>
+          <h2 className="section-title mb-3">Laps</h2>
           <table className="w-full border-collapse text-sm mb-6">
             <thead>
               <tr>
@@ -152,20 +152,20 @@ export function ActivityDetailView({
                         {intensity && (
                           <span className="inline-flex items-center gap-1.5">
                             <span className={`w-1.5 h-1.5 rounded-full ${intensity.dotClass}`} />
-                            <span className="text-[9px] uppercase tracking-[0.1em] text-text/45">{intensity.label}</span>
+                            <span className="text-[9px] uppercase tracking-[0.1em] text-text/60">{intensity.label}</span>
                           </span>
                         )}
                       </td>
                     )}
                     <td className={`${tdClass} metric`}>{formatDistance(lap.distanceM)}</td>
                     <td className={`${tdClass} metric`}>{formatDuration(Math.round(lap.durationSec))}</td>
-                    <td className={`${tdClass} metric text-text/55`}>
+                    <td className={`${tdClass} metric text-text/60`}>
                       {/* Pas d'allure sur une récupération : trente mètres en
                           deux minutes donnent 1h/km, un chiffre qui n'apprend
                           rien et rend la colonne illisible. */}
                       {intensity?.isRecovery || lap.avgPaceSecPerKm == null ? '—' : formatPace(lap.avgPaceSecPerKm)}
                     </td>
-                    <td className={`${tdClass} metric text-text/55`}>
+                    <td className={`${tdClass} metric text-text/60`}>
                       {lap.avgHeartRate != null ? `${lap.avgHeartRate}bpm` : '—'}
                     </td>
                   </tr>
@@ -178,7 +178,7 @@ export function ActivityDetailView({
 
       {planned && (
         <>
-          <h4 className="mb-3">Planned vs. completed</h4>
+          <h2 className="section-title mb-3">Planned vs. completed</h2>
           <PlannedVsActualTable planned={planned} actual={actual} />
         </>
       )}
