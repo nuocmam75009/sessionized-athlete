@@ -50,7 +50,9 @@ export function ProfileView({
   const [stravaConnected, setStravaConnected] = useState(initialStravaConnected)
   const [stravaBusy, setStravaBusy] = useState(false)
   const [stravaError, setStravaError] = useState<string | null>(null)
-  const [stravaSync, setStravaSync] = useState<StravaSyncState>('idle')
+  // « En cours » dès le premier rendu au retour de Strava : l'effet ci-dessous
+  // lance la synchronisation sans avoir à modifier l'état de façon synchrone.
+  const [stravaSync, setStravaSync] = useState<StravaSyncState>(stravaBanner === 'connected' ? 'syncing' : 'idle')
   const router = useRouter()
   // Une fois Strava déconnecté, il n'y a plus rien à renouveler.
   const needsReconnect = stravaBanner === 'reconnect' && stravaConnected
@@ -61,7 +63,6 @@ export function ProfileView({
   useEffect(() => {
     if (stravaBanner !== 'connected') return
     let cancelled = false
-    setStravaSync('syncing')
     clientFetch('/api/strava/sync', { method: 'POST' })
       .then((res) => {
         if (cancelled) return

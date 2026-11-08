@@ -140,7 +140,9 @@ export default function LoginView() {
           setError("The coach app isn't configured in this environment.")
           return
         }
-        window.location.href = `${coachAppUrl}${redirectTo}`
+        // Autre application, sur une autre origine : navigation complète, que
+        // le routeur de Next ne sait pas faire.
+        window.location.assign(new URL(redirectTo, coachAppUrl).toString())
         return
       }
 

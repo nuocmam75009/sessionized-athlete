@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
@@ -209,9 +209,13 @@ export function Sidebar({ brand, brandMark, navItems, actions = [], utility }: S
   const [mobileOpen, setMobileOpen] = useState(false)
   const mark = brandMark ?? brand.charAt(0).toUpperCase()
 
-  useEffect(() => {
+  // Menu mobile refermé à chaque navigation. Ajusté pendant le rendu plutôt
+  // que dans un effet, qui provoquerait un second rendu à chaque page.
+  const [openedOn, setOpenedOn] = useState(pathname)
+  if (openedOn !== pathname) {
+    setOpenedOn(pathname)
     setMobileOpen(false)
-  }, [pathname])
+  }
 
   return (
     <>
