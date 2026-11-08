@@ -1,0 +1,30 @@
+# Propose chaque semaine une PR par mise à jour de dépendance ; le pipeline CI
+# vérifie qu'elle ne casse rien avant la fusion. Les alertes de sécurité
+# (Dependabot security updates, à activer dans Settings → Code security)
+# arrivent, elles, sans attendre la semaine.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    # Paquets publiés ensemble : une seule PR pour garder des versions alignées.
+    groups:
+      next:
+        patterns: ["next", "eslint-config-next", "@next/*"]
+      react:
+        patterns: ["react", "react-dom", "@types/react", "@types/react-dom"]
+      tests:
+        patterns: ["vitest", "@vitest/*", "@playwright/test", "@testing-library/*", "msw"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+
+  # Image de base du Dockerfile (node:22-alpine).
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
