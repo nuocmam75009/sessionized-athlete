@@ -151,12 +151,12 @@ export function ProfileView({
             <div className="panel-flat rounded-lg px-4 py-3.5">
               <p className="m-0 text-sm">
                 <strong className="font-semibold">{coachName(coach)}</strong>
-                <span className="text-text/45"> · assigned since {assignedSince(coach.createdAt)}</span>
+                <span className="text-text/60"> · assigned since {assignedSince(coach.createdAt)}</span>
               </p>
             </div>
           ) : (
             <div>
-              <p className="m-0 text-text/50 mb-2">No coach assigned.</p>
+              <p className="m-0 text-text/60 mb-2">No coach assigned.</p>
               <Link href="/coaches" className="text-sm text-accent hover:text-accent-700">
                 Find a coach →
               </Link>

@@ -34,7 +34,7 @@ export function MonthCalendar({ entries }: { entries: DayEntry[] }) {
                   {WEEKDAY_HEADERS.map((label) => (
                     <div
                       key={label}
-                      className="text-center text-[10px] font-medium uppercase tracking-[0.12em] text-text/35"
+                      className="text-center text-[10px] font-medium uppercase tracking-[0.12em] text-text/60"
                     >
                       {label}
                     </div>
@@ -83,7 +83,6 @@ function WeekCell({ week, isSelected, onClick }: { week: WeekEntry; isSelected: 
       type="button"
       onClick={onClick}
       aria-pressed={isSelected}
-      aria-label={`Week summary ${week.label}`}
       className={`lift w-20 shrink-0 flex flex-col items-center justify-center gap-1 rounded-lg border px-1 cursor-pointer ${
         // La semaine sélectionnée est la seule à porter un halo : c'est ce qui
         // relie la ligne du calendrier au panneau de récapitulatif à sa droite.
@@ -92,8 +91,11 @@ function WeekCell({ week, isSelected, onClick }: { week: WeekEntry; isSelected: 
           : 'border-dashed border-divider bg-surface/30 hover:border-solid'
       }`}
     >
+      {/* Nom accessible = ce texte + le visible (WCAG 2.5.3 : le nom doit contenir
+          le texte affiché, pour la commande vocale). */}
+      <span className="sr-only">Week summary {week.label}: </span>
       <span className="metric font-semibold text-[13px]">{formatDistance(week.summary.distanceM)}</span>
-      <span className={`text-[9px] uppercase tracking-[0.1em] ${isSelected ? 'text-accent-700' : 'text-text/40'}`}>
+      <span className={`text-[9px] uppercase tracking-[0.1em] ${isSelected ? 'text-accent-700' : 'text-text/60'}`}>
         {week.shortLabel}
       </span>
     </button>
@@ -133,14 +135,14 @@ function DayCell({ entry, onClick }: { entry: DayEntry; onClick: () => void }) {
       {dotClass && (
         <div className="flex items-center gap-1 mb-0.5">
           <span className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />
-          <span className="text-[9px] uppercase tracking-[0.09em] text-text/45">{label}</span>
+          <span className="text-[9px] uppercase tracking-[0.09em] text-text/60">{label}</span>
         </div>
       )}
 
       <div className="text-[10px] text-text/60 text-center leading-snug line-clamp-2">
         {title}
         {entry.unplannedActivities.length > 1 && (
-          <span className="text-text/40"> +{entry.unplannedActivities.length - 1}</span>
+          <span className="text-text/60"> +{entry.unplannedActivities.length - 1}</span>
         )}
       </div>
     </button>

@@ -190,7 +190,7 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
   return (
     <div>
       <h1>Upload activity</h1>
-      <p className="text-text/50 mt-2 mb-8 max-w-[56ch]">
+      <p className="text-text/60 mt-2 mb-8 max-w-[56ch]">
         Attach the .fit file from your watch, and optionally a .gpx for the route — drop both at once.
       </p>
 
@@ -225,7 +225,7 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
               <path d="M92.69,84.69,120,57.37V152a8,8,0,0,0,16,0V57.37l27.31,27.32a8,8,0,0,0,11.32-11.32l-40-40a8,8,0,0,0-11.32,0l-40,40A8,8,0,0,0,92.69,84.69ZM224,144v64a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V144a16,16,0,0,1,32,0v56H208V144a16,16,0,0,1,16,0Z" />
             </svg>
             <div className="font-semibold">Drag your .fit and .gpx files here, or click to browse</div>
-            <div className="text-text/45 text-[13px] mt-1.5 max-w-[46ch] mx-auto">
+            <div className="text-text/60 text-[13px] mt-1.5 max-w-[46ch] mx-auto">
               Drop the .fit and .gpx together to attach the route, or the .fit on its own.
             </div>
           </div>
@@ -251,7 +251,7 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
                   />
                   <path d="M128,8A96.11,96.11,0,0,0,32,104c0,43.13,26.36,74.34,52.29,99.28A280.34,280.34,0,0,0,123.3,235a8,8,0,0,0,9.4,0,280.34,280.34,0,0,0,39-31.72C199.64,178.34,226,147.13,226,104A96.11,96.11,0,0,0,128,8Zm0,208.32C112,203,48,150.72,48,104a80,80,0,0,1,160,0C208,150.72,144,203,128,216.32ZM128,64a40,40,0,1,0,40,40A40,40,0,0,0,128,64Zm0,64a24,24,0,1,1,24-24A24,24,0,0,1,128,128Z" />
                 </svg>
-                <div className="text-text/45 text-[13px] max-w-[36ch] text-center">
+                <div className="text-text/60 text-[13px] max-w-[36ch] text-center">
                   Add a .gpx to preview the route — otherwise the map is built after upload.
                 </div>
               </div>

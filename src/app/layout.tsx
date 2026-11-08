@@ -21,7 +21,9 @@ const monoUi = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sessionized",
+  // Chaque page déclare son propre titre (« Profile · Sessionized ») : c'est
+  // la première chose qu'annonce un lecteur d'écran (RGAA 8.5, 8.6).
+  title: { default: "Sessionized", template: "%s · Sessionized" },
   description: "Your plan, from your coach, every day.",
 };
 

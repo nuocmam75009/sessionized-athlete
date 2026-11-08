@@ -28,7 +28,7 @@ export function WeekHeartRateZones({ week }: { week: WeekEntry }) {
   )
 
   if (state.status === 'loading') {
-    return <p className="text-sm text-text/45">Loading…</p>
+    return <p className="text-sm text-text/60">Loading…</p>
   }
 
   if (state.status === 'error') {
@@ -64,14 +64,14 @@ export function WeekHeartRateZones({ week }: { week: WeekEntry }) {
       {zones.length >= 3 && (
         <div className="flex items-baseline gap-2.5 mb-4">
           <span className="metric font-semibold text-[26px] leading-none">{easyShare} %</span>
-          <span className="text-sm text-text/50">easy (Z1–Z2) · {formatDuration(totalSeconds)} with HR</span>
+          <span className="text-sm text-text/60">easy (Z1–Z2) · {formatDuration(totalSeconds)} with HR</span>
         </div>
       )}
 
       <ZoneDistributionChart zones={zones} totalSeconds={totalSeconds} formatRange={formatHeartRateRange} />
 
       {secondsWithoutData > 0 && (
-        <p className="text-xs text-text/50 mt-2">
+        <p className="text-xs text-text/60 mt-2">
           {formatDuration(secondsWithoutData)} recorded without a heart rate sensor — excluded from the split.
         </p>
       )}

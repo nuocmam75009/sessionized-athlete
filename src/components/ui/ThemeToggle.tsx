@@ -35,7 +35,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
       onClick={toggle}
       aria-label={nextLabel}
       title={nextLabel}
-      className={`group relative inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md text-text/50 transition-colors hover:bg-text/[0.07] hover:text-accent cursor-pointer ${className}`}
+      className={`group relative inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md text-text/60 transition-colors hover:bg-text/[0.07] hover:text-accent cursor-pointer ${className}`}
     >
       {/* mode="wait" pour que l'icône sortante ait fini de pivoter avant que la
           suivante entre : les deux superposées à mi-course forment une bouillie. */}

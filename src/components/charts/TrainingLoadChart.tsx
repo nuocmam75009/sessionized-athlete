@@ -119,8 +119,8 @@ function LoadTooltip({ active, payload }: Partial<TooltipContentProps<number, st
         ))}
         {point.load > 0 && (
           <div className="contents">
-            <dt className="text-text/45 pt-1 border-t border-divider">Session load</dt>
-            <dd className="metric text-right text-text/45 pt-1 border-t border-divider">
+            <dt className="text-text/60 pt-1 border-t border-divider">Session load</dt>
+            <dd className="metric text-right text-text/60 pt-1 border-t border-divider">
               {point.load.toFixed(0)}
             </dd>
           </div>

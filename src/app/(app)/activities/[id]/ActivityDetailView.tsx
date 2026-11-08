@@ -152,20 +152,20 @@ export function ActivityDetailView({
                         {intensity && (
                           <span className="inline-flex items-center gap-1.5">
                             <span className={`w-1.5 h-1.5 rounded-full ${intensity.dotClass}`} />
-                            <span className="text-[9px] uppercase tracking-[0.1em] text-text/45">{intensity.label}</span>
+                            <span className="text-[9px] uppercase tracking-[0.1em] text-text/60">{intensity.label}</span>
                           </span>
                         )}
                       </td>
                     )}
                     <td className={`${tdClass} metric`}>{formatDistance(lap.distanceM)}</td>
                     <td className={`${tdClass} metric`}>{formatDuration(Math.round(lap.durationSec))}</td>
-                    <td className={`${tdClass} metric text-text/55`}>
+                    <td className={`${tdClass} metric text-text/60`}>
                       {/* Pas d'allure sur une récupération : trente mètres en
                           deux minutes donnent 1h/km, un chiffre qui n'apprend
                           rien et rend la colonne illisible. */}
                       {intensity?.isRecovery || lap.avgPaceSecPerKm == null ? '—' : formatPace(lap.avgPaceSecPerKm)}
                     </td>
-                    <td className={`${tdClass} metric text-text/55`}>
+                    <td className={`${tdClass} metric text-text/60`}>
                       {lap.avgHeartRate != null ? `${lap.avgHeartRate}bpm` : '—'}
                     </td>
                   </tr>

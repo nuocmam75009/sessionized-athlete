@@ -27,11 +27,11 @@ export function CoachCard({ coach }: { coach: CoachAssignment }) {
           <Avatar name={name} size={48} />
           <div className="min-w-0">
             <div className="font-heading font-semibold text-[15px] tracking-[-0.01em] truncate">{name}</div>
-            <div className="text-text/45 text-xs truncate">{coach.user.email}</div>
+            <div className="text-text/60 text-xs truncate">{coach.user.email}</div>
           </div>
         </div>
 
-        <div className="flex-1 text-sm text-text/55">Coach since {memberSince(coach.createdAt)}</div>
+        <div className="flex-1 text-sm text-text/60">Coach since {memberSince(coach.createdAt)}</div>
       </div>
     </Tilt>
   )

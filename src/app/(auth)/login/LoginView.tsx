@@ -267,7 +267,7 @@ export default function LoginView() {
           {submitting ? '…' : mode === 'login' ? 'Log in' : 'Create account'}
         </Button>
       </form>
-      <p className="text-[13px] mt-5 text-text/45">
+      <p className="text-[13px] mt-5 text-text/60">
         {mode === 'login' ? 'New here?' : 'Already have an account?'}{' '}
         {/* Un bouton et non un lien : il change de mode sans quitter la page. */}
         <button

@@ -97,7 +97,7 @@ function SidebarItem({ label, icon: Icon, active, collapsed, showPill = true, hr
       )}
       <span
         className={`relative z-10 shrink-0 transition-[color,transform] duration-200 ease-out-3d group-hover:scale-110 ${
-          active ? 'text-accent' : 'text-text/45 group-hover:text-text'
+          active ? 'text-accent' : 'text-text/60 group-hover:text-text'
         }`}
       >
         <Icon />
@@ -121,7 +121,16 @@ function SidebarItem({ label, icon: Icon, active, collapsed, showPill = true, hr
 
   if (href) {
     return (
-      <Link href={href} onClick={onNavigate} aria-current={active ? 'page' : undefined} className={className}>
+      <Link
+        href={href}
+        onClick={onNavigate}
+        aria-current={active ? 'page' : undefined}
+        // Repliée, la barre n'affiche que l'icône : le libellé reste le nom
+        // du lien pour les lecteurs d'écran, et s'affiche au survol.
+        aria-label={collapsed ? label : undefined}
+        title={collapsed ? label : undefined}
+        className={className}
+      >
         {content}
         {/* En absolu sur le bord droit : visible aussi quand la barre est repliée. */}
         <PendingHint className="absolute right-2 top-1/2 z-10 -translate-y-1/2" />
@@ -136,6 +145,8 @@ function SidebarItem({ label, icon: Icon, active, collapsed, showPill = true, hr
         onClick?.()
         onNavigate?.()
       }}
+      aria-label={collapsed ? label : undefined}
+      title={collapsed ? label : undefined}
       className={className}
     >
       {content}
@@ -310,7 +321,7 @@ export function Sidebar({ brand, brandMark, navItems, actions = [], utility }: S
             type="button"
             onClick={() => setCollapsed((c) => !c)}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-sm text-text/45 transition-colors hover:bg-text/[0.07] hover:text-text cursor-pointer"
+            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-sm text-text/60 transition-colors hover:bg-text/[0.07] hover:text-text cursor-pointer"
           >
             <motion.svg
               width="16"

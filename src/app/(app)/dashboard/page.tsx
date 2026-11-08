@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { MonthCalendar } from '@/components/calendar/MonthCalendar'
 import { MonthSportBreakdown } from '@/components/calendar/MonthSportBreakdown'
@@ -17,6 +18,8 @@ import {
 import { serverApiFetchStatus } from '@/lib/server-api'
 import { formatDistance, formatDuration } from '@/lib/utils'
 import type { Activity, TrainingLoadSeries, Workout } from '@/lib/types'
+
+export const metadata: Metadata = { title: 'Calendar' }
 
 // Fenêtre affichée par le graphe de charge. Assez longue pour qu'une reprise
 // ou une coupure se voient, assez courte pour que la courbe garde du relief.

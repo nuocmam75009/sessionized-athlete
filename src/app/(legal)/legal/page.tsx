@@ -4,7 +4,7 @@ import { HOSTS, LEGAL_LAST_UPDATED, PUBLISHER } from '@/lib/legal'
 import { formatLegalDate } from '@/lib/utils'
 
 export const metadata: Metadata = {
-  title: 'Legal notice · Sessionized',
+  title: 'Legal notice',
 }
 
 // Mentions légales exigées par l'article 6 de la LCEN : éditeur, directeur de

@@ -67,7 +67,7 @@ export function SportHoursChart({ bySport }: { bySport: SportBreakdown[] }) {
         <span className="metric font-semibold text-[19px] leading-none">
           {formatDuration(Math.round(totalSeconds))}
         </span>
-        <span className="text-[9px] uppercase tracking-[0.12em] text-text/35 mt-1.5">total</span>
+        <span className="text-[9px] uppercase tracking-[0.12em] text-text/60 mt-1.5">total</span>
       </div>
     </div>
   )

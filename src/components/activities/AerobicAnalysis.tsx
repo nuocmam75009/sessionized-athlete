@@ -67,7 +67,7 @@ export function AerobicAnalysis({ activityId }: { activityId: string }) {
 
   if (!analysis.eligible) {
     return (
-      <p className="text-[12px] text-text/40 mb-7">
+      <p className="text-[12px] text-text/60 mb-7">
         No aerobic analysis for this session — {REJECTIONS[analysis.reason]}.
       </p>
     )
@@ -86,7 +86,7 @@ export function AerobicAnalysis({ activityId }: { activityId: string }) {
         <div className="flex gap-10 flex-wrap mb-5">
           <Stat label="Efficiency factor" value={analysis.efficiencyFactor.toFixed(2)} />
           <div>
-            <div className="text-[10px] uppercase tracking-[0.11em] text-text/45">Decoupling</div>
+            <div className="text-[10px] uppercase tracking-[0.11em] text-text/60">Decoupling</div>
             <div className="metric mt-1.5 font-semibold leading-none text-[26px]">
               {analysis.decouplingPct > 0 ? '+' : ''}
               {analysis.decouplingPct.toFixed(1)} %
@@ -128,7 +128,7 @@ export function AerobicAnalysis({ activityId }: { activityId: string }) {
           </tbody>
         </table>
 
-        <p className="text-[12px] text-text/45 mt-4 max-w-[64ch]">
+        <p className="text-[12px] text-text/60 mt-4 max-w-[64ch]">
           {rating.hint} Efficiency factor is metres covered per minute per heartbeat — it rises as
           you get faster at the same heart rate. The first{' '}
           {formatDuration(Math.round(analysis.analyzedFromSec))} are excluded as warm-up.
