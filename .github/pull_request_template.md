@@ -11,7 +11,7 @@
 
 ## Vérifications
 
-- [ ] `npm run lint`, `npx tsc --noEmit` et `npm test` passent en local
+- [ ] `npm run lint`, `npm run typecheck` et `npm test` passent en local
 - [ ] Tests ajoutés ou mis à jour, avec l'identifiant du cas du plan de tests (Txx) dans leur nom
 - [ ] Nouvelle page : titre (`metadata.title`) et audit axe (ajout à `tests/e2e/a11y.spec.ts`)
 - [ ] Nouvelle origine externe : ajoutée à la CSP (`src/lib/security-headers.ts`), et justifiée
