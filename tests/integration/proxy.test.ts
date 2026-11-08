@@ -23,13 +23,71 @@ describe('proxy — périmètre', () => {
     'protège %s',
     (url) => {
       expect(unstable_doesMiddlewareMatch({ config, nextConfig, url })).toBe(true)
+      expect(redirectTarget(proxy(requestTo(url)))?.pathname).toBe('/login')
     },
   )
 
+  // Pages publiques : le proxy leur pose la CSP, sans exiger de session.
+  it.each(['/login', '/legal', '/privacy'])('%s : CSP, mais accessible sans session', (url) => {
+    expect(unstable_doesMiddlewareMatch({ config, nextConfig, url })).toBe(true)
+    const response = proxy(requestTo(url))
+    expect(redirectTarget(response)).toBeNull()
+    expect(response.headers.get('Content-Security-Policy')).toContain("frame-ancestors 'none'")
+  })
+
   // Les routes /api vérifient elles-mêmes le cookie (401 JSON plutôt qu'une
-  // redirection HTML) ; /login doit rester accessible sans session.
-  it.each(['/login', '/api/auth/login', '/api/activities/abc'])('laisse passer %s', (url) => {
-    expect(unstable_doesMiddlewareMatch({ config, nextConfig, url })).toBe(false)
+  // redirection HTML) ; les fichiers statiques n'ont rien à protéger.
+  it.each(['/api/auth/login', '/api/activities/abc', '/_next/static/chunks/app.js', '/leaflet/marker-icon-2x.png'])(
+    'laisse passer %s',
+    (url) => {
+      expect(unstable_doesMiddlewareMatch({ config, nextConfig, url })).toBe(false)
+    },
+  )
+})
+
+describe('proxy — Content-Security-Policy', () => {
+  function cspOf(response: Response) {
+    return response.headers.get('Content-Security-Policy') ?? ''
+  }
+  const nonceOf = (csp: string) => /'nonce-([^']+)'/.exec(csp)?.[1]
+
+  it('T30 — politique stricte : scripts au nonce seulement, ni objet, ni cadre', () => {
+    const csp = cspOf(proxy(requestTo('/dashboard', validToken())))
+    expect(csp).toMatch(/script-src 'self' 'nonce-[A-Za-z0-9+/=]+' 'strict-dynamic'/)
+    expect(csp).not.toMatch(/script-src[^;]*'unsafe-inline'/)
+    expect(csp).toContain("object-src 'none'")
+    expect(csp).toContain("base-uri 'self'")
+    expect(csp).toContain("frame-ancestors 'none'")
+  })
+
+  it('un nonce neuf à chaque requête, transmis aux pages', () => {
+    const first = proxy(requestTo('/login'))
+    const second = proxy(requestTo('/login'))
+    const nonce = nonceOf(cspOf(first))
+    expect(nonce).toBeDefined()
+    expect(nonceOf(cspOf(second))).not.toBe(nonce)
+    expect(first.headers.get('x-middleware-request-x-nonce')).toBe(nonce)
+  })
+
+  it('le nonce envoyé par le navigateur est ignoré', () => {
+    const request = new NextRequest('http://localhost:3000/login', { headers: { 'x-nonce': 'choisi-par-l-attaquant' } })
+    const response = proxy(request)
+    expect(response.headers.get('x-middleware-request-x-nonce')).not.toBe('choisi-par-l-attaquant')
+  })
+})
+
+describe('next.config — en-têtes fixes', () => {
+  it('HSTS, nosniff, X-Frame-Options, Referrer-Policy et Permissions-Policy sur toutes les réponses', async () => {
+    const rules = await nextConfig.headers!()
+    const all = rules.find((rule) => rule.source === '/:path*')
+    const byName = Object.fromEntries(all!.headers.map(({ key, value }) => [key, value]))
+    expect(byName).toMatchObject({
+      'Strict-Transport-Security': expect.stringMatching(/max-age=\d{8}/),
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
+    })
+    expect(nextConfig.poweredByHeader).toBe(false)
   })
 })
 

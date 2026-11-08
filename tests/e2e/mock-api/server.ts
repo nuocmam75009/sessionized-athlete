@@ -333,7 +333,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
       })
       res.end(
         JSON.stringify({
-          format: 'sessionized-export/1',
+          format: 'sessionized-export/2',
           exportedAt: new Date().toISOString(),
           account: {
             id: user.id,

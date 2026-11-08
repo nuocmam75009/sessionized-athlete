@@ -44,7 +44,7 @@ test.describe('Droits RGPD', () => {
       format: string
       account: { email: string }
     }
-    expect(exported.format).toBe('sessionized-export/1')
+    expect(exported.format).toBe('sessionized-export/2')
     expect(exported.account.email).toBe(USERS.athlete.email)
   })
 
