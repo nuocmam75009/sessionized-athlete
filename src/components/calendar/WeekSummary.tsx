@@ -32,7 +32,8 @@ export function WeekSummary({ week, className = '' }: { week: WeekEntry; classNa
           </span>
         )}
       </div>
-      <h3 className="mb-1">{week.label}</h3>
+      {/* h2 : première section sous le h1 du mois ; taille d'un h3. */}
+      <h2 className="mb-1 text-[1.2rem] leading-[1.2] tracking-[-0.02em]">{week.label}</h2>
       <p className="text-sm text-text/60 mb-6">
         {summary.activeDays} active day{summary.activeDays === 1 ? '' : 's'} out of 7
       </p>
@@ -123,9 +124,9 @@ export function WeekSummary({ week, className = '' }: { week: WeekEntry; classNa
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="mb-6 last:mb-0">
-      {/* Le style d'étiquette (capitales sourdes) vient de globals.css — h4 ne
-          sert jamais de titre de contenu dans l'app. */}
-      <h4 className="mb-3 pb-2 border-b border-divider">{title}</h4>
+      {/* Style d'étiquette (capitales sourdes) de .section-title, globals.css ;
+          h3 sous le h2 de la semaine. */}
+      <h3 className="section-title mb-3 pb-2 border-b border-divider">{title}</h3>
       {children}
     </section>
   )

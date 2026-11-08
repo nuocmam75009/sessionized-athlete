@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { Field, fieldErrorProps, inputClassName, Select, Textarea } from '@/components/ui/Field'
 import { RouteMap } from '@/components/ui/RouteMap'
+import { useHydrated } from '@/hooks/useHydrated'
 import { clientFetch } from '@/lib/client-fetch'
 import { formatDateLabel } from '@/lib/utils'
 import type { UploadedActivity, Workout } from '@/lib/types'
@@ -35,6 +36,7 @@ async function attachGpx(activityId: string, file: File): Promise<boolean> {
 export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const hydrated = useHydrated()
   const [stage, setStage] = useState<Stage>('idle')
   const [selectedFitFile, setSelectedFitFile] = useState<File | null>(null)
   const [selectedGpxFile, setSelectedGpxFile] = useState<File | null>(null)
@@ -200,6 +202,8 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
         accept=".fit,.gpx"
         multiple
         className="hidden"
+        // Un fichier choisi avant l'hydratation ne serait jamais lu (useHydrated).
+        disabled={!hydrated}
         onChange={onFileSelected}
       />
 

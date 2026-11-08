@@ -7,6 +7,7 @@ import { AuthLayout } from '@/components/layout/AuthLayout'
 import { Button } from '@/components/ui/Button'
 import { CheckboxField, Field, fieldErrorProps, Input } from '@/components/ui/Field'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
+import { useHydrated } from '@/hooks/useHydrated'
 import type { AuthFailure } from '@/lib/auth-errors'
 import { safeRedirectTarget } from '@/lib/redirect'
 import type { AuthUser } from '@/lib/types'
@@ -63,6 +64,7 @@ export default function LoginView() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const hydrated = useHydrated()
 
   // Les règles changent d'un mode à l'autre (longueur du mot de passe) : les
   // erreurs affichées pour l'autre mode ne valent plus.
@@ -263,7 +265,7 @@ export default function LoginView() {
             {error}
           </p>
         )}
-        <Button type="submit" block disabled={submitting}>
+        <Button type="submit" block disabled={submitting || !hydrated}>
           {submitting ? '…' : mode === 'login' ? 'Log in' : 'Create account'}
         </Button>
       </form>

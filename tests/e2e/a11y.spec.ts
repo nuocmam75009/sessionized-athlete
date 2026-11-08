@@ -47,6 +47,8 @@ for (const colorScheme of ['dark', 'light'] as const) {
 
 test.describe('T29 — navigation au clavier et titres de page (RGAA 8.6, 12.7)', () => {
   test('chaque page a son propre titre', async ({ page, context }) => {
+    // Six pages à la suite : plus long que le délai par défaut sous charge.
+    test.slow()
     await page.goto('/login')
     await expect(page).toHaveTitle('Log in · Sessionized')
 
@@ -132,4 +134,18 @@ test.describe('T32 — préférences du système et affichage mobile', () => {
     expect(topmost).toBe(true)
     await context.close()
   })
+})
+
+// RGAA 9.1 : axe range cette règle parmi les bonnes pratiques, hors du
+// périmètre de T18 (WCAG A/AA) ; relevée par Lighthouse le 08/11/2026.
+test('T29 — plan des titres sans saut de niveau', async ({ page, context }) => {
+  // Quatre pages, un audit axe chacune.
+  test.slow()
+  await signInAs(context, USERS.athlete)
+  for (const path of ['/dashboard', `/activities/${ATHLETE_ACTIVITY_ID}`, '/profile', '/athlete-data']) {
+    await page.goto(path)
+    await page.waitForLoadState('networkidle')
+    const results = await new AxeBuilder({ page }).withRules(['heading-order']).analyze()
+    expect(results.violations.map((v) => `${path} ${v.id}`)).toEqual([])
+  }
 })

@@ -49,6 +49,8 @@ test.describe('Droits RGPD', () => {
   })
 
   test('T25 — suppression : mot de passe exigé, puis compte effacé et session fermée', async ({ page, context }) => {
+    // Parcours complet en trois écrans, deux appels à l'API.
+    test.slow()
     await signInAs(context, USERS.deleter)
     await page.goto('/profile')
 
