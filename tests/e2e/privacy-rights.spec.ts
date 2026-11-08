@@ -71,7 +71,11 @@ test.describe('Droits RGPD', () => {
     await expect(page.getByRole('status')).toHaveText('Your account and all its data have been deleted.')
     expect((await context.cookies()).some((c) => c.name === SESSION_COOKIE_NAME)).toBe(false)
 
-    // Le compte n'existe plus : la connexion est refusée.
+    // Le compte n'existe plus : la connexion est refusée. La page vient d'être
+    // rechargée en entier (hardNavigate) : une saisie faite avant l'hydratation
+    // serait effacée par React. Le bouton, actif une fois la page hydratée
+    // (useHydrated), sert de signal.
+    await expect(page.getByRole('button', { name: 'Log in' })).toBeEnabled()
     await page.getByLabel('Email', { exact: true }).fill(USERS.deleter.email)
     await page.getByLabel('Password', { exact: true }).fill(PASSWORD)
     await page.getByRole('button', { name: 'Log in' }).click()
