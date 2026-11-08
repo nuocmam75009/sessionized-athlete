@@ -17,6 +17,19 @@ updates:
         patterns: ["react", "react-dom", "@types/react", "@types/react-dom"]
       tests:
         patterns: ["vitest", "@vitest/*", "@playwright/test", "@testing-library/*", "msw"]
+    # Versions majeures du framework et des types Node : à la main, sur une
+    # branche dédiée ; @types/node suit la version de Node exécutée (22).
+    ignore:
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint-config-next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
