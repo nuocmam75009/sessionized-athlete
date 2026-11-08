@@ -52,7 +52,7 @@ export function ActivityNoteEditor({ activity, onSaved }: { activity: Activity; 
   if (!editing) {
     return (
       <div className="mb-6">
-        <h4 className="mb-3">Your note</h4>
+        <h2 className="section-title mb-3">Your note</h2>
         <p className="text-sm mb-1">
           <span className="text-text/60">Difficulty: </span>
           {activity.difficultyNote != null ? `${activity.difficultyNote}/10` : '—'}
@@ -70,7 +70,7 @@ export function ActivityNoteEditor({ activity, onSaved }: { activity: Activity; 
 
   return (
     <div className="mb-6 max-w-[420px]">
-      <h4 className="mb-3">Your note</h4>
+      <h2 className="section-title mb-3">Your note</h2>
       <div className="grid gap-3">
         <Field label="Athlete note" htmlFor="sn-edit-athlete-note">
           <Textarea

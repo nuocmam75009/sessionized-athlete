@@ -39,7 +39,7 @@ export function TrainingLoadPanel({ series }: { series: TrainingLoadSeries }) {
   if (series.activityCount === 0 || series.points.length === 0) {
     return (
       <section className="panel rounded-lg px-6 py-5">
-        <h4 className="mb-2">Training load</h4>
+        <h2 className="section-title mb-2">Training load</h2>
         <p className="text-[13px] text-text/60 max-w-[52ch]">
           Fitness, fatigue and form appear once you have imported a few activities — connect Strava
           or upload a .fit file to get started.
@@ -57,7 +57,7 @@ export function TrainingLoadPanel({ series }: { series: TrainingLoadSeries }) {
   return (
     <section className="panel rounded-lg px-6 py-5">
       <div className="flex items-baseline justify-between gap-4 flex-wrap mb-5">
-        <h4 className="mb-0">Training load</h4>
+        <h2 className="section-title mb-0">Training load</h2>
         <span className="text-[11px] uppercase tracking-[0.11em] text-text/60">
           Estimated · {activityCount} activities
         </span>

@@ -48,6 +48,6 @@ export const config = {
     // Toutes les pages, sauf les routes /api (elles vérifient elles-mêmes le
     // cookie et répondent en JSON, sans HTML à protéger), les fichiers de
     // Next et ceux de public/.
-    '/((?!api/|_next/static|_next/image|favicon\\.ico|leaflet/|.*\\.(?:png|jpg|jpeg|svg|webp|ico|txt)$).*)',
+    '/((?!api/|_next/static|_next/image|favicon\\.ico|leaflet/|maplibre/|.*\\.(?:png|jpg|jpeg|svg|webp|ico|txt)$).*)',
   ],
 }

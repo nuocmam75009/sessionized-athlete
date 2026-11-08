@@ -17,6 +17,9 @@
 /blob-report
 /playwright/.cache
 
+# worker MapLibre, copié depuis node_modules au build (scripts/copy-maplibre-worker.mjs)
+/public/maplibre/
+
 # next.js
 /.next/
 /out/

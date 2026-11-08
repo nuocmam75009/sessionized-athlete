@@ -71,6 +71,11 @@ export function RouteMap({ gpxData, points, onStats, className }: RouteMapProps)
       // Pont Leaflet ↔ MapLibre : les tuiles vectorielles sont rendues au WebGL
       // dans le tilePane, sous les calques Leaflet habituels (tracé, marqueurs).
       const { maplibreGL } = await import('@maplibre/maplibre-gl-leaflet')
+      // Worker servi depuis public/ (scripts/copy-maplibre-worker.mjs) : le
+      // chemin que MapLibre déduit de son propre fichier n'existe plus une
+      // fois le module regroupé par Next.
+      const maplibre = await import('maplibre-gl')
+      maplibre.setWorkerUrl('/maplibre/maplibre-gl-worker.mjs')
 
       if (cancelled || !containerRef.current) return
 

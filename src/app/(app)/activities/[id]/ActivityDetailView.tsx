@@ -111,7 +111,7 @@ export function ActivityDetailView({
 
       {mapPoints && mapPoints.length > 0 && (
         <>
-          <h4 className="mb-3">Route</h4>
+          <h2 className="section-title mb-3">Route</h2>
           <RouteMap points={mapPoints} className="w-full h-[280px] rounded-lg mb-7 border border-divider" />
         </>
       )}
@@ -129,7 +129,7 @@ export function ActivityDetailView({
 
       {laps.length > 0 && (
         <>
-          <h4 className="mb-3">Laps</h4>
+          <h2 className="section-title mb-3">Laps</h2>
           <table className="w-full border-collapse text-sm mb-6">
             <thead>
               <tr>
@@ -178,7 +178,7 @@ export function ActivityDetailView({
 
       {planned && (
         <>
-          <h4 className="mb-3">Planned vs. completed</h4>
+          <h2 className="section-title mb-3">Planned vs. completed</h2>
           <PlannedVsActualTable planned={planned} actual={actual} />
         </>
       )}

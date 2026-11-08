@@ -81,7 +81,7 @@ export function AerobicAnalysis({ activityId }: { activityId: string }) {
 
   return (
     <section className="mb-7">
-      <h4 className="mb-3">Aerobic response</h4>
+      <h2 className="section-title mb-3">Aerobic response</h2>
       <div className="panel rounded-lg px-6 py-5">
         <div className="flex gap-10 flex-wrap mb-5">
           <Stat label="Efficiency factor" value={analysis.efficiencyFactor.toFixed(2)} />

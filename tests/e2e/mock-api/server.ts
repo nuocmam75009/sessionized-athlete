@@ -450,6 +450,15 @@ async function route(req: IncomingMessage, res: ServerResponse) {
       Object.assign(activity, await toWebRequest(req).json())
       return send(res, 200, activity)
     }
+    // Une courte trace synthétique pour l'activité de référence : de quoi
+    // afficher la carte (T31). Les autres activités n'en ont pas.
+    if (method === 'GET' && sub === 'track' && id === ATHLETE_ACTIVITY_ID) {
+      return send(
+        res,
+        200,
+        Array.from({ length: 20 }, (_, i) => ({ elapsedSec: i * 5, latitude: 48.83 + i * 0.0003, longitude: 2.44, heartRate: 150 })),
+      )
+    }
     if (method === 'GET' && (sub === 'track' || sub === 'route')) return send(res, 200, [])
     if (method === 'GET' && sub === 'analysis') return send(res, 200, { eligible: false, reason: 'TOO_SHORT' })
     if (method === 'POST' && sub === 'gpx') return send(res, 201, { activityId: id, routePointsCount: 0 })

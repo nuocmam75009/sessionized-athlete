@@ -277,9 +277,13 @@
     line-height: 1.2;
     letter-spacing: -0.02em;
   }
-  /* h4 sert partout de titre de section, jamais de titre de contenu : traité
-     comme une étiquette (capitales espacées, sourd) plutôt que comme un titre. */
-  h4 {
+  /* Titre de section, traité comme une étiquette (capitales espacées, sourd)
+     plutôt que comme un titre de contenu. Porté par un h2 (.section-title)
+     quand la section est directement sous le h1 de la page : sauter de h1 à
+     h4 casse le plan du document que suivent les lecteurs d'écran (RGAA 9.1).
+     La classe l'emporte sur le style de h2 (spécificité supérieure). */
+  h4,
+  .section-title {
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.11em;

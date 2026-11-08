@@ -84,3 +84,29 @@ test.describe('T30 — en-têtes de sécurité et Content-Security-Policy', () =
     expect(await page.evaluate(() => (window as unknown as { __injected?: boolean }).__injected)).toBeUndefined()
   })
 })
+
+// Régression du 08/11/2026 : après la montée de maplibre-gl en version 6, la
+// carte restait vide, son worker introuvable (404) une fois le module
+// regroupé par Next. Il est désormais servi depuis public/maplibre/.
+test('T31 — la carte charge son worker, sans erreur ni violation de la CSP', async ({ page, context }) => {
+  // Style minimal à la place des tuiles externes, bloquées pendant les tests.
+  await page.route('https://tiles.openfreemap.org/**', (route) =>
+    route.fulfill({ json: { version: 8, sources: {}, layers: [] } }),
+  )
+  const errors: string[] = []
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text())
+  })
+  page.on('pageerror', (error) => errors.push(error.message))
+  await signInAs(context, USERS.athlete)
+
+  const worker = page.waitForResponse((response) => response.url().includes('/maplibre/maplibre-gl-worker.mjs'))
+  await page.goto(`/activities/${ATHLETE_ACTIVITY_ID}`)
+  const response = await worker
+  expect(response.status()).toBe(200)
+  expect(response.headers()['content-type']).toMatch(/javascript/)
+
+  await expect(page.locator('.leaflet-container')).toBeVisible()
+  await page.waitForLoadState('networkidle')
+  expect(errors.filter((e) => /worker|Content Security Policy|MIME type/i.test(e))).toEqual([])
+})

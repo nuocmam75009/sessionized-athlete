@@ -131,7 +131,7 @@ export function ProfileView({
       )}
       <div className="grid gap-8 max-w-[560px] mt-5">
         <section>
-          <h4 className="mb-3">Account</h4>
+          <h2 className="section-title mb-3">Account</h2>
           <div className="grid gap-3">
             <Field label="First name" htmlFor="sn-p-firstname">
               <Input id="sn-p-firstname" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
@@ -146,7 +146,7 @@ export function ProfileView({
         </section>
 
         <section>
-          <h4 className="mb-3">Coach</h4>
+          <h2 className="section-title mb-3">Coach</h2>
           {coach ? (
             <div className="panel-flat rounded-lg px-4 py-3.5">
               <p className="m-0 text-sm">
@@ -165,7 +165,7 @@ export function ProfileView({
         </section>
 
         <section>
-          <h4 className="mb-3">Preferences</h4>
+          <h2 className="section-title mb-3">Preferences</h2>
           <Field label="Units" htmlFor="sn-unit">
             <SegmentedControl
               name="unit"
@@ -192,7 +192,7 @@ export function ProfileView({
         </section>
 
         <section>
-          <h4 className="mb-3">Integrations</h4>
+          <h2 className="section-title mb-3">Integrations</h2>
           <div className="flex gap-2 items-center mb-2">
             <Badge variant="accent">Garmin Connect · Connected</Badge>
           </div>
@@ -273,7 +273,7 @@ export function ProfileView({
         {/* Après le bouton d'enregistrement : ces actions ne font pas partie
             du formulaire, et la suppression doit rester à l'écart. */}
         <section className="border-t border-divider pt-6">
-          <h4 className="mb-3">Your data</h4>
+          <h2 className="section-title mb-3">Your data</h2>
           <p className="text-sm text-text/80 mb-3 max-w-[60ch]">
             {user?.healthDataConsentAt && (
               <>You agreed to the processing of your health data on {formatLegalDate(user.healthDataConsentAt)}. </>
