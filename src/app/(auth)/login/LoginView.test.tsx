@@ -132,6 +132,39 @@ describe('LoginView — messages d’erreur', () => {
     expect(navigation.push).not.toHaveBeenCalled()
   })
 
+  it('T27 — mot de passe refusé par l’API : chaque raison sur le champ, qui reçoit le focus', async () => {
+    stubLogin(
+      Response.json(
+        {
+          message: 'Choose another password.',
+          reasons: ['Too weak: use at least 8 characters.', 'Too common or predictable.'],
+        },
+        { status: 400 },
+      ),
+    )
+    render(<LoginView />)
+    fireEvent.click(screen.getByRole('button', { name: 'Create an account' }))
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'camille@test.dev' } })
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'azerty123' } })
+    fireEvent.click(screen.getByRole('checkbox', { name: /health data/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }))
+
+    const password = screen.getByLabelText('Password')
+    await waitFor(() => expect(password).toHaveAccessibleDescription(/Too weak.*Too common or predictable/))
+    expect(password).toHaveAttribute('aria-invalid', 'true')
+    expect(password).toHaveFocus()
+    expect(navigation.push).not.toHaveBeenCalled()
+  })
+
+  it('T28 — compte verrouillé : le délai est annoncé', async () => {
+    stubLogin(Response.json({ message: 'Too many attempts. Try again in 14 min.' }, { status: 429 }))
+    render(<LoginView />)
+    submit()
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Too many attempts. Try again in 14 min.')
+    expect(navigation.push).not.toHaveBeenCalled()
+  })
+
   it('le passage à l’inscription est un bouton, pas un lien vers « # »', () => {
     render(<LoginView />)
     expect(screen.queryByRole('link', { name: 'Create an account' })).not.toBeInTheDocument()

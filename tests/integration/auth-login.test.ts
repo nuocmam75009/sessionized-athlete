@@ -83,4 +83,25 @@ describe('POST /api/auth/login', () => {
     expect(await res.json()).toEqual({ message: 'Invalid credentials' })
     expect(cookieJar.get(SESSION_COOKIE_NAME)).toBeUndefined()
   })
+
+  it('T28 — compte verrouillé (429) : délai restant, sans révéler si le compte existe', async () => {
+    backend.use(
+      http.post(`${API_URL}/auth/login`, () =>
+        HttpResponse.json(
+          {
+            statusCode: 429,
+            message: 'Trop de tentatives de connexion. Réessayez dans 14 min.',
+            retryAfterSec: 812,
+          },
+          { status: 429 },
+        ),
+      ),
+    )
+
+    const res = await POST(loginRequest(credentials))
+
+    expect(res.status).toBe(429)
+    expect(await res.json()).toEqual({ message: 'Too many attempts. Try again in 14 min.' })
+    expect(cookieJar.get(SESSION_COOKIE_NAME)).toBeUndefined()
+  })
 })

@@ -7,13 +7,15 @@ import { AuthLayout } from '@/components/layout/AuthLayout'
 import { Button } from '@/components/ui/Button'
 import { CheckboxField, Field, fieldErrorProps, Input } from '@/components/ui/Field'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
+import type { AuthFailure } from '@/lib/auth-errors'
 import { safeRedirectTarget } from '@/lib/redirect'
 import type { AuthUser } from '@/lib/types'
 
 type Mode = 'login' | 'register'
 
-// Même minimum que l'API (RegisterDto) : refusé ici, il n'aboutirait qu'à un
-// message générique.
+// Même minimum que l'API (RegisterDto) : refusé ici sans aller-retour. Les
+// autres règles de la politique de mots de passe sont vérifiées par l'API,
+// dont les raisons de refus s'affichent sur le champ.
 const MIN_PASSWORD_LENGTH = 8
 
 interface FieldErrors {
@@ -111,7 +113,22 @@ export default function LoginView() {
                 }),
               })
             })()
-      if (!res.ok) throw new Error('auth failed')
+      if (!res.ok) {
+        const failure = (await res.json().catch(() => null)) as AuthFailure | null
+        // Compte ou IP temporairement bloqués : le délai est dit, sans rien
+        // révéler sur l'existence du compte (même réponse pour tous).
+        if (res.status === 429 && failure?.message) {
+          setError(failure.message)
+          return
+        }
+        // Mot de passe refusé à l'inscription : chaque raison, sur le champ.
+        if (mode === 'register' && failure?.reasons?.length) {
+          setFieldErrors({ password: failure.reasons.join(' ') })
+          document.getElementById(FIELD_IDS.password)?.focus()
+          return
+        }
+        throw new Error('auth failed')
+      }
 
       const { user }: { user: AuthUser } = await res.json()
 
