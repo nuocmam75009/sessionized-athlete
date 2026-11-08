@@ -39,8 +39,11 @@ jobs:
       - name: Analyse statique (ESLint)
         run: npm run lint
 
+      # next typegen d'abord : les types globaux des routes (LayoutProps,
+      # PageProps) sont générés dans .next/types, absent d'un dépôt fraîchement
+      # cloné. En local, next dev ou next build les avaient déjà produits.
       - name: Contrôle des types (TypeScript)
-        run: npx tsc --noEmit
+        run: npm run typecheck
 
       # Unitaires (jsdom) et intégration (Route Handlers et proxy, avec le
       # backend simulé par MSW) : aucun service externe.
