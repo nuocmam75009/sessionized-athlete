@@ -311,7 +311,7 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
           {savedWithoutRoute ? (
             <p role="alert" className="text-sm text-danger">
               Activity saved, but the .gpx route couldn&apos;t be attached.{' '}
-              <Link href={`/activities/${savedWithoutRoute}`} className="text-accent hover:text-accent-700">
+              <Link href={`/activities/${savedWithoutRoute}`} className="text-accent underline underline-offset-2 hover:text-accent-700">
                 Add it from the activity page →
               </Link>
             </p>

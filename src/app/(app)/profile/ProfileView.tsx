@@ -157,7 +157,7 @@ export function ProfileView({
           ) : (
             <div>
               <p className="m-0 text-text/60 mb-2">No coach assigned.</p>
-              <Link href="/coaches" className="text-sm text-accent hover:text-accent-700">
+              <Link href="/coaches" className="text-sm text-accent underline underline-offset-2 hover:text-accent-700">
                 Find a coach →
               </Link>
             </div>
@@ -237,7 +237,7 @@ export function ProfileView({
           {stravaBanner === 'connected' && stravaSync === 'done' && (
             <p role="status" className="text-sm text-success mt-2">
               Strava activities imported.{' '}
-              <Link href="/dashboard" className="text-accent hover:text-accent-700">
+              <Link href="/dashboard" className="text-accent underline underline-offset-2 hover:text-accent-700">
                 View my calendar →
               </Link>
             </p>

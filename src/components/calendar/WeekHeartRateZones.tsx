@@ -41,7 +41,7 @@ export function WeekHeartRateZones({ week }: { week: WeekEntry }) {
     return (
       <p className="text-sm text-text/60">
         No heart rate zones synced yet —{' '}
-        <Link href="/athlete-data" className="text-accent hover:text-accent-700">
+        <Link href="/athlete-data" className="text-accent underline underline-offset-2 hover:text-accent-700">
           connect Strava
         </Link>{' '}
         to get them.
