@@ -98,6 +98,23 @@ test.describe('Contrôle d’accès', () => {
     await expect(page).toHaveURL('/dashboard?month=2026-10')
   })
 
+  test('T26 — déconnexion : le jeton est révoqué, le rejouer ne rouvre pas la session', async ({ page, context }) => {
+    await page.goto('/login')
+    await logIn(page, USERS.leaver.email, PASSWORD)
+    await expect(page).toHaveURL('/dashboard')
+    const session = (await context.cookies()).find((c) => c.name === SESSION_COOKIE_NAME)
+    expect(session).toBeDefined()
+
+    await page.getByRole('button', { name: 'Log out' }).first().click()
+    await expect(page).toHaveURL(/\/login/)
+    expect((await context.cookies()).some((c) => c.name === SESSION_COOKIE_NAME)).toBe(false)
+
+    // Un attaquant qui aurait copié le cookie avant la déconnexion le rejoue.
+    await context.addCookies([session!])
+    await page.goto('/dashboard')
+    await expect(page).toHaveURL('/login?redirect=%2Fdashboard&reason=expired')
+  })
+
   test('T20 — jeton refusé par l’API pendant que la page est ouverte : /login', async ({ page, context }) => {
     // La page d'import ne charge rien côté serveur : c'est son appel client à
     // /api/workouts qui reçoit le 401.

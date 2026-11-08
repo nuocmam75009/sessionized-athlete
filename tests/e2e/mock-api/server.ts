@@ -46,6 +46,8 @@ export const USERS = {
   legacyAudit: { id: 'cmuserlegacyaudit0000000a', email: 'legacy-audit@test.dev', role: 'ATHLETE', firstName: 'Lia', lastName: 'Legacy' },
   // Supprime son compte pendant T25 : à ne pas réutiliser ailleurs.
   deleter: { id: 'cmuserdeleter00000000000a', email: 'deleter@test.dev', role: 'ATHLETE', firstName: 'Del', lastName: 'Eter' },
+  // Se déconnecte (T26) : son jeton est révoqué, il ne doit gêner aucun autre test.
+  leaver: { id: 'cmuserleaver000000000000a', email: 'leaver@test.dev', role: 'ATHLETE', firstName: 'Lou', lastName: 'Leaver' },
   coach: { id: 'cmusercoach0000000000000a', email: 'coach@test.dev', role: 'COACH', firstName: 'Cleo', lastName: 'Coach' },
 } satisfies Record<string, MockUser>
 
@@ -180,6 +182,8 @@ const healthDataConsentAt = new Map<string, string>(
     .map((u) => [u.id, '2026-11-01T08:00:00.000Z']),
 )
 const deletedUsers = new Set<string>()
+// Jetons révoqués par POST /auth/logout (Redis côté API réelle).
+const revokedTokens = new Set<string>()
 let idCounter = 0
 
 function nextId(prefix: string): string {
@@ -220,6 +224,7 @@ function authenticate(req: IncomingMessage): MockUser | null {
   const header = req.headers.authorization ?? ''
   const [scheme, token] = header.split(' ')
   if (scheme !== 'Bearer' || !token) return null
+  if (revokedTokens.has(token)) return null
   try {
     const payload = JSON.parse(Buffer.from(token.split('.')[1] ?? '', 'base64url').toString('utf8'))
     if (typeof payload.exp !== 'number' || payload.exp * 1000 <= Date.now()) return null
@@ -275,6 +280,12 @@ async function route(req: IncomingMessage, res: ServerResponse) {
 
   const user = authenticate(req)
   if (!user) return error(res, 401, 'Unauthorized')
+
+  if (method === 'POST' && path === '/auth/logout') {
+    revokedTokens.add((req.headers.authorization ?? '').split(' ')[1])
+    res.writeHead(204).end()
+    return
+  }
 
   const ownActivities = () => activities.filter((a) => a.athleteId === user.id)
 
