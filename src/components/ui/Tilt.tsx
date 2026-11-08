@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, type PointerEvent, type ReactNode } from 'react'
-import { motion, useMotionTemplate, useMotionValue, useReducedMotion, useSpring, useTransform } from 'motion/react'
+import { motion, useMotionTemplate, useMotionValue, useSpring, useTransform } from 'motion/react'
 
 interface TiltProps {
   children: ReactNode
@@ -22,11 +22,11 @@ interface TiltProps {
  *
  * La perspective est ouverte par le cadre extérieur, jamais par l'élément qui
  * tourne — `perspective` ne s'applique qu'aux enfants. Sous
- * prefers-reduced-motion, le composant s'efface et ne rend que ses enfants.
+ * prefers-reduced-motion, la carte ne suit pas le pointeur (même HTML, voir
+ * MotionProvider).
  */
 export function Tilt({ children, className = '', max = 7, glare = true }: TiltProps) {
   const frameRef = useRef<HTMLDivElement>(null)
-  const reduceMotion = useReducedMotion()
 
   // Position du pointeur, normalisée dans [-0.5, 0.5] depuis le centre.
   const offsetX = useMotionValue(0)
@@ -47,7 +47,9 @@ export function Tilt({ children, className = '', max = 7, glare = true }: TiltPr
 
   function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
     const frame = frameRef.current
-    if (!frame) return
+    // Lu au moment du geste et non au rendu : le HTML reste le même que sur le
+    // serveur, et la carte ne s'incline simplement pas.
+    if (!frame || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     const rect = frame.getBoundingClientRect()
     const ratioX = (event.clientX - rect.left) / rect.width
     const ratioY = (event.clientY - rect.top) / rect.height
@@ -63,8 +65,6 @@ export function Tilt({ children, className = '', max = 7, glare = true }: TiltPr
     glareX.set(50)
     glareY.set(50)
   }
-
-  if (reduceMotion) return <div className={className}>{children}</div>
 
   return (
     <div

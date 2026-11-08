@@ -154,5 +154,7 @@ export function RouteMap({ gpxData, points, onStats, className }: RouteMapProps)
     }
   }, [gpxData, points, onStats, theme])
 
-  return <div ref={containerRef} className={className ?? 'w-full h-[220px] rounded-md'} />
+  // relative z-0 : contexte d'empilement propre. Sans lui, les calques de
+  // Leaflet (z-index 400 et plus) passaient au-dessus du menu mobile ouvert.
+  return <div ref={containerRef} className={`relative z-0 ${className ?? 'w-full h-[220px] rounded-md'}`} />
 }

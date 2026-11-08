@@ -88,3 +88,48 @@ test.describe('T29 — navigation au clavier et titres de page (RGAA 8.6, 12.7)'
     }
   })
 })
+
+// Régressions relevées le 08/11/2026 en capturant les écrans du dossier.
+test.describe('T32 — préférences du système et affichage mobile', () => {
+  // « Réduire les animations » faisait rendre à Reveal et Tilt un HTML
+  // différent de celui du serveur : erreur d'hydratation (React n° 418), page
+  // reconstruite côté client et thème clair perdu.
+  test('« réduire les animations » : aucune erreur d’hydratation, le thème clair est conservé', async ({ browser }) => {
+    const context = await browser.newContext({ colorScheme: 'light', reducedMotion: 'reduce' })
+    await signInAs(context, USERS.athlete)
+    const page = await context.newPage()
+    const errors: string[] = []
+    page.on('pageerror', (error) => errors.push(error.message))
+
+    for (const path of ['/dashboard', '/profile']) {
+      await page.goto(path)
+      await page.waitForLoadState('networkidle')
+      await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+    }
+    expect(errors).toEqual([])
+    await context.close()
+  })
+
+  // Les calques de Leaflet (z-index 400 et plus) passaient au-dessus du menu.
+  test('mobile : le menu ouvert passe au-dessus de la carte', async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
+    await signInAs(context, USERS.athlete)
+    const page = await context.newPage()
+    await page.route('https://tiles.openfreemap.org/**', (route) =>
+      route.fulfill({ json: { version: 8, sources: {}, layers: [] } }),
+    )
+    await page.goto(`/activities/${ATHLETE_ACTIVITY_ID}`)
+    const map = page.locator('.leaflet-container')
+    await expect(map).toBeVisible()
+
+    await page.getByRole('button', { name: 'Open menu' }).click()
+    const box = (await map.boundingBox())!
+    // Un point de la carte recouvert par le tiroir du menu (256 px de large).
+    const topmost = await page.evaluate(
+      ({ x, y }) => document.elementFromPoint(x, y)?.closest('.leaflet-container') === null,
+      { x: Math.min(box.x + 40, 200), y: box.y + box.height / 2 },
+    )
+    expect(topmost).toBe(true)
+    await context.close()
+  })
+})

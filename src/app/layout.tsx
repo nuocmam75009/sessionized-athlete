@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { AmbientBackdrop } from "@/components/layout/AmbientBackdrop";
+import { MotionProvider } from "@/components/layout/MotionProvider";
 import { NONCE_HEADER } from "@/lib/security-headers";
 import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme";
 import { APP_LOCALE } from "@/lib/utils";
@@ -51,8 +52,10 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         {/* Premier nœud du body pour s'exécuter avant toute peinture : c'est ce
             qui évite le flash de thème au chargement. Voir lib/theme.ts. */}
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
-        <AmbientBackdrop />
-        {children}
+        <MotionProvider>
+          <AmbientBackdrop />
+          {children}
+        </MotionProvider>
       </body>
     </html>
   );

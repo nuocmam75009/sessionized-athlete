@@ -1,7 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { motion, useReducedMotion } from 'motion/react'
+import { motion } from 'motion/react'
 
 interface RevealProps {
   children: ReactNode
@@ -18,10 +18,8 @@ interface RevealProps {
 // qu'aux enfants directs, donc l'hériter d'un conteneur de page plus haut ne
 // marcherait pas — sans ce cadre, rotateX écrase le bloc au lieu de l'incliner.
 export function Reveal({ children, className = '', delay = 0 }: RevealProps) {
-  const reduceMotion = useReducedMotion()
-
-  if (reduceMotion) return <div className={className}>{children}</div>
-
+  // Même HTML que les animations soient réduites ou non (MotionProvider) :
+  // un rendu conditionnel ici cassait l'hydratation.
   return (
     <div className="[perspective:1200px]">
       <motion.div
