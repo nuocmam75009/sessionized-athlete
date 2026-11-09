@@ -114,6 +114,11 @@ export interface Lap {
   index: number
   distanceM: number
   durationSec: number
+  // Départ du lap en secondes depuis le début de l'activité, repère de
+  // TrackPoint.elapsedSec. null sur un lap importé avant que l'API ne le
+  // calcule, absent d'une API antérieure au champ : le graphe d'allure se
+  // rabat alors sur la somme des durées (voir lapSpans, lib/pace-chart.ts).
+  startElapsedSec?: number | null
   avgPaceSecPerKm: number | null
   avgHeartRate: number | null
   maxHeartRate: number | null

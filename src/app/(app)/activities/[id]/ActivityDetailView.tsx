@@ -5,17 +5,17 @@ import { AerobicAnalysis } from '@/components/activities/AerobicAnalysis'
 import { ActivityNoteEditor } from '@/components/activities/ActivityNoteEditor'
 import { FitFileUpload } from '@/components/activities/FitFileUpload'
 import { GpxRouteUpload } from '@/components/activities/GpxRouteUpload'
+import { LapAnalysis } from '@/components/activities/LapAnalysis'
 import { PlannedVsActualTable } from '@/components/activities/PlannedVsActualTable'
 import { Badge } from '@/components/ui/Badge'
 import { BackLink } from '@/components/ui/BackLink'
 import { RouteMap, type RoutePoint } from '@/components/ui/RouteMap'
 import { Stat } from '@/components/ui/Stat'
-import { thClass, tdClass } from '@/components/ui/table'
-import { activityLabelStyle, formatActivity, lapIntensityStyle } from '@/lib/activity-format'
+import { activityLabelStyle, formatActivity } from '@/lib/activity-format'
 import { clientFetch } from '@/lib/client-fetch'
 import { workoutTargets } from '@/lib/plan-format'
-import { formatDateLabel, formatDistance, formatDuration, formatPace } from '@/lib/utils'
-import type { Activity, Workout } from '@/lib/types'
+import { formatDateLabel } from '@/lib/utils'
+import type { Activity, TrackPoint, Workout } from '@/lib/types'
 
 export function ActivityDetailView({
   activity: initialActivity,
@@ -26,7 +26,9 @@ export function ActivityDetailView({
 }) {
   const [activity, setActivity] = useState(initialActivity)
 
-  const [trackPoints, setTrackPoints] = useState<RoutePoint[] | null>(null)
+  // Trace seconde par seconde : la carte n'en lit que les positions, le
+  // graphe d'allure la vitesse et le temps écoulé.
+  const [trackPoints, setTrackPoints] = useState<TrackPoint[] | null>(null)
   // Tracé importé séparément via le bouton .gpx (POST /activities/:id/gpx) —
   // pris en compte seulement si le .fit n'a pas déjà de trace GPS.
   const [gpxRoutePoints, setGpxRoutePoints] = useState<RoutePoint[] | null>(null)
@@ -35,7 +37,7 @@ export function ActivityDetailView({
     let cancelled = false
     clientFetch(`/api/activities/${activity.id}/track`)
       .then((res) => (res.ok ? res.json() : []))
-      .then((data: RoutePoint[]) => {
+      .then((data: TrackPoint[]) => {
         if (!cancelled) setTrackPoints(data)
       })
       .catch(() => {
@@ -69,13 +71,11 @@ export function ActivityDetailView({
   const actual = formatActivity(activity)
   const planned = workout ? workoutTargets(workout) : null
 
-  // L'API ne garantit pas l'ordre des laps, et le rattachement d'un .fit les
-  // remplace en bloc : on trie sur index plutôt que de s'y fier.
-  const laps = [...activity.laps].sort((a, b) => a.index - b.index)
-  // Colonne affichée seulement si au moins un lap porte une intensité — sur une
-  // activité Strava sans .fit rattaché, elle serait vide de bout en bout.
-  const showIntensity = laps.some((lap) => lapIntensityStyle(lap.intensity) != null)
   const canAttachFit = activity.source === 'STRAVA' && !activity.hasFitFile
+  // Le rattachement d'un .fit remplace les laps en bloc, sous de nouveaux
+  // identifiants : la clé remonte LapAnalysis, dont la sélection désignerait
+  // sinon des laps disparus.
+  const lapsKey = activity.laps.map((lap) => lap.id).join()
 
   return (
     <div>
@@ -127,54 +127,12 @@ export function ActivityDetailView({
 
       <AerobicAnalysis activityId={activity.id} />
 
-      {laps.length > 0 && (
-        <>
-          <h2 className="section-title mb-3">Laps</h2>
-          <table className="w-full border-collapse text-sm mb-6">
-            <thead>
-              <tr>
-                <th className={thClass}>Lap</th>
-                {showIntensity && <th className={thClass}>Type</th>}
-                <th className={thClass}>Distance</th>
-                <th className={thClass}>Duration</th>
-                <th className={thClass}>Pace</th>
-                <th className={thClass}>Avg HR</th>
-              </tr>
-            </thead>
-            <tbody>
-              {laps.map((lap) => {
-                const intensity = lapIntensityStyle(lap.intensity)
-                return (
-                  <tr key={lap.id} className={intensity?.isRecovery ? 'bg-text/[0.045]' : ''}>
-                    <td className={`${tdClass} metric font-semibold`}>{lap.index + 1}</td>
-                    {showIntensity && (
-                      <td className={tdClass}>
-                        {intensity && (
-                          <span className="inline-flex items-center gap-1.5">
-                            <span className={`w-1.5 h-1.5 rounded-full ${intensity.dotClass}`} />
-                            <span className="text-[9px] uppercase tracking-[0.1em] text-text/60">{intensity.label}</span>
-                          </span>
-                        )}
-                      </td>
-                    )}
-                    <td className={`${tdClass} metric`}>{formatDistance(lap.distanceM)}</td>
-                    <td className={`${tdClass} metric`}>{formatDuration(Math.round(lap.durationSec))}</td>
-                    <td className={`${tdClass} metric text-text/60`}>
-                      {/* Pas d'allure sur une récupération : trente mètres en
-                          deux minutes donnent 1h/km, un chiffre qui n'apprend
-                          rien et rend la colonne illisible. */}
-                      {intensity?.isRecovery || lap.avgPaceSecPerKm == null ? '—' : formatPace(lap.avgPaceSecPerKm)}
-                    </td>
-                    <td className={`${tdClass} metric text-text/60`}>
-                      {lap.avgHeartRate != null ? `${lap.avgHeartRate}bpm` : '—'}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </>
-      )}
+      <LapAnalysis
+        key={lapsKey}
+        laps={activity.laps}
+        trackPoints={trackPoints}
+        lapTimesExcludePauses={canAttachFit}
+      />
 
       {planned && (
         <>

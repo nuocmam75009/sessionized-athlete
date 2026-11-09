@@ -148,8 +148,74 @@ function makeActivity(overrides: Partial<Activity> & Pick<Activity, 'id' | 'athl
   }
 }
 
+// Fractionné de l'activité de référence, pour le graphe d'allure et la
+// sélection de laps (T33) : échauffement, 6 × (2 min vite, 1 min 30 trot),
+// retour au calme. 45 min, comme son totalDurationSec.
+const REFERENCE_SEGMENTS = [
+  { intensity: 'WARMUP', durationSec: 900, speed: 3.2, heartRate: 140 },
+  ...Array.from({ length: 11 }, (_, i) =>
+    i % 2 === 0
+      ? { intensity: 'INTERVAL', durationSec: 120, speed: 5, heartRate: 172 }
+      : { intensity: 'RECOVERY', durationSec: 90, speed: 2.4, heartRate: 150 },
+  ),
+  { intensity: 'COOLDOWN', durationSec: 630, speed: 3, heartRate: 138 },
+]
+
+function referenceLaps() {
+  let start = 0
+  return REFERENCE_SEGMENTS.map((segment, index) => {
+    const lap = {
+      id: `cmlapathlete${String(index).padStart(13, '0')}`,
+      activityId: ATHLETE_ACTIVITY_ID,
+      index,
+      intensity: segment.intensity,
+      distanceM: segment.speed * segment.durationSec,
+      durationSec: segment.durationSec,
+      startElapsedSec: start,
+      avgPaceSecPerKm: 1000 / segment.speed,
+      avgHeartRate: segment.heartRate,
+      maxHeartRate: segment.heartRate + 6,
+      avgCadence: null,
+      avgPower: null,
+      avgStanceTimeMs: null,
+      avgVerticalOscillationMm: null,
+      avgVerticalRatio: null,
+      avgStepLengthMm: null,
+    }
+    start += segment.durationSec
+    return lap
+  })
+}
+
+// Un point toutes les 5 s, comme le jeu de démo de l'API.
+function referenceTrack() {
+  const points: Array<Record<string, number>> = []
+  let elapsedSec = 0
+  let distanceM = 0
+  for (const segment of REFERENCE_SEGMENTS) {
+    for (let t = 0; t < segment.durationSec; t += 5) {
+      points.push({
+        elapsedSec,
+        distanceM,
+        latitude: 48.83 + distanceM * 0.000009,
+        longitude: 2.44,
+        heartRate: segment.heartRate,
+        speedMPerSec: segment.speed,
+      })
+      elapsedSec += 5
+      distanceM += segment.speed * 5
+    }
+  }
+  return points
+}
+
 const activities: Activity[] = [
-  makeActivity({ id: ATHLETE_ACTIVITY_ID, athleteId: USERS.athlete.id, startedAt: todayAt(8, 0, -2) }),
+  makeActivity({
+    id: ATHLETE_ACTIVITY_ID,
+    athleteId: USERS.athlete.id,
+    startedAt: todayAt(8, 0, -2),
+    laps: referenceLaps(),
+  }),
   makeActivity({ id: OTHER_ATHLETE_ACTIVITY_ID, athleteId: USERS.other.id, athleteNote: 'Note privée de Otto' }),
 ]
 
@@ -450,14 +516,10 @@ async function route(req: IncomingMessage, res: ServerResponse) {
       Object.assign(activity, await toWebRequest(req).json())
       return send(res, 200, activity)
     }
-    // Une courte trace synthétique pour l'activité de référence : de quoi
-    // afficher la carte (T31). Les autres activités n'en ont pas.
+    // Une trace synthétique pour l'activité de référence : de quoi afficher la
+    // carte (T31) et le graphe d'allure (T33). Les autres activités n'en ont pas.
     if (method === 'GET' && sub === 'track' && id === ATHLETE_ACTIVITY_ID) {
-      return send(
-        res,
-        200,
-        Array.from({ length: 20 }, (_, i) => ({ elapsedSec: i * 5, latitude: 48.83 + i * 0.0003, longitude: 2.44, heartRate: 150 })),
-      )
+      return send(res, 200, referenceTrack())
     }
     if (method === 'GET' && (sub === 'track' || sub === 'route')) return send(res, 200, [])
     if (method === 'GET' && sub === 'analysis') return send(res, 200, { eligible: false, reason: 'TOO_SHORT' })
