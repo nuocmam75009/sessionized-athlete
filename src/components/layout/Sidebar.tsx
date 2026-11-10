@@ -23,16 +23,38 @@ export interface SidebarAction {
   onClick?: () => void
 }
 
+/** Noms accessibles des boutons propres à la sidebar, fournis par l'app dans
+    sa langue. */
+export interface SidebarLabels {
+  openMenu: string
+  closeMenu: string
+  expandSidebar: string
+  collapseSidebar: string
+}
+
+const DEFAULT_LABELS: SidebarLabels = {
+  openMenu: 'Open menu',
+  closeMenu: 'Close menu',
+  expandSidebar: 'Expand sidebar',
+  collapseSidebar: 'Collapse sidebar',
+}
+
 export interface SidebarProps {
   brand: string
   brandMark?: string
   navItems: SidebarNavItem[]
   actions?: SidebarAction[]
-  /** Contrôle rendu à droite de la barre mobile et dans le pied de la sidebar
-      desktop — le bascule de thème aujourd'hui. Passé en ReactNode pour que ce
-      composant reste ignorant de ce qu'il héberge, et donc copiable tel quel
-      dans l'app coach. */
-  utility?: ReactNode
+  /** Contrôles rendus à droite de la barre mobile et dans le pied de la
+      sidebar desktop — bascules de langue et de thème aujourd'hui. Passés en
+      ReactNode (ou en fonction de l'état replié, pour qu'ils s'adaptent à la
+      barre de 72px) afin que ce composant reste ignorant de ce qu'il héberge,
+      et donc copiable tel quel dans l'app coach. */
+  utility?: ReactNode | ((state: { collapsed: boolean }) => ReactNode)
+  labels?: SidebarLabels
+}
+
+function renderUtility(utility: SidebarProps['utility'], collapsed: boolean): ReactNode {
+  return typeof utility === 'function' ? utility({ collapsed }) : utility
 }
 
 function MenuIcon({ className }: SidebarIconProps) {
@@ -165,8 +187,9 @@ function NavList({ items, collapsed, pathname, onNavigate }: { items: SidebarNav
   )
 }
 
-// Pied de la sidebar : l'utilitaire (bascule de thème) au-dessus des actions,
-// séparé par le même filet. Replié, il se centre sous les icônes de nav.
+// Pied de la sidebar : les utilitaires (langue, thème) au-dessus des actions,
+// séparés par le même filet. Repliée, la barre les empile et les centre sous
+// les icônes de nav : côte à côte, ils déborderaient des 72px.
 function SidebarFooter({
   actions,
   collapsed,
@@ -175,14 +198,16 @@ function SidebarFooter({
 }: {
   actions: SidebarAction[]
   collapsed: boolean
-  utility?: ReactNode
+  utility?: SidebarProps['utility']
   onNavigate?: () => void
 }) {
   if (actions.length === 0 && !utility) return null
   return (
     <div className="flex flex-col gap-1 border-t border-divider px-3 py-3">
       {utility && (
-        <div className={`mb-1 flex px-1 ${collapsed ? 'justify-center' : 'justify-start'}`}>{utility}</div>
+        <div className={`mb-1 flex items-center gap-2 px-1 ${collapsed ? 'flex-col justify-center' : 'justify-start'}`}>
+          {renderUtility(utility, collapsed)}
+        </div>
       )}
       {actions.map((action) => (
         <SidebarItem
@@ -214,7 +239,7 @@ const SHELL = 'bg-surface/92'
 // tokens de thème partagés (--color-accent, --color-surface, --color-text,
 // --color-divider, --font-heading) — copiable tel quel dans sessionized-coach
 // tant que ces tokens y sont définis.
-export function Sidebar({ brand, brandMark, navItems, actions = [], utility }: SidebarProps) {
+export function Sidebar({ brand, brandMark, navItems, actions = [], utility, labels = DEFAULT_LABELS }: SidebarProps) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -234,7 +259,7 @@ export function Sidebar({ brand, brandMark, navItems, actions = [], utility }: S
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
-          aria-label="Open menu"
+          aria-label={labels.openMenu}
           className="inline-flex h-8 w-8 items-center justify-center rounded-sm text-text/60 transition-colors hover:bg-text/[0.07] hover:text-text cursor-pointer"
         >
           <MenuIcon />
@@ -243,7 +268,7 @@ export function Sidebar({ brand, brandMark, navItems, actions = [], utility }: S
         <span className="font-heading font-semibold tracking-[-0.01em]">{brand}</span>
         {/* Poussé à droite de la barre : sur mobile c'est le seul endroit où le
             contrôle reste atteignable sans ouvrir le tiroir. */}
-        {utility && <span className="ml-auto">{utility}</span>}
+        {utility && <span className="ml-auto flex items-center gap-2">{renderUtility(utility, false)}</span>}
       </div>
 
       <AnimatePresence>
@@ -273,7 +298,7 @@ export function Sidebar({ brand, brandMark, navItems, actions = [], utility }: S
                 <button
                   type="button"
                   onClick={() => setMobileOpen(false)}
-                  aria-label="Close menu"
+                  aria-label={labels.closeMenu}
                   className="inline-flex h-8 w-8 items-center justify-center rounded-sm text-text/60 transition-colors hover:bg-text/[0.07] hover:text-text cursor-pointer"
                 >
                   <CloseIcon />
@@ -320,7 +345,7 @@ export function Sidebar({ brand, brandMark, navItems, actions = [], utility }: S
           <button
             type="button"
             onClick={() => setCollapsed((c) => !c)}
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-label={collapsed ? labels.expandSidebar : labels.collapseSidebar}
             className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-sm text-text/60 transition-colors hover:bg-text/[0.07] hover:text-text cursor-pointer"
           >
             <motion.svg

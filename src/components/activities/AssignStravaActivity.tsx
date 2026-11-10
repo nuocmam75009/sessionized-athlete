@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
+import { useI18n } from '@/hooks/useI18n'
 import { formatActivity } from '@/lib/activity-format'
 import { clientFetch } from '@/lib/client-fetch'
 import { formatDateLabel } from '@/lib/utils'
@@ -15,13 +16,14 @@ import type { Activity } from '@/lib/types'
 // orpheline (workoutId null) et doit être assignée ici.
 export function AssignStravaActivity({ workoutId, candidates }: { workoutId: string; candidates: Activity[] }) {
   const router = useRouter()
+  const { locale, t } = useI18n()
   const [open, setOpen] = useState(false)
   const [assigningId, setAssigningId] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [failed, setFailed] = useState(false)
 
   async function assign(activityId: string) {
     setAssigningId(activityId)
-    setError(null)
+    setFailed(false)
     try {
       const res = await clientFetch(`/api/activities/${activityId}`, {
         method: 'PATCH',
@@ -32,7 +34,7 @@ export function AssignStravaActivity({ workoutId, candidates }: { workoutId: str
       setOpen(false)
       router.refresh()
     } catch {
-      setError("Couldn't assign the activity. Try again.")
+      setFailed(true)
     } finally {
       setAssigningId(null)
     }
@@ -41,7 +43,7 @@ export function AssignStravaActivity({ workoutId, candidates }: { workoutId: str
   if (!open) {
     return (
       <Button variant="secondary" onClick={() => setOpen(true)}>
-        Assign Strava activity
+        {t.assignStrava.open}
       </Button>
     )
   }
@@ -49,28 +51,28 @@ export function AssignStravaActivity({ workoutId, candidates }: { workoutId: str
   return (
     <div className="panel rounded-lg p-4 w-full max-w-[420px]">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-semibold">Assign a Strava activity</span>
+        <span className="text-sm font-semibold">{t.assignStrava.title}</span>
         <button
           type="button"
           onClick={() => setOpen(false)}
           className="text-text/60 hover:text-text text-sm cursor-pointer"
         >
-          Cancel
+          {t.common.cancel}
         </button>
       </div>
 
       <div className="grid gap-2">
         {candidates.map((activity) => {
-          const actual = formatActivity(activity)
+          const actual = formatActivity(activity, locale)
           return (
             <div
               key={activity.id}
               className="flex items-center justify-between gap-2 panel-flat rounded-md px-3 py-2.5"
             >
               <div className="text-sm min-w-0">
-                <div className="font-medium truncate">{activity.sport ?? 'Activity'}</div>
+                <div className="font-medium truncate">{activity.sport ?? t.common.activity}</div>
                 <div className="metric text-text/60 text-[12px] mt-0.5">
-                  {formatDateLabel(activity.startedAt)} · {actual.distance} · {actual.duration}
+                  {formatDateLabel(activity.startedAt, locale)} · {actual.distance} · {actual.duration}
                 </div>
               </div>
               <Button
@@ -79,15 +81,15 @@ export function AssignStravaActivity({ workoutId, candidates }: { workoutId: str
                 onClick={() => assign(activity.id)}
                 disabled={assigningId !== null}
               >
-                {assigningId === activity.id ? 'Assigning…' : 'Assign'}
+                {assigningId === activity.id ? t.assignStrava.assigning : t.assignStrava.assign}
               </Button>
             </div>
           )
         })}
       </div>
-      {error && (
+      {failed && (
         <p role="alert" className="text-sm text-danger mt-2">
-          {error}
+          {t.assignStrava.failed}
         </p>
       )}
     </div>

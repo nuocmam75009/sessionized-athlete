@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { getI18n } from '@/lib/i18n/server'
 import Link from 'next/link'
 import { MonthCalendar } from '@/components/calendar/MonthCalendar'
 import { MonthSportBreakdown } from '@/components/calendar/MonthSportBreakdown'
@@ -19,7 +20,10 @@ import { serverApiFetchStatus } from '@/lib/server-api'
 import { formatDistance, formatDuration } from '@/lib/utils'
 import type { Activity, TrainingLoadSeries, Workout } from '@/lib/types'
 
-export const metadata: Metadata = { title: 'Calendar' }
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n()
+  return { title: t.pageTitles.calendar }
+}
 
 // Fenêtre affichée par le graphe de charge. Assez longue pour qu'une reprise
 // ou une coupure se voient, assez courte pour que la courbe garde du relief.
@@ -51,11 +55,12 @@ export default async function DashboardPage({
 
   // /strava/status ne lit que notre base, sans appeler Strava : la
   // synchronisation, elle, n'a lieu qu'à la demande (StravaSyncButton).
-  const [workoutsRes, activitiesRes, { data: trainingLoad }, { data: strava }] = await Promise.all([
+  const [workoutsRes, activitiesRes, { data: trainingLoad }, { data: strava }, { locale, t }] = await Promise.all([
     serverApiFetchStatus<Workout[]>('/workouts'),
     serverApiFetchStatus<Activity[]>('/activities'),
     serverApiFetchStatus<TrainingLoadSeries>(`/training-load?${loadQuery.toString()}`),
     serverApiFetchStatus<{ connected: boolean }>('/strava/status'),
+    getI18n(),
   ])
   const workouts = workoutsRes.data
   const activities = activitiesRes.data
@@ -75,9 +80,9 @@ export default async function DashboardPage({
       <div className="flex items-end justify-between mb-8 flex-wrap gap-4">
         <div>
           <div className="font-heading font-semibold text-[10px] tracking-[0.18em] uppercase text-accent mb-2.5">
-            Calendar
+            {t.dashboard.eyebrow}
           </div>
-          <h1 className="mb-0">{formatMonthLabel(monthStart)}</h1>
+          <h1 className="mb-0">{formatMonthLabel(monthStart, locale)}</h1>
         </div>
         <div className="flex items-center justify-end gap-3 flex-wrap">
           {/* key : un message de synchronisation ne survit pas au changement de mois. */}
@@ -88,17 +93,17 @@ export default async function DashboardPage({
             {/* Changer de mois relance quatre appels à l'API : le point signale
                 que le clic a été pris en compte. */}
             <Link href={`/dashboard?month=${toMonthParam(prevMonth)}`} className={MONTH_NAV_LINK}>
-              ‹ Previous
+              {t.dashboard.previous}
               <PendingHint />
             </Link>
             {!isCurrentMonth && (
               <Link href="/dashboard" className={`${MONTH_NAV_LINK} text-accent hover:text-accent-700`}>
-                This month
+                {t.dashboard.thisMonth}
                 <PendingHint />
               </Link>
             )}
             <Link href={`/dashboard?month=${toMonthParam(nextMonth)}`} className={MONTH_NAV_LINK}>
-              Next ›
+              {t.dashboard.next}
               <PendingHint />
             </Link>
           </nav>
@@ -113,16 +118,15 @@ export default async function DashboardPage({
           se payait directement sur la métrique. */}
       {calendarFailed && (
         <p role="alert" className="panel-flat rounded-md px-4 py-3 mb-4 text-sm text-danger">
-          Couldn&apos;t load all your workouts and activities — the calendar may be incomplete. Refresh the page to
-          try again.
+          {t.dashboard.loadFailed}
         </p>
       )}
       <MonthCalendar entries={entries} />
 
       <div className="panel rounded-lg mt-6 px-6 py-5 flex gap-10 flex-wrap">
-        <Stat label="Distance" value={formatDistance(summary.distanceM)} />
-        <Stat label="Time" value={formatDuration(summary.durationSec)} />
-        <Stat label="Activities" value={String(summary.activityCount)} />
+        <Stat label={t.stats.distance} value={formatDistance(summary.distanceM, locale)} />
+        <Stat label={t.stats.time} value={formatDuration(summary.durationSec)} />
+        <Stat label={t.stats.activities} value={String(summary.activityCount)} />
       </div>
       {/* Backend injoignable : le tableau de bord reste utilisable sans son
           graphe de charge plutôt que de tomber en entier. */}

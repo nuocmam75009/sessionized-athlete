@@ -3,6 +3,9 @@ import {
   buildMonthEntries,
   buildMonthSummary,
   buildWeekEntries,
+  formatDayLabel,
+  formatMonthLabel,
+  formatWeekRangeLabel,
   formatWeekShortLabel,
   getDayStatus,
   getMonthGridDays,
@@ -227,8 +230,21 @@ describe('récapitulatifs', () => {
 
 describe('formatage des dates', () => {
   it('ne répète le mois que lorsqu’il change', () => {
-    expect(formatWeekShortLabel('2026-08-03', '2026-08-09')).toBe('Aug 3–9')
-    expect(formatWeekShortLabel('2026-08-31', '2026-09-06')).toBe('Aug 31–Sep 6')
+    expect(formatWeekShortLabel('2026-08-03', '2026-08-09', 'en')).toBe('Aug 3–9')
+    expect(formatWeekShortLabel('2026-08-31', '2026-09-06', 'en')).toBe('Aug 31–Sep 6')
+  })
+
+  it('place le mois après les jours en français', () => {
+    expect(formatWeekShortLabel('2026-08-03', '2026-08-09', 'fr')).toBe('3–9 août')
+    expect(formatWeekShortLabel('2026-08-31', '2026-09-06', 'fr')).toBe('31 août–6 sept.')
+    expect(formatWeekRangeLabel('2026-08-03', '2026-08-09', 'fr')).toBe('3 août – 9 août')
+  })
+
+  it('met une majuscule au mois et au jour en tête de libellé, en français', () => {
+    expect(formatMonthLabel(new Date(2026, 7, 1), 'en')).toBe('August 2026')
+    expect(formatMonthLabel(new Date(2026, 7, 1), 'fr')).toBe('Août 2026')
+    expect(formatDayLabel('2026-08-04', 'en')).toBe('Tue, Aug 4')
+    expect(formatDayLabel('2026-08-04', 'fr')).toBe('Mar. 4 août')
   })
 
   it('produit un datetime ISO complet avec l’offset local', () => {

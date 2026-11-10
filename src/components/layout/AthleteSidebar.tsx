@@ -1,8 +1,10 @@
 'use client'
 
 import { Sidebar, type SidebarAction, type SidebarIconProps, type SidebarNavItem } from '@/components/layout/Sidebar'
+import { LanguageToggle } from '@/components/ui/LanguageToggle'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { useAuth } from '@/hooks/useAuth'
+import { useI18n } from '@/hooks/useI18n'
 
 function CalendarIcon({ className }: SidebarIconProps) {
   return (
@@ -49,19 +51,33 @@ function LogoutIcon({ className }: SidebarIconProps) {
   )
 }
 
-const NAV_ITEMS: SidebarNavItem[] = [
-  { href: '/dashboard', label: 'Calendar', icon: CalendarIcon },
-  { href: '/athlete-data', label: 'Athlete Data', icon: HeartPulseIcon },
-  { href: '/profile', label: 'Profile', icon: ProfileIcon },
-]
-
 export function AthleteSidebar() {
   const { logout } = useAuth()
+  const { t } = useI18n()
 
-  const actions: SidebarAction[] = [
-    { key: 'upload', label: 'Upload activity', icon: UploadIcon, href: '/activities/upload' },
-    { key: 'logout', label: 'Log out', icon: LogoutIcon, onClick: logout },
+  const navItems: SidebarNavItem[] = [
+    { href: '/dashboard', label: t.nav.calendar, icon: CalendarIcon },
+    { href: '/athlete-data', label: t.nav.athleteData, icon: HeartPulseIcon },
+    { href: '/profile', label: t.nav.profile, icon: ProfileIcon },
   ]
 
-  return <Sidebar brand="Sessionized" navItems={NAV_ITEMS} actions={actions} utility={<ThemeToggle />} />
+  const actions: SidebarAction[] = [
+    { key: 'upload', label: t.nav.uploadActivity, icon: UploadIcon, href: '/activities/upload' },
+    { key: 'logout', label: t.nav.logOut, icon: LogoutIcon, onClick: logout },
+  ]
+
+  return (
+    <Sidebar
+      brand="Sessionized"
+      navItems={navItems}
+      actions={actions}
+      labels={t.nav}
+      utility={({ collapsed }) => (
+        <>
+          <LanguageToggle orientation={collapsed ? 'vertical' : 'horizontal'} />
+          <ThemeToggle />
+        </>
+      )}
+    />
+  )
 }

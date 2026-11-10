@@ -1,3 +1,5 @@
+import type { Locale } from './i18n/config'
+import { getDictionary } from './i18n/dictionaries'
 import { formatDistance, formatDuration, formatPace } from './utils'
 import type { Activity, Workout } from './types'
 
@@ -7,7 +9,10 @@ import type { Activity, Workout } from './types'
 // soit des cibles détaillées par lap (WorkoutLap.targetDistanceM/...), soit
 // les deux — la somme des laps est prioritaire quand elle existe, sinon on
 // retombe sur les cibles globales du workout.
-export function workoutTargets(workout: Pick<Workout, 'laps' | 'targetDistanceM' | 'targetDurationSec'>) {
+export function workoutTargets(
+  workout: Pick<Workout, 'laps' | 'targetDistanceM' | 'targetDurationSec'>,
+  locale: Locale,
+) {
   const { laps } = workout
   const lapsDistanceM = laps.reduce((sum, lap) => sum + (lap.targetDistanceM ?? 0), 0)
   const lapsDurationSec = laps.reduce((sum, lap) => sum + (lap.targetDurationSec ?? 0), 0)
@@ -25,19 +30,22 @@ export function workoutTargets(workout: Pick<Workout, 'laps' | 'targetDistanceM'
         : 0
 
   return {
-    distance: totalDistanceM > 0 ? formatDistance(totalDistanceM) : '—',
+    distance: totalDistanceM > 0 ? formatDistance(totalDistanceM, locale) : '—',
     duration: totalDurationSec > 0 ? formatDuration(totalDurationSec) : '—',
     pace: avgPaceSecPerKm > 0 ? formatPace(avgPaceSecPerKm) : '—',
   }
 }
 
 // Résume les cibles d'un workout en une ligne lisible.
-export function summarizeWorkoutLaps(workout: Pick<Workout, 'laps' | 'targetDistanceM' | 'targetDurationSec'>): string {
-  const targets = workoutTargets(workout)
+export function summarizeWorkoutLaps(
+  workout: Pick<Workout, 'laps' | 'targetDistanceM' | 'targetDurationSec'>,
+  locale: Locale,
+): string {
+  const targets = workoutTargets(workout, locale)
   const parts = [targets.distance, targets.duration, targets.pace].filter((p) => p !== '—')
   if (parts.length > 0) return parts.join(' · ')
   const { laps } = workout
-  return `${laps.length} lap${laps.length > 1 ? 's' : ''}`
+  return getDictionary(locale).plan.lapCount(laps.length)
 }
 
 export function findLinkedActivityId(workoutId: string, activities: Activity[]): string | undefined {

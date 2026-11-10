@@ -3,7 +3,9 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
+import { useI18n } from '@/hooks/useI18n'
 import { clientFetch } from '@/lib/client-fetch'
+import type { Dictionary } from '@/lib/i18n/dictionaries'
 
 type SyncResult =
   // importedCount null : réponse sans compteur lisible, le sync a réussi quand même.
@@ -19,18 +21,18 @@ function readNumber(body: unknown, key: string): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null
 }
 
-function resultMessage(result: SyncResult): string {
+// Rédigé à l'affichage et non au moment du résultat : le message suit la
+// langue si l'athlète en change pendant qu'il est affiché.
+function resultMessage(result: SyncResult, t: Dictionary): string {
   switch (result.kind) {
     case 'done':
-      if (result.importedCount === null) return 'Synced with Strava.'
-      if (result.importedCount === 0) return 'Already up to date.'
-      return result.importedCount === 1 ? '1 new activity imported.' : `${result.importedCount} new activities imported.`
+      if (result.importedCount === null) return t.stravaSync.synced
+      if (result.importedCount === 0) return t.stravaSync.upToDate
+      return t.stravaSync.imported(result.importedCount)
     case 'rate-limited':
-      return result.retryAfterMin
-        ? `Strava's request limit is reached. Try again in ${result.retryAfterMin} min.`
-        : "Strava's request limit is reached. Try again later."
+      return result.retryAfterMin ? t.stravaSync.rateLimitedRetryIn(result.retryAfterMin) : t.stravaSync.rateLimited
     case 'error':
-      return "Couldn't sync with Strava. Try again."
+      return t.stravaSync.failed
   }
 }
 
@@ -41,6 +43,7 @@ function resultMessage(result: SyncResult): string {
 // il sait avoir une nouvelle sortie.
 export function StravaSyncButton() {
   const router = useRouter()
+  const { t } = useI18n()
   const [isPending, startTransition] = useTransition()
   const [result, setResult] = useState<SyncResult | null>(null)
 
@@ -88,11 +91,11 @@ export function StravaSyncButton() {
       {result &&
         (result.kind === 'done' ? (
           <p role="status" className="m-0 text-[13px] text-success">
-            {resultMessage(result)}
+            {resultMessage(result, t)}
           </p>
         ) : (
           <p role="alert" className="m-0 text-[13px] text-danger">
-            {resultMessage(result)}
+            {resultMessage(result, t)}
           </p>
         ))}
       <Button variant="secondary" onClick={sync} disabled={isPending}>
@@ -102,7 +105,7 @@ export function StravaSyncButton() {
             className="h-3.5 w-3.5 rounded-full border-2 border-accent/30 border-t-accent animate-spin"
           />
         )}
-        {isPending ? 'Syncing…' : 'Sync Strava'}
+        {isPending ? t.stravaSync.syncing : t.stravaSync.sync}
       </Button>
     </div>
   )

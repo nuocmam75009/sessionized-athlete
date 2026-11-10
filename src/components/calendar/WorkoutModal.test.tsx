@@ -28,8 +28,6 @@ function workout(overrides: Partial<Workout> = {}): Workout {
 function dayEntry(overrides: Partial<DayEntry> = {}): DayEntry {
   return {
     dateParam: '2026-08-04',
-    dateLabel: 'Tue, Aug 4',
-    weekdayLabel: 'Tue',
     dayNumber: 4,
     isToday: false,
     isInCurrentMonth: true,

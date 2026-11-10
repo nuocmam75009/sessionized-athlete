@@ -1,15 +1,23 @@
 'use client'
 
 import { useState } from 'react'
-import { buildWeekEntries, dayStatusStyles, findDefaultWeekIndex, type DayEntry, type WeekEntry } from '@/lib/calendar'
-import { sportKindLabel, toSportKind } from '@/lib/sport'
+import { useI18n } from '@/hooks/useI18n'
+import {
+  buildWeekEntries,
+  dayStatusStyles,
+  findDefaultWeekIndex,
+  formatWeekRangeLabel,
+  formatWeekShortLabel,
+  type DayEntry,
+  type WeekEntry,
+} from '@/lib/calendar'
+import { toSportKind } from '@/lib/sport'
 import { formatDistance } from '@/lib/utils'
 import { WeekSummary } from './WeekSummary'
 import { WorkoutModal } from './WorkoutModal'
 
-const WEEKDAY_HEADERS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-
 export function MonthCalendar({ entries }: { entries: DayEntry[] }) {
+  const { t } = useI18n()
   const [selectedDay, setSelectedDay] = useState<DayEntry | null>(null)
   // La semaine sélectionnée est mémorisée par sa date de début, pas par son
   // index : en changeant de mois, la grille change de taille et l'index ne
@@ -31,7 +39,7 @@ export function MonthCalendar({ entries }: { entries: DayEntry[] }) {
             <div className="min-w-[720px]">
               <div className="flex gap-2 mb-1.5">
                 <div className="grid grid-cols-7 gap-2 flex-1">
-                  {WEEKDAY_HEADERS.map((label) => (
+                  {t.calendar.weekdays.map((label) => (
                     <div
                       key={label}
                       className="text-center text-[10px] font-medium uppercase tracking-[0.12em] text-text/60"
@@ -78,6 +86,7 @@ export function MonthCalendar({ entries }: { entries: DayEntry[] }) {
 }
 
 function WeekCell({ week, isSelected, onClick }: { week: WeekEntry; isSelected: boolean; onClick: () => void }) {
+  const { locale, t } = useI18n()
   return (
     <button
       type="button"
@@ -93,21 +102,24 @@ function WeekCell({ week, isSelected, onClick }: { week: WeekEntry; isSelected: 
     >
       {/* Nom accessible = ce texte + le visible (WCAG 2.5.3 : le nom doit contenir
           le texte affiché, pour la commande vocale). */}
-      <span className="sr-only">Week summary {week.label}: </span>
-      <span className="metric font-semibold text-[13px]">{formatDistance(week.summary.distanceM)}</span>
+      <span className="sr-only">
+        {t.calendar.weekSummaryOf(formatWeekRangeLabel(week.startDateParam, week.endDateParam, locale))}
+      </span>
+      <span className="metric font-semibold text-[13px]">{formatDistance(week.summary.distanceM, locale)}</span>
       <span className={`text-[9px] uppercase tracking-[0.1em] ${isSelected ? 'text-accent-700' : 'text-text/60'}`}>
-        {week.shortLabel}
+        {formatWeekShortLabel(week.startDateParam, week.endDateParam, locale)}
       </span>
     </button>
   )
 }
 
 function DayCell({ entry, onClick }: { entry: DayEntry; onClick: () => void }) {
-  const { dotClass, bgClass, borderClass, label } = dayStatusStyles(entry.status)
+  const { t } = useI18n()
+  const { dotClass, bgClass, borderClass } = dayStatusStyles(entry.status)
   const firstUnplanned = entry.unplannedActivities[0]
   // Libellé normalisé plutôt que la chaîne brute de la montre ou de Strava :
   // "running" et "TrailRun" côtoyaient "Run" et "Trail run" du récapitulatif.
-  const title = entry.workout?.title ?? (firstUnplanned ? sportKindLabel(toSportKind(firstUnplanned.sport)) : null)
+  const title = entry.workout?.title ?? (firstUnplanned ? t.sports[toSportKind(firstUnplanned.sport)] : null)
 
   return (
     <button
@@ -132,10 +144,10 @@ function DayCell({ entry, onClick }: { entry: DayEntry; onClick: () => void }) {
         {entry.dayNumber}
       </div>
 
-      {dotClass && (
+      {entry.status !== 'empty' && (
         <div className="flex items-center gap-1 mb-0.5">
           <span className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />
-          <span className="text-[9px] uppercase tracking-[0.09em] text-text/60">{label}</span>
+          <span className="text-[9px] uppercase tracking-[0.09em] text-text/60">{t.calendar.status[entry.status]}</span>
         </div>
       )}
 

@@ -23,6 +23,7 @@ import {
   type LapSpan,
   type PaceSample,
 } from '@/lib/pace-chart'
+import { useI18n } from '@/hooks/useI18n'
 import { formatPace } from '@/lib/utils'
 
 const AXIS_TICK = { fill: 'var(--color-text)', fontSize: 11, opacity: 0.45 }
@@ -49,6 +50,7 @@ export function PaceChart({
   selectedIds: ReadonlySet<string>
   onLapClick?: (lapId: string) => void
 }) {
+  const { t } = useI18n()
   // Zone affichée, pilotée par la navigation du bas. Remise à zéro quand la
   // trace change : les index ne désignent plus les mêmes points.
   const [range, setRange] = useState<{ samples: PaceSample[]; value: Range } | null>(null)
@@ -149,7 +151,7 @@ export function PaceChart({
         />
         <Line
           dataKey={highlighted}
-          name="Pace"
+          name={t.laps.paceTitle}
           stroke={HIGHLIGHT}
           strokeWidth={2}
           dot={false}
@@ -163,7 +165,7 @@ export function PaceChart({
           stroke="var(--color-accent)"
           fill="var(--color-surface)"
           tickFormatter={formatClock}
-          ariaLabel="Zoom on part of the session"
+          ariaLabel={t.laps.zoomLabel}
           onChange={(next) => setRange({ samples, value: next })}
         >
           {/* Axe propre à l'aperçu : il partage le magasin d'état du graphe
@@ -200,6 +202,7 @@ function PaceTooltip({
   payload,
   spans,
 }: Partial<Pick<TooltipContentProps<number, string>, 'active' | 'payload'>> & { spans: LapSpan[] }) {
+  const { t } = useI18n()
   if (!active || !payload || payload.length === 0) return null
   const sample = payload[0].payload as PaceSample
   const lap = spans.find((span) => sample.t >= span.start && sample.t < span.end)
@@ -208,7 +211,7 @@ function PaceTooltip({
     <div className="panel rounded-md px-3 py-2 shadow-lg backdrop-blur-sm">
       <div className="font-heading font-semibold text-xs mb-1.5">
         {formatClock(sample.t)}
-        {lap && <span className="font-normal text-text/60"> · Lap {lap.number}</span>}
+        {lap && <span className="font-normal text-text/60"> · {t.laps.lapNumber(lap.number)}</span>}
       </div>
       <div className="metric text-xs">
         {sample.pace == null

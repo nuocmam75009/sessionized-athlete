@@ -3,6 +3,7 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, useReducedMotion } from 'motion/react'
+import { useI18n } from '@/hooks/useI18n'
 
 // Éléments atteignables au clavier, dans l'ordre du document.
 const FOCUSABLE =
@@ -53,6 +54,7 @@ export function Modal({
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   const reduceMotion = useReducedMotion()
+  const { t } = useI18n()
 
   // À l'ouverture seulement, et non à chaque nouvelle identité de onClose : un
   // parent qui la recrée à chaque rendu ramènerait sinon le focus sur le
@@ -105,7 +107,7 @@ export function Modal({
           <button
             ref={closeButtonRef}
             type="button"
-            aria-label="Close"
+            aria-label={t.common.close}
             onClick={onClose}
             className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-sm text-text/60 transition-colors hover:bg-text/[0.07] hover:text-text cursor-pointer"
           >

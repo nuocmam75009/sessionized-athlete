@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
+  formatDateLabel,
+  formatDecimal,
   formatDistance,
   formatDuration,
   formatLegalDate,
@@ -42,8 +44,21 @@ describe('formatDuration', () => {
 
 describe('formatDistance', () => {
   it('convertit les mètres en kilomètres à une décimale', () => {
-    expect(formatDistance(8400)).toBe('8.4 km')
-    expect(formatDistance(0)).toBe('0.0 km')
+    expect(formatDistance(8400, 'en')).toBe('8.4 km')
+    expect(formatDistance(0, 'en')).toBe('0.0 km')
+  })
+
+  it('prend le séparateur décimal de la langue, sans séparateur de milliers', () => {
+    expect(formatDistance(8400, 'fr')).toBe('8,4 km')
+    expect(formatDistance(1234500, 'en')).toBe('1234.5 km')
+  })
+})
+
+describe('formatDecimal', () => {
+  it('affiche le signe d’un écart, sauf pour zéro', () => {
+    expect(formatDecimal(3.24, 1, 'en', { signed: true })).toBe('+3.2')
+    expect(formatDecimal(-12.5, 1, 'fr', { signed: true })).toMatch(/^[-−]12,5$/)
+    expect(formatDecimal(0, 1, 'en', { signed: true })).toBe('0.0')
   })
 })
 
@@ -96,10 +111,19 @@ describe('isSameCalendarDay', () => {
 
 describe('formatLegalDate', () => {
   it('écrit la date en toutes lettres, dans la langue de l’interface', () => {
-    expect(formatLegalDate('2026-11-07')).toBe('November 7, 2026')
+    expect(formatLegalDate('2026-11-07', 'en')).toBe('November 7, 2026')
+    expect(formatLegalDate('2026-11-07', 'fr')).toBe('7 novembre 2026')
   })
 
   it('ne recule pas d’un jour selon le fuseau du serveur', () => {
-    expect(formatLegalDate('2026-01-01')).toBe('January 1, 2026')
+    expect(formatLegalDate('2026-01-01', 'en')).toBe('January 1, 2026')
+  })
+})
+
+describe('formatDateLabel', () => {
+  it('met une majuscule initiale au jour abrégé en français', () => {
+    // Midi UTC : le même jour quel que soit le fuseau de la machine de test.
+    expect(formatDateLabel('2026-08-04T12:00:00Z', 'en')).toBe('Tue, Aug 4')
+    expect(formatDateLabel('2026-08-04T12:00:00Z', 'fr')).toBe('Mar. 4 août')
   })
 })

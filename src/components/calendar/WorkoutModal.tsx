@@ -6,9 +6,10 @@ import { ImportActions } from '@/components/activities/ImportActions'
 import { PlannedVsActualTable } from '@/components/activities/PlannedVsActualTable'
 import { buttonClassName } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
+import { useI18n } from '@/hooks/useI18n'
 import { formatActivity } from '@/lib/activity-format'
+import { formatDayLabel, type DayEntry } from '@/lib/calendar'
 import { summarizeWorkoutLaps, workoutTargets } from '@/lib/plan-format'
-import type { DayEntry } from '@/lib/calendar'
 
 export function WorkoutModal({
   entry,
@@ -17,11 +18,13 @@ export function WorkoutModal({
   entry: DayEntry
   onClose: () => void
 }) {
+  const { locale, t } = useI18n()
   const { workout, linkedActivity, unplannedActivities, status } = entry
   const stravaCandidates = unplannedActivities.filter((a) => a.source === 'STRAVA')
+  const dateLabel = formatDayLabel(entry.dateParam, locale)
 
   return (
-    <Modal label={entry.dateLabel} eyebrow={entry.dateLabel} onClose={onClose}>
+    <Modal label={dateLabel} eyebrow={dateLabel} onClose={onClose}>
       {workout && (
         <>
           <h3 className="mb-2">{workout.title}</h3>
@@ -30,13 +33,16 @@ export function WorkoutModal({
               “{workout.coachNote}”
             </blockquote>
           )}
-          <p className="text-sm text-text/60 mb-5">{summarizeWorkoutLaps(workout)}</p>
+          <p className="text-sm text-text/60 mb-5">{summarizeWorkoutLaps(workout, locale)}</p>
 
           {status === 'done' && linkedActivity && (
             <>
-              <PlannedVsActualTable planned={workoutTargets(workout)} actual={formatActivity(linkedActivity)} />
+              <PlannedVsActualTable
+                planned={workoutTargets(workout, locale)}
+                actual={formatActivity(linkedActivity, locale)}
+              />
               <Link href={`/activities/${linkedActivity.id}`} className={`${buttonClassName('secondary')} mt-4`}>
-                View full breakdown
+                {t.common.viewFullBreakdown}
               </Link>
             </>
           )}
@@ -55,15 +61,15 @@ export function WorkoutModal({
       {!workout && unplannedActivities.length > 0 && (
         <div className="grid gap-3">
           {unplannedActivities.map((activity) => {
-            const actual = formatActivity(activity)
+            const actual = formatActivity(activity, locale)
             return (
               <div key={activity.id} className="panel-flat rounded-md px-3.5 py-3">
-                <div className="font-semibold text-sm mb-1">{activity.sport ?? 'Activity'}</div>
+                <div className="font-semibold text-sm mb-1">{activity.sport ?? t.common.activity}</div>
                 <div className="metric text-text/60 text-[13px] mb-2.5">
                   {actual.distance} · {actual.duration} · {actual.pace}
                 </div>
                 <Link href={`/activities/${activity.id}`} className={buttonClassName('secondary')}>
-                  View full breakdown
+                  {t.common.viewFullBreakdown}
                 </Link>
               </div>
             )
@@ -73,9 +79,9 @@ export function WorkoutModal({
 
       {!workout && unplannedActivities.length === 0 && (
         <div>
-          <p className="text-text/60 text-sm mb-4">Nothing planned for this day.</p>
+          <p className="text-text/60 text-sm mb-4">{t.calendar.nothingPlanned}</p>
           <Link href="/activities/upload" className={buttonClassName('secondary')}>
-            Log a run
+            {t.calendar.logRun}
           </Link>
         </div>
       )}

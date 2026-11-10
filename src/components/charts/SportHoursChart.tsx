@@ -2,6 +2,7 @@
 
 import { Cell, Pie, PieChart, Tooltip } from 'recharts'
 import type { TooltipContentProps } from 'recharts'
+import { useI18n } from '@/hooks/useI18n'
 import { sportColor } from '@/lib/sport'
 import { formatDistance, formatDuration } from '@/lib/utils'
 import type { SportBreakdown } from '@/lib/calendar'
@@ -26,10 +27,11 @@ function formatShare(seconds: number, totalSeconds: number): string {
 // dont les arcs sont les parts ; les chiffres exacts par sport sont dans le
 // tableau qui accompagne le graphe et qui lui sert de légende.
 export function SportHoursChart({ bySport }: { bySport: SportBreakdown[] }) {
+  const { t } = useI18n()
   const totalSeconds = bySport.reduce((sum, entry) => sum + entry.durationSec, 0)
 
   const slices: SportSlice[] = bySport.map((entry) => ({
-    label: entry.label,
+    label: t.sports[entry.kind],
     durationSec: entry.durationSec,
     activityCount: entry.activityCount,
     distanceM: entry.distanceM,
@@ -67,13 +69,14 @@ export function SportHoursChart({ bySport }: { bySport: SportBreakdown[] }) {
         <span className="metric font-semibold text-[19px] leading-none">
           {formatDuration(Math.round(totalSeconds))}
         </span>
-        <span className="text-[9px] uppercase tracking-[0.12em] text-text/60 mt-1.5">total</span>
+        <span className="text-[9px] uppercase tracking-[0.12em] text-text/60 mt-1.5">{t.sportBreakdown.total}</span>
       </div>
     </div>
   )
 }
 
 function SportTooltip({ active, payload }: Partial<TooltipContentProps<number, string>>) {
+  const { locale, t } = useI18n()
   if (!active || !payload || payload.length === 0) return null
   const slice = payload[0].payload as SportSlice
 
@@ -84,8 +87,8 @@ function SportTooltip({ active, payload }: Partial<TooltipContentProps<number, s
         {formatDuration(Math.round(slice.durationSec))} · {slice.shareLabel}
       </div>
       <div className="text-xs text-text/60">
-        {slice.activityCount} session{slice.activityCount === 1 ? '' : 's'}
-        {slice.distanceM > 0 && ` · ${formatDistance(slice.distanceM)}`}
+        {t.sportBreakdown.sessionCount(slice.activityCount)}
+        {slice.distanceM > 0 && ` · ${formatDistance(slice.distanceM, locale)}`}
       </div>
     </div>
   )

@@ -11,13 +11,21 @@ export const PUBLISHER = {
 
 // Hébergeurs et sous-traitants, d'après l'architecture déployée (CLAUDE.md) et
 // la chaîne de connexion de la base (région AWS eu-west-2). Adresses à
-// revérifier sur les sites des prestataires avant publication.
+// revérifier sur les sites des prestataires avant publication. Les adresses
+// postales restent telles que les écrit le prestataire ; seule la description
+// de la région est traduite.
 export const HOSTS = {
   frontend: { name: 'Vercel Inc.', address: '440 N Barranca Ave #4133, Covina, CA 91723, United States' },
   api: { name: 'Hetzner Online GmbH', address: 'Industriestr. 25, 91710 Gunzenhausen, Germany' },
-  database: { name: 'Neon, Inc.', location: 'AWS London region (eu-west-2), United Kingdom' },
+  database: {
+    name: 'Neon, Inc.',
+    location: {
+      en: 'AWS London region (eu-west-2), United Kingdom',
+      fr: 'région AWS de Londres (eu-west-2), Royaume-Uni',
+    },
+  },
 }
 
 // Date affichée en tête des deux pages : à changer à chaque modification de
-// leur contenu.
-export const LEGAL_LAST_UPDATED = '2026-11-08'
+// leur contenu, dans l'une ou l'autre langue.
+export const LEGAL_LAST_UPDATED = '2026-11-10'

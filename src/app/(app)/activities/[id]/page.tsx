@@ -1,11 +1,15 @@
 import type { Metadata } from 'next'
+import { getI18n } from '@/lib/i18n/server'
 import { notFound } from 'next/navigation'
 import { ActivityDetailView } from './ActivityDetailView'
 import { serverApiFetch, serverApiFetchStatus } from '@/lib/server-api'
 import { isValidId } from '@/lib/utils'
 import type { Activity, Workout } from '@/lib/types'
 
-export const metadata: Metadata = { title: 'Activity' }
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n()
+  return { title: t.pageTitles.activity }
+}
 
 export default async function ActivityDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

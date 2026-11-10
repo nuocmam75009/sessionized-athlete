@@ -17,11 +17,14 @@ function lap(overrides: Partial<WorkoutLap>): WorkoutLap {
 
 describe('workoutTargets', () => {
   it('donne la priorité à la somme des laps sur les cibles globales', () => {
-    const targets = workoutTargets({
-      targetDistanceM: 12000,
-      targetDurationSec: 3600,
-      laps: [lap({ targetDistanceM: 400, targetPaceSecPerKm: 200 }), lap({ targetDistanceM: 400, targetPaceSecPerKm: 210 })],
-    })
+    const targets = workoutTargets(
+      {
+        targetDistanceM: 12000,
+        targetDurationSec: 3600,
+        laps: [lap({ targetDistanceM: 400, targetPaceSecPerKm: 200 }), lap({ targetDistanceM: 400, targetPaceSecPerKm: 210 })],
+      },
+      'en',
+    )
     expect(targets.distance).toBe('0.8 km')
     // Durée absente des laps : on retombe sur la cible globale.
     expect(targets.duration).toBe(`1h00'`)
@@ -29,12 +32,16 @@ describe('workoutTargets', () => {
   })
 
   it('déduit l’allure des cibles globales quand les laps n’en donnent pas', () => {
-    const targets = workoutTargets({ targetDistanceM: 10000, targetDurationSec: 3000, laps: [] })
+    const targets = workoutTargets({ targetDistanceM: 10000, targetDurationSec: 3000, laps: [] }, 'en')
     expect(targets).toEqual({ distance: '10.0 km', duration: `50'00"`, pace: `5'00"/km` })
   })
 
+  it('écrit la distance avec le séparateur décimal de la langue', () => {
+    expect(workoutTargets({ targetDistanceM: 10000, targetDurationSec: 3000, laps: [] }, 'fr').distance).toBe('10,0 km')
+  })
+
   it('affiche un tiret pour chaque cible absente', () => {
-    expect(workoutTargets({ targetDistanceM: null, targetDurationSec: null, laps: [] })).toEqual({
+    expect(workoutTargets({ targetDistanceM: null, targetDurationSec: null, laps: [] }, 'en')).toEqual({
       distance: '—',
       duration: '—',
       pace: '—',
@@ -44,7 +51,14 @@ describe('workoutTargets', () => {
 
 describe('summarizeWorkoutLaps', () => {
   it('retombe sur le nombre de laps sans aucune cible', () => {
-    expect(summarizeWorkoutLaps({ targetDistanceM: null, targetDurationSec: null, laps: [lap({}), lap({})] })).toBe('2 laps')
-    expect(summarizeWorkoutLaps({ targetDistanceM: null, targetDurationSec: null, laps: [lap({})] })).toBe('1 lap')
+    const noTargets = { targetDistanceM: null, targetDurationSec: null }
+    expect(summarizeWorkoutLaps({ ...noTargets, laps: [lap({}), lap({})] }, 'en')).toBe('2 laps')
+    expect(summarizeWorkoutLaps({ ...noTargets, laps: [lap({})] }, 'en')).toBe('1 lap')
+  })
+
+  it('accorde le nombre de tours en français', () => {
+    const noTargets = { targetDistanceM: null, targetDurationSec: null }
+    expect(summarizeWorkoutLaps({ ...noTargets, laps: [lap({}), lap({})] }, 'fr')).toBe('2 tours')
+    expect(summarizeWorkoutLaps({ ...noTargets, laps: [lap({})] }, 'fr')).toBe('1 tour')
   })
 })

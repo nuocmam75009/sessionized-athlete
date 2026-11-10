@@ -1,6 +1,7 @@
 'use client'
 
 import { AnimatePresence, motion } from 'motion/react'
+import { useI18n } from '@/hooks/useI18n'
 import { useTheme } from '@/hooks/useTheme'
 
 function SunIcon() {
@@ -26,7 +27,8 @@ function MoonIcon() {
 // on est en sombre), c'est la convention la plus répandue.
 export function ThemeToggle({ className = '' }: { className?: string }) {
   const { theme, toggle } = useTheme()
-  const nextLabel = theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'
+  const { t } = useI18n()
+  const nextLabel = theme === 'dark' ? t.theme.switchToLight : t.theme.switchToDark
 
   return (
     <button

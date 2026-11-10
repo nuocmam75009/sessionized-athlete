@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
+import { useI18n } from '@/hooks/useI18n'
 import { useZoneDistribution } from '@/hooks/useZoneDistribution'
 import { toIsoDateTimeWithOffset, type WeekEntry } from '@/lib/calendar'
 import { formatDuration } from '@/lib/utils'
@@ -22,17 +23,24 @@ function formatHeartRateRange(min: number, max: number | null): string {
 // à l'API sont des datetimes locaux complets : la semaine est un lundi→dimanche
 // local, pas une fenêtre UTC.
 export function WeekHeartRateZones({ week }: { week: WeekEntry }) {
+  const { t } = useI18n()
   const state = useZoneDistribution(
     toIsoDateTimeWithOffset(week.startDateParam, 'start'),
     toIsoDateTimeWithOffset(week.endDateParam, 'end'),
   )
 
   if (state.status === 'loading') {
-    return <p className="text-sm text-text/60">Loading…</p>
+    return <p className="text-sm text-text/60">{t.heartRateZones.loading}</p>
   }
 
   if (state.status === 'error') {
-    return <p className="text-sm text-text/60">{state.message}</p>
+    return (
+      <p className="text-sm text-text/60">
+        {state.httpStatus != null
+          ? t.heartRateZones.loadFailed(state.httpStatus)
+          : t.heartRateZones.loadFailedGeneric}
+      </p>
+    )
   }
 
   const { zones, totalSeconds, secondsWithoutData } = state.data
@@ -40,17 +48,17 @@ export function WeekHeartRateZones({ week }: { week: WeekEntry }) {
   if (zones.length === 0) {
     return (
       <p className="text-sm text-text/60">
-        No heart rate zones synced yet —{' '}
+        {t.heartRateZones.notSyncedBefore}{' '}
         <Link href="/athlete-data" className="text-accent underline underline-offset-2 hover:text-accent-700">
-          connect Strava
+          {t.heartRateZones.notSyncedLink}
         </Link>{' '}
-        to get them.
+        {t.heartRateZones.notSyncedAfter}
       </p>
     )
   }
 
   if (totalSeconds === 0) {
-    return <p className="text-sm text-text/60">No heart rate recorded this week.</p>
+    return <p className="text-sm text-text/60">{t.heartRateZones.noHeartRate}</p>
   }
 
   // Part du temps en endurance (Z1–Z2) : le premier chiffre qu'on regarde pour
@@ -64,16 +72,14 @@ export function WeekHeartRateZones({ week }: { week: WeekEntry }) {
       {zones.length >= 3 && (
         <div className="flex items-baseline gap-2.5 mb-4">
           <span className="metric font-semibold text-[26px] leading-none">{easyShare} %</span>
-          <span className="text-sm text-text/60">easy (Z1–Z2) · {formatDuration(totalSeconds)} with HR</span>
+          <span className="text-sm text-text/60">{t.heartRateZones.easyShare(formatDuration(totalSeconds))}</span>
         </div>
       )}
 
       <ZoneDistributionChart zones={zones} totalSeconds={totalSeconds} formatRange={formatHeartRateRange} />
 
       {secondsWithoutData > 0 && (
-        <p className="text-xs text-text/60 mt-2">
-          {formatDuration(secondsWithoutData)} recorded without a heart rate sensor — excluded from the split.
-        </p>
+        <p className="text-xs text-text/60 mt-2">{t.heartRateZones.withoutSensor(formatDuration(secondsWithoutData))}</p>
       )}
     </>
   )

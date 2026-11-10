@@ -11,7 +11,8 @@ import { Badge } from '@/components/ui/Badge'
 import { BackLink } from '@/components/ui/BackLink'
 import { RouteMap, type RoutePoint } from '@/components/ui/RouteMap'
 import { Stat } from '@/components/ui/Stat'
-import { activityLabelStyle, formatActivity } from '@/lib/activity-format'
+import { useI18n } from '@/hooks/useI18n'
+import { activityLabelVariant, formatActivity } from '@/lib/activity-format'
 import { clientFetch } from '@/lib/client-fetch'
 import { workoutTargets } from '@/lib/plan-format'
 import { formatDateLabel } from '@/lib/utils'
@@ -24,6 +25,7 @@ export function ActivityDetailView({
   activity: Activity
   workout: Workout | null
 }) {
+  const { locale, t } = useI18n()
   const [activity, setActivity] = useState(initialActivity)
 
   // Trace seconde par seconde : la carte n'en lit que les positions, le
@@ -68,8 +70,8 @@ export function ActivityDetailView({
   const hasGpsTrace = Boolean(trackPoints && trackPoints.length > 0)
   const mapPoints = hasGpsTrace ? trackPoints : gpxRoutePoints
 
-  const actual = formatActivity(activity)
-  const planned = workout ? workoutTargets(workout) : null
+  const actual = formatActivity(activity, locale)
+  const planned = workout ? workoutTargets(workout, locale) : null
 
   const canAttachFit = activity.source === 'STRAVA' && !activity.hasFitFile
   // Le rattachement d'un .fit remplace les laps en bloc, sous de nouveaux
@@ -81,24 +83,21 @@ export function ActivityDetailView({
     <div>
       <BackLink fallbackHref="/dashboard" />
       <div className="font-heading font-semibold text-[10px] tracking-[0.18em] uppercase text-accent mb-2.5">
-        {formatDateLabel(activity.startedAt)}
+        {formatDateLabel(activity.startedAt, locale)}
       </div>
       <div className="flex items-baseline gap-3 flex-wrap">
-        <h1 className="mb-0">{workout?.title ?? activity.sport ?? 'Activity'}</h1>
+        <h1 className="mb-0">{workout?.title ?? activity.sport ?? t.common.activity}</h1>
         <Badge variant="outline">{activity.source}</Badge>
-        {activity.labels.map((label) => {
-          const { text, variant } = activityLabelStyle(label)
-          return (
-            <Badge key={label} variant={variant}>
-              {text}
-            </Badge>
-          )
-        })}
+        {activity.labels.map((label) => (
+          <Badge key={label} variant={activityLabelVariant(label)}>
+            {t.activity.labels[label]}
+          </Badge>
+        ))}
       </div>
       <div className="panel rounded-lg my-7 px-6 py-5 flex gap-10 flex-wrap">
-        <Stat label="Distance" value={actual.distance} />
-        <Stat label="Duration" value={actual.duration} />
-        <Stat label="Avg pace" value={actual.pace} />
+        <Stat label={t.stats.distance} value={actual.distance} />
+        <Stat label={t.stats.duration} value={actual.duration} />
+        <Stat label={t.stats.avgPace} value={actual.pace} />
       </div>
 
       {workout?.coachNote && (
@@ -111,7 +110,7 @@ export function ActivityDetailView({
 
       {mapPoints && mapPoints.length > 0 && (
         <>
-          <h2 className="section-title mb-3">Route</h2>
+          <h2 className="section-title mb-3">{t.activity.route}</h2>
           <RouteMap points={mapPoints} className="w-full h-[280px] rounded-lg mb-7 border border-divider" />
         </>
       )}
@@ -136,7 +135,7 @@ export function ActivityDetailView({
 
       {planned && (
         <>
-          <h2 className="section-title mb-3">Planned vs. completed</h2>
+          <h2 className="section-title mb-3">{t.activity.plannedVsCompleted}</h2>
           <PlannedVsActualTable planned={planned} actual={actual} />
         </>
       )}

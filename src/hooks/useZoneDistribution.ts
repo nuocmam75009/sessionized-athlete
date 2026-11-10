@@ -9,10 +9,20 @@ import type { ZoneDistribution } from '@/lib/types'
 // et l'agrégation ne bouge pas tant qu'aucune activité n'est importée.
 const cache = new Map<string, ZoneDistribution>()
 
+class HttpError extends Error {
+  readonly status: number
+  constructor(status: number) {
+    super(`HTTP ${status}`)
+    this.status = status
+  }
+}
+
 export type ZoneDistributionState =
   | { status: 'loading' }
   | { status: 'ready'; data: ZoneDistribution }
-  | { status: 'error'; message: string }
+  // httpStatus null : requête qui n'a pas abouti (réseau, réponse illisible).
+  // Le message est rédigé à l'affichage, dans la langue courante.
+  | { status: 'error'; httpStatus: number | null }
 
 // Ce hook ne se resynchronise pas quand `from`/`to` changent : monte un
 // composant par période (key={week.startDateParam}) plutôt que de faire varier
@@ -32,9 +42,9 @@ export function useZoneDistribution(from: string, to: string): ZoneDistributionS
 
     clientFetch(`/api/activities/hr-zones?${params.toString()}`, { signal: controller.signal })
       .then(async (res) => {
-        // Message affiché tel quel dans le récapitulatif : rédigé ici plutôt
-        // que repris de l'API, dont les textes sont en français.
-        if (!res.ok) throw new Error(`Couldn't load heart rate zones (HTTP ${res.status}).`)
+        // Seul le statut est gardé : le message affiché est rédigé par le
+        // composant plutôt que repris de l'API, dont les textes sont en français.
+        if (!res.ok) throw new HttpError(res.status)
         return (await res.json()) as ZoneDistribution
       })
       .then((data) => {
@@ -43,7 +53,7 @@ export function useZoneDistribution(from: string, to: string): ZoneDistributionS
       })
       .catch((err: unknown) => {
         if (controller.signal.aborted) return
-        setState({ status: 'error', message: err instanceof Error ? err.message : "Couldn't load heart rate zones." })
+        setState({ status: 'error', httpStatus: err instanceof HttpError ? err.status : null })
       })
 
     return () => controller.abort()
