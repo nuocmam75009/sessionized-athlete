@@ -2,7 +2,7 @@
 
 # Sessionized — front athlète, contexte pour Claude Code
 
-Lis ce fichier avant de générer du code. Il décrit l'état réel du dépôt au 08/11/2026.
+Lis ce fichier avant de générer du code. Il décrit l'état réel du dépôt au 10/11/2026.
 
 ---
 
@@ -24,9 +24,22 @@ Sessionized est une plateforme de coaching sportif (course à pied) :
 | Animations | `motion` (framer-motion) |
 | Graphes | Recharts |
 | Carte | Leaflet + MapLibre (tuiles OpenFreeMap) |
+| Langues | Anglais et français, dictionnaires TypeScript maison (`lib/i18n/`) |
 | Tests | Vitest, Testing Library, MSW, Playwright, axe-core |
 
-Il n'y a ni WebSocket, ni chat (retiré le 03/11/2026), ni bibliothèque d'icônes : les icônes sont des SVG en ligne.
+Il n'y a ni WebSocket, ni chat (retiré le 03/11/2026), ni bibliothèque d'icônes (SVG en ligne), ni bibliothèque d'i18n.
+
+## Langues de l'interface (i18n)
+
+Anglais (défaut) et français. Pas de préfixe de langue dans les URL : la langue est une préférence de l'athlète, pas une ressource.
+
+- **Résolution** (`lib/i18n/config.ts`, `resolveLocale`) : cookie `sessionized_locale` (choix explicite) > `Accept-Language` du navigateur > anglais.
+- **Bascule** : `LanguageToggle` (barre latérale, écran de connexion, pages légales, préférences du profil) appelle la Server Function `setLocale` (`lib/i18n/actions.ts`), qui pose le cookie (`HttpOnly`, un an). Poser un cookie depuis une Server Function invalide tout le cache client du routeur : ne pas remplacer par un `document.cookie` + `router.refresh()`.
+- **Dictionnaires** : `lib/i18n/dictionaries/en.ts` fixe la forme (`Dictionary`), `fr.ts` doit la respecter (erreur de compilation sinon). Les textes qui dépendent d'un nombre sont des fonctions (pluriels). Français : espace insécable ` ` avant `: ; ? !`.
+- **Lecture** : `await getI18n()` (`lib/i18n/server.ts`) dans un Server Component ou un `generateMetadata` ; `useI18n()` dans un composant client. Un composant partagé entre arbres serveur et client est un composant client.
+- **Formats** : dates et nombres passent par les fonctions de `lib/utils.ts` et `lib/calendar.ts`, qui prennent la langue en paramètre (`formatDistance(m, locale)` : « 8.4 km » / « 8,4 km »). Les structures de données (`DayEntry`, `WeekEntry`, `SportBreakdown`) ne contiennent aucun libellé : on formate à l'affichage.
+- **Messages d'erreur dans l'état React** : garder un code (`'duplicate'`, `{ kind: 'loginFailed' }`) et le traduire au rendu, pas une chaîne déjà rédigée, qui resterait dans l'ancienne langue après une bascule.
+- **Textes longs** (mentions légales, politique de confidentialité) : un composant par langue (`PrivacyPolicyEn.tsx` / `PrivacyPolicyFr.tsx`), à tenir identiques sur le fond.
 
 ## Appels à l'API : le navigateur ne l'appelle jamais
 
@@ -35,7 +48,7 @@ Pattern BFF : le JWT reste dans un cookie `HttpOnly` (`sessionized_athlete_token
 - **Server Components** : `serverApiFetch()` / `serverApiFetchStatus()` de `lib/server-api.ts`, qui transmettent le cookie en `Authorization: Bearer`. Un 401 renvoie vers `/login?reason=expired`.
 - **Composants client** : `clientFetch('/api/...')` (`lib/client-fetch.ts`) vers un Route Handler de `src/app/api/`, qui relaie vers l'API.
 - **Route Handlers** : URL construite avec `backendUrl()` de `lib/env.ts`. Tout segment dynamique est validé par `isValidId()` avant d'être concaténé.
-- **Messages d'erreur** : ceux de l'API sont en français et ne sont jamais affichés tels quels. Les routes `/api/auth/*` les traduisent (`lib/auth-errors.ts`).
+- **Messages d'erreur** : ceux de l'API sont en français et ne sont jamais affichés tels quels. Les routes `/api/auth/*` les traduisent dans la langue de la requête (`lib/auth-errors.ts`, `requestLocale`).
 
 ## Sécurité
 
@@ -61,9 +74,10 @@ src/
 │   ├── (legal)/               mentions légales, politique de confidentialité
 │   └── api/                   Route Handlers (BFF)
 ├── components/                ui/, layout/, calendar/, activities/, charts/, account/, training/
-├── hooks/                     useAuth, useTheme, useZoneDistribution
+├── hooks/                     useAuth, useI18n, useTheme, useZoneDistribution
 ├── lib/                       server-api, client-fetch, env, auth-cookie, auth-errors,
 │                              security-headers, jwt, redirect, calendar, types, utils…
+│   └── i18n/                  config (langues, cookie), dictionaries/, server, actions
 └── proxy.ts
 tests/
 ├── integration/               Route Handlers et proxy, backend simulé (MSW)
@@ -75,9 +89,9 @@ tests/
 - Composants en PascalCase, un par fichier ; hooks préfixés `use` ; pas de `any`.
 - Server Components par défaut, `'use client'` seulement si une interaction l'exige.
 - Commentaires en français ; noms de variables et de fonctions en anglais.
-- Interface en anglais, dates formatées avec `APP_LOCALE` (`lib/utils.ts`).
-- Chaque page déclare `metadata.title` (modèle `%s · Sessionized`).
-- Accessibilité : texte secondaire à 60 % d'opacité au minimum (`text-text/60`), en dessous le contraste AA n'est pas atteint. Toute nouvelle page est ajoutée à l'audit axe (`tests/e2e/a11y.spec.ts`).
+- Interface bilingue : aucun texte affiché en dur dans un composant, tout passe par les dictionnaires (voir « Langues de l'interface »).
+- Chaque page déclare son titre par `generateMetadata` et `t.pageTitles` (modèle `%s · Sessionized`).
+- Accessibilité : texte secondaire à 60 % d'opacité au minimum (`text-text/60`), en dessous le contraste AA n'est pas atteint. Toute nouvelle page est ajoutée à l'audit axe (`tests/e2e/a11y.spec.ts`), qui la passe aussi en français.
 - Les tests portent l'identifiant du cas du plan de tests (`T01`…) dans leur nom (voir `tests/README.md`).
 - Messages de commit : Conventional Commits, en français.
 

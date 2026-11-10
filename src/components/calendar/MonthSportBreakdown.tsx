@@ -1,6 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
+import { useI18n } from '@/hooks/useI18n'
 import { SportBreakdownTable } from './SportBreakdownTable'
 import type { SportBreakdown } from '@/lib/calendar'
 
@@ -17,6 +18,7 @@ const CHART_SIZE_PX = 180
 // tableau pour les chiffres exacts — il sert aussi de légende, chaque sport y
 // portant sa couleur, et de repli lisible quand la couleur ne suffit pas.
 export function MonthSportBreakdown({ bySport }: { bySport: SportBreakdown[] }) {
+  const { t } = useI18n()
   // Un seul sport sur le mois : un donut d'une seule part n'apprend rien, et le
   // tableau ne ferait que répéter les totaux affichés juste au-dessus.
   if (bySport.length < 2) return null
@@ -28,7 +30,7 @@ export function MonthSportBreakdown({ bySport }: { bySport: SportBreakdown[] }) 
 
   return (
     <div className="mt-6 max-w-[720px]">
-      <h2 className="section-title mb-4 pb-2 border-b border-divider">Hours by sport</h2>
+      <h2 className="section-title mb-4 pb-2 border-b border-divider">{t.sportBreakdown.title}</h2>
       <div className="flex flex-col sm:flex-row gap-6 items-start">
         <div style={{ width: CHART_SIZE_PX, height: CHART_SIZE_PX }} className="shrink-0">
           <SportHoursChart bySport={byHours} />

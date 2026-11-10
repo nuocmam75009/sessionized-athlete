@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Field, fieldErrorProps, Input } from '@/components/ui/Field'
 import { Modal } from '@/components/ui/Modal'
+import { useI18n } from '@/hooks/useI18n'
 import { clientFetch } from '@/lib/client-fetch'
 import { hardNavigate } from '@/lib/hard-navigate'
 
@@ -13,20 +14,33 @@ function focusPassword() {
   document.getElementById(PASSWORD_ID)?.focus()
 }
 
+// Codes plutôt que messages : le texte est rédigé à l'affichage, dans la
+// langue courante.
+type PasswordError = 'missing' | 'incorrect'
+type DeleteError = 'tooManyAttempts' | 'failed'
+
 // Confirmation de la suppression du compte (droit à l'effacement). Le mot de
 // passe est redemandé : une session laissée ouverte sur un poste partagé ne
 // suffit pas à tout effacer.
 export function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
+  const { t } = useI18n()
   const [password, setPassword] = useState('')
-  const [passwordError, setPasswordError] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [passwordError, setPasswordError] = useState<PasswordError | null>(null)
+  const [error, setError] = useState<DeleteError | null>(null)
   const [deleting, setDeleting] = useState(false)
+
+  const passwordMessage =
+    passwordError === 'missing'
+      ? t.common.enterPassword
+      : passwordError === 'incorrect'
+        ? t.accountData.deleteDialog.incorrectPassword
+        : null
 
   async function submit(e: FormEvent) {
     e.preventDefault()
     setError(null)
     if (!password) {
-      setPasswordError('Enter your password.')
+      setPasswordError('missing')
       focusPassword()
       return
     }
@@ -46,31 +60,28 @@ export function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
         return
       }
       if (res.status === 403) {
-        setPasswordError('Incorrect password.')
+        setPasswordError('incorrect')
         focusPassword()
       } else if (res.status === 429) {
-        setError('Too many attempts. Wait a minute, then try again.')
+        setError('tooManyAttempts')
       } else {
-        setError("Couldn't delete your account. Try again.")
+        setError('failed')
       }
     } catch {
-      setError("Couldn't delete your account. Try again.")
+      setError('failed')
     }
     setDeleting(false)
   }
 
   return (
-    <Modal label="Delete your account" eyebrow="Delete account" onClose={onClose}>
-      <h2 className="mb-3">Delete your account?</h2>
-      <p className="text-sm text-text/80 mb-2">
-        This permanently erases your account and everything in it: activities, GPS tracks, original files, training
-        plans and notes. Your coach loses access to them too. This can&apos;t be undone.
-      </p>
-      <p className="text-sm text-text/80 mb-5">Want a copy? Download your data before deleting your account.</p>
+    <Modal label={t.accountData.deleteDialog.label} eyebrow={t.accountData.deleteDialog.eyebrow} onClose={onClose}>
+      <h2 className="mb-3">{t.accountData.deleteDialog.title}</h2>
+      <p className="text-sm text-text/80 mb-2">{t.accountData.deleteDialog.warning}</p>
+      <p className="text-sm text-text/80 mb-5">{t.accountData.deleteDialog.copyHint}</p>
       {/* noValidate : même raison que sur l'écran de connexion, la validation
           et ses messages sont les nôtres. */}
       <form onSubmit={submit} noValidate className="grid gap-4">
-        <Field label="Password" htmlFor={PASSWORD_ID} error={passwordError}>
+        <Field label={t.common.password} htmlFor={PASSWORD_ID} error={passwordMessage}>
           <Input
             id={PASSWORD_ID}
             type="password"
@@ -78,20 +89,20 @@ export function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            {...fieldErrorProps(PASSWORD_ID, passwordError)}
+            {...fieldErrorProps(PASSWORD_ID, passwordMessage)}
           />
         </Field>
         {error && (
           <p role="alert" className="text-sm text-danger">
-            {error}
+            {t.accountData.deleteDialog[error]}
           </p>
         )}
         <div className="flex flex-wrap justify-end gap-2">
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {t.common.cancel}
           </Button>
           <Button type="submit" variant="danger" disabled={deleting}>
-            {deleting ? 'Deleting…' : 'Delete my account'}
+            {deleting ? t.accountData.deleteDialog.deleting : t.accountData.deleteAccount}
           </Button>
         </div>
       </form>

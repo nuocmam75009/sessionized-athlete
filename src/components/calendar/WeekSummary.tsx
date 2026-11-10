@@ -6,9 +6,10 @@ import { SportIcon } from '@/components/ui/SportIcon'
 import { Stat } from '@/components/ui/Stat'
 import { SportBreakdownTable } from './SportBreakdownTable'
 import { WeekHeartRateZones } from './WeekHeartRateZones'
+import { useI18n } from '@/hooks/useI18n'
 import { formatActivity } from '@/lib/activity-format'
-import { dayStatusStyles, type DayEntry, type WeekEntry } from '@/lib/calendar'
-import { isFootSport, sportColor, sportKindLabel, toSportKind } from '@/lib/sport'
+import { dayStatusStyles, formatWeekdayLabel, formatWeekRangeLabel, type DayEntry, type WeekEntry } from '@/lib/calendar'
+import { isFootSport, sportColor, toSportKind } from '@/lib/sport'
 import { formatDistance, formatDuration, formatPace } from '@/lib/utils'
 import type { Activity } from '@/lib/types'
 
@@ -17,6 +18,7 @@ import type { Activity } from '@/lib/types'
 // calculé à partir des activités déjà chargées, sauf la répartition par zone
 // de FC qui vient d'une agrégation serveur (voir WeekHeartRateZones).
 export function WeekSummary({ week, className = '' }: { week: WeekEntry; className?: string }) {
+  const { locale, t } = useI18n()
   const { summary } = week
   const detailedDays = week.days.filter((d) => d.activities.length > 0 || d.workout != null)
 
@@ -24,90 +26,95 @@ export function WeekSummary({ week, className = '' }: { week: WeekEntry; classNa
     <aside className={`panel rounded-lg p-6 ${className}`}>
       <div className="flex items-baseline justify-between gap-3 mb-1.5">
         <div className="font-heading font-semibold text-[10px] tracking-[0.16em] uppercase text-accent">
-          Week summary
+          {t.weekSummary.eyebrow}
         </div>
         {week.containsToday && (
           <span className="text-[9px] uppercase tracking-[0.11em] text-text/60 rounded-sm px-2 py-1 ring-1 ring-inset ring-divider">
-            This week
+            {t.weekSummary.thisWeek}
           </span>
         )}
       </div>
       {/* h2 : première section sous le h1 du mois ; taille d'un h3. */}
-      <h2 className="mb-1 text-[1.2rem] leading-[1.2] tracking-[-0.02em]">{week.label}</h2>
-      <p className="text-sm text-text/60 mb-6">
-        {summary.activeDays} active day{summary.activeDays === 1 ? '' : 's'} out of 7
-      </p>
+      <h2 className="mb-1 text-[1.2rem] leading-[1.2] tracking-[-0.02em]">
+        {formatWeekRangeLabel(week.startDateParam, week.endDateParam, locale)}
+      </h2>
+      <p className="text-sm text-text/60 mb-6">{t.weekSummary.activeDays(summary.activeDays)}</p>
 
       {summary.activityCount === 0 && summary.plannedCount === 0 ? (
-        <p className="text-text/60 text-sm">No workouts or activities this week.</p>
+        <p className="text-text/60 text-sm">{t.weekSummary.empty}</p>
       ) : (
         <>
-          <Section title="Volume">
+          <Section title={t.weekSummary.volume}>
             <div className="grid grid-cols-3 gap-x-3 gap-y-4">
-              <Stat size="sm" label="Distance" value={formatDistance(summary.distanceM)} />
-              <Stat size="sm" label="Time" value={formatDuration(Math.round(summary.durationSec))} />
-              <Stat size="sm" label="Activities" value={String(summary.activityCount)} />
+              <Stat size="sm" label={t.stats.distance} value={formatDistance(summary.distanceM, locale)} />
+              <Stat size="sm" label={t.stats.time} value={formatDuration(Math.round(summary.durationSec))} />
+              <Stat size="sm" label={t.stats.activities} value={String(summary.activityCount)} />
               <Stat
                 size="sm"
-                label="Avg pace"
+                label={t.stats.avgPace}
                 value={summary.avgPaceSecPerKm != null ? formatPace(summary.avgPaceSecPerKm) : '—'}
               />
               <Stat
                 size="sm"
-                label="Longest"
-                value={summary.longestActivityM > 0 ? formatDistance(summary.longestActivityM) : '—'}
+                label={t.stats.longest}
+                value={summary.longestActivityM > 0 ? formatDistance(summary.longestActivityM, locale) : '—'}
               />
               <Stat
                 size="sm"
-                label="Elevation"
+                label={t.stats.elevation}
                 value={summary.elevationGainM > 0 ? `${Math.round(summary.elevationGainM)} m` : '—'}
               />
             </div>
           </Section>
 
-          <Section title="Physio">
+          <Section title={t.weekSummary.physio}>
             <div className="grid grid-cols-3 gap-x-3 gap-y-4">
-              <Stat size="sm" label="Avg HR" value={summary.avgHeartRate != null ? `${summary.avgHeartRate} bpm` : '—'} />
-              <Stat size="sm" label="Max HR" value={summary.maxHeartRate != null ? `${summary.maxHeartRate} bpm` : '—'} />
               <Stat
                 size="sm"
-                label="Calories"
+                label={t.stats.avgHr}
+                value={summary.avgHeartRate != null ? `${summary.avgHeartRate} bpm` : '—'}
+              />
+              <Stat
+                size="sm"
+                label={t.stats.maxHr}
+                value={summary.maxHeartRate != null ? `${summary.maxHeartRate} bpm` : '—'}
+              />
+              <Stat
+                size="sm"
+                label={t.stats.calories}
                 value={summary.totalCalories != null ? `${summary.totalCalories} kcal` : '—'}
               />
             </div>
           </Section>
 
           {summary.activityCount > 0 && (
-            <Section title="Heart rate zones">
+            <Section title={t.weekSummary.heartRateZones}>
               {/* Remonté par période : la key force un composant neuf par
                   semaine plutôt qu'un refetch sur une instance vivante. */}
               <WeekHeartRateZones key={week.startDateParam} week={week} />
             </Section>
           )}
 
-          <Section title="Plan">
+          <Section title={t.weekSummary.plan}>
             <div className="grid grid-cols-4 gap-x-3 gap-y-4">
-              <Stat size="sm" label="Planned" value={String(summary.plannedCount)} />
-              <Stat size="sm" label="Done" value={String(summary.doneCount)} />
-              <Stat size="sm" label="Missed" value={String(summary.missedCount)} />
-              <Stat size="sm" label="To come" value={String(summary.upcomingCount)} />
+              <Stat size="sm" label={t.weekSummary.planned} value={String(summary.plannedCount)} />
+              <Stat size="sm" label={t.weekSummary.done} value={String(summary.doneCount)} />
+              <Stat size="sm" label={t.weekSummary.missed} value={String(summary.missedCount)} />
+              <Stat size="sm" label={t.weekSummary.toCome} value={String(summary.upcomingCount)} />
             </div>
             {summary.unplannedCount > 0 && (
-              <p className="text-sm text-text/60 mt-3">
-                {summary.unplannedCount} unplanned activit{summary.unplannedCount === 1 ? 'y' : 'ies'} — not linked to a
-                workout.
-              </p>
+              <p className="text-sm text-text/60 mt-3">{t.weekSummary.unplanned(summary.unplannedCount)}</p>
             )}
           </Section>
 
           {summary.bySport.length > 0 && (
-            <Section title="By sport">
+            <Section title={t.weekSummary.bySport}>
               <SportBreakdownTable bySport={summary.bySport} />
             </Section>
           )}
 
           {detailedDays.length > 0 && (
-            <Section title="Day by day">
+            <Section title={t.weekSummary.dayByDay}>
               <div className="grid gap-2">
                 {detailedDays.map((day) => (
                   <DayRow key={day.dateParam} day={day} />
@@ -136,8 +143,9 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 // les métriques qui ont un sens pour ce sport (pas d'allure min/km à vélo, pas
 // de distance sur une séance de renforcement).
 function ActivityRow({ activity }: { activity: Activity }) {
+  const { locale, t } = useI18n()
   const kind = toSportKind(activity.sport)
-  const { distance, duration, pace } = formatActivity(activity)
+  const { distance, duration, pace } = formatActivity(activity, locale)
 
   const metrics = [
     activity.totalDistanceM > 0 ? distance : null,
@@ -152,25 +160,26 @@ function ActivityRow({ activity }: { activity: Activity }) {
     >
       <SportIcon kind={kind} className="shrink-0" style={{ color: sportColor(kind) }} />
       <span className="min-w-0 truncate">
-        <span className="text-text/80">{sportKindLabel(kind)}</span> · {metrics.join(' · ')}
+        <span className="text-text/80">{t.sports[kind]}</span> · {metrics.join(' · ')}
       </span>
     </Link>
   )
 }
 
 function DayRow({ day }: { day: DayEntry }) {
-  const { dotClass, label } = dayStatusStyles(day.status)
+  const { locale, t } = useI18n()
+  const { dotClass } = dayStatusStyles(day.status)
 
   return (
     <div className="panel-flat rounded-md px-3.5 py-3">
       <div className="flex items-baseline justify-between gap-3 mb-1">
         <span className="font-heading font-semibold text-[13px] tracking-[-0.01em]">
-          {day.weekdayLabel} {day.dayNumber}
+          {formatWeekdayLabel(day.dateParam, locale)} {day.dayNumber}
         </span>
-        {dotClass && (
+        {day.status !== 'empty' && (
           <span className="flex items-center gap-1.5 text-[9px] uppercase tracking-[0.1em] text-text/60">
             <span className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />
-            {label}
+            {t.calendar.status[day.status]}
           </span>
         )}
       </div>
@@ -178,7 +187,7 @@ function DayRow({ day }: { day: DayEntry }) {
       {day.workout && <div className="text-sm mb-1">{day.workout.title}</div>}
 
       {day.activities.length === 0 ? (
-        <div className="text-sm text-text/60">No activity recorded</div>
+        <div className="text-sm text-text/60">{t.weekSummary.noActivity}</div>
       ) : (
         <div className="grid gap-1">
           {day.activities.map((activity) => (

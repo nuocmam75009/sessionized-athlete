@@ -114,7 +114,7 @@ describe('Jeu d’essai — calendrier du mois', () => {
   it('cas 1 : octobre 2026 s’affiche en 5 semaines de 7 jours, du lundi 28 septembre au dimanche 1er novembre', () => {
     const { days, weeks } = renderCalendar()
 
-    expect(formatMonthLabel(MONTH)).toBe('October 2026')
+    expect(formatMonthLabel(MONTH, 'en')).toBe('October 2026')
     expect(days).toHaveLength(35)
     expect(days[0]).toHaveTextContent(/^28/)
     expect(days[34]).toHaveTextContent(/^1/)
@@ -227,7 +227,7 @@ describe('Jeu d’essai — calendrier du mois', () => {
     const { entries, weeks } = renderCalendar()
     const month = buildMonthSummary(entries)
 
-    expect(formatDistance(month.distanceM)).toBe('60.2 km')
+    expect(formatDistance(month.distanceM, 'en')).toBe('60.2 km')
     expect(formatDuration(month.durationSec)).toBe("3h10'")
     expect(month.activityCount).toBe(4)
     // La sortie du 29 septembre compte dans sa semaine, affichée en tête de grille.

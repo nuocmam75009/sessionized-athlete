@@ -3,21 +3,13 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Field, Input, Select } from '@/components/ui/Field'
+import { useI18n } from '@/hooks/useI18n'
 import { clientFetch } from '@/lib/client-fetch'
 import { formatPace } from '@/lib/utils'
 import { Specialty } from '@/lib/types'
 import type { AthleteProfile, AthleteProfileUpdate } from '@/lib/types'
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error'
-
-const SPECIALTY_LABELS: Record<Specialty, string> = {
-  [Specialty.TRAIL]: 'Trail',
-  [Specialty.ULTRA_TRAIL]: 'Ultra-trail',
-  [Specialty.MIDDLE_DISTANCE_TRACK]: 'Middle distance (track)',
-  [Specialty.LONG_DISTANCE_TRACK]: 'Long distance (track)',
-  [Specialty.MIDDLE_DISTANCE_ROAD]: 'Middle distance (road)',
-  [Specialty.LONG_DISTANCE_ROAD]: 'Long distance (road)',
-}
 
 function ZoneRow({ label, values }: { label: string; values: string[] }) {
   return (
@@ -41,6 +33,7 @@ export function AthleteDataView({
   athleteProfile: AthleteProfile | null
   loadFailed: boolean
 }) {
+  const { t } = useI18n()
   const [age, setAge] = useState(athleteProfile?.age?.toString() ?? '')
   const [weightKg, setWeightKg] = useState(athleteProfile?.weightKg?.toString() ?? '')
   const [heightCm, setHeightCm] = useState(athleteProfile?.heightCm?.toString() ?? '')
@@ -73,15 +66,15 @@ export function AthleteDataView({
 
   return (
     <div>
-      <h1>Athlete Data</h1>
+      <h1>{t.athleteData.title}</h1>
       <p className="text-text/60 mt-2 max-w-[52ch]">
-        These physiological details help your coach fine-tune your sessions — target zones, load, recovery.
+        {t.athleteData.intro}
       </p>
       {/* Sans ce message, un échec de chargement se lirait comme un profil
           jamais rempli. */}
       {loadFailed && (
         <p role="alert" className="text-danger mt-4">
-          Couldn&apos;t load your athlete data. Refresh the page to try again.
+          {t.athleteData.loadFailed}
         </p>
       )}
       <form
@@ -92,10 +85,10 @@ export function AthleteDataView({
         className="grid gap-3 max-w-[420px] mt-6"
       >
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Age" htmlFor="ad-age">
+          <Field label={t.athleteData.age} htmlFor="ad-age">
             <Input id="ad-age" type="number" min={10} max={100} value={age} onChange={(e) => setAge(e.target.value)} />
           </Field>
-          <Field label="Weight (kg)" htmlFor="ad-weight">
+          <Field label={t.athleteData.weight} htmlFor="ad-weight">
             <Input
               id="ad-weight"
               type="number"
@@ -108,7 +101,7 @@ export function AthleteDataView({
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Height (cm)" htmlFor="ad-height">
+          <Field label={t.athleteData.height} htmlFor="ad-height">
             <Input
               id="ad-height"
               type="number"
@@ -118,17 +111,17 @@ export function AthleteDataView({
               onChange={(e) => setHeightCm(e.target.value)}
             />
           </Field>
-          <Field label="Basal metabolic rate (kcal)" htmlFor="ad-bmr">
+          <Field label={t.athleteData.bmr} htmlFor="ad-bmr">
             <Input id="ad-bmr" type="number" min={500} max={5000} value={bmr} onChange={(e) => setBmr(e.target.value)} />
           </Field>
         </div>
 
-        <Field label="Specialty" htmlFor="ad-specialty">
+        <Field label={t.athleteData.specialty} htmlFor="ad-specialty">
           <Select id="ad-specialty" value={specialty} onChange={(e) => setSpecialty(e.target.value)}>
             <option value="">—</option>
             {Object.values(Specialty).map((value) => (
               <option key={value} value={value}>
-                {SPECIALTY_LABELS[value]}
+                {t.athleteData.specialties[value]}
               </option>
             ))}
           </Select>
@@ -136,16 +129,16 @@ export function AthleteDataView({
 
         <div className="flex items-center gap-3 mt-2">
           <Button type="submit" className="w-fit" disabled={saveState === 'saving'}>
-            {saveState === 'saving' ? 'Saving…' : 'Save changes'}
+            {saveState === 'saving' ? t.common.saving : t.common.saveChanges}
           </Button>
           {saveState === 'saved' && (
             <span role="status" className="text-sm text-success">
-              Saved.
+              {t.common.saved}
             </span>
           )}
           {saveState === 'error' && (
             <span role="alert" className="text-sm text-danger">
-              Couldn&apos;t save changes. Try again.
+              {t.common.saveChangesFailed}
             </span>
           )}
         </div>
@@ -153,12 +146,14 @@ export function AthleteDataView({
 
       {athleteProfile && (athleteProfile.heartRateZonesBpm.length > 0 || athleteProfile.paceZonesSecPerKm.length > 0) && (
         <div className="grid gap-4 max-w-[420px] mt-8 pt-6 border-t border-divider">
-          <div className="text-[10px] uppercase tracking-[0.14em] text-accent font-semibold">Synced from Strava</div>
+          <div className="text-[10px] uppercase tracking-[0.14em] text-accent font-semibold">
+            {t.athleteData.syncedFromStrava}
+          </div>
           {athleteProfile.heartRateZonesBpm.length > 0 && (
-            <ZoneRow label="Heart rate zones (bpm)" values={athleteProfile.heartRateZonesBpm.map(String)} />
+            <ZoneRow label={t.athleteData.heartRateZones} values={athleteProfile.heartRateZonesBpm.map(String)} />
           )}
           {athleteProfile.paceZonesSecPerKm.length > 0 && (
-            <ZoneRow label="Pace zones" values={athleteProfile.paceZonesSecPerKm.map(formatPace)} />
+            <ZoneRow label={t.athleteData.paceZones} values={athleteProfile.paceZonesSecPerKm.map(formatPace)} />
           )}
         </div>
       )}

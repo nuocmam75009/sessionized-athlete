@@ -4,20 +4,8 @@
 // "cycling"). On normalise les deux vers un même jeu de catégories — sans quoi
 // un "Run" Strava et un "running" .fit compteraient comme deux sports distincts
 // dans le récapitulatif de semaine.
+// Le nom affiché de chaque catégorie est dans les dictionnaires (t.sports).
 export type SportKind = 'run' | 'trail_run' | 'ride' | 'swim' | 'walk' | 'hike' | 'strength' | 'row' | 'ski' | 'other'
-
-const SPORT_KIND_LABELS: Record<SportKind, string> = {
-  run: 'Run',
-  trail_run: 'Trail run',
-  ride: 'Ride',
-  swim: 'Swim',
-  walk: 'Walk',
-  hike: 'Hike',
-  strength: 'Strength',
-  row: 'Rowing',
-  ski: 'Ski',
-  other: 'Other',
-}
 
 export function toSportKind(sport: string | null): SportKind {
   if (!sport) return 'other'
@@ -46,10 +34,6 @@ export function toSportKind(sport: string | null): SportKind {
     return 'strength'
   }
   return 'other'
-}
-
-export function sportKindLabel(kind: SportKind): string {
-  return SPORT_KIND_LABELS[kind]
 }
 
 // Couleurs définies dans globals.css. La teinte suit le sport, jamais son rang

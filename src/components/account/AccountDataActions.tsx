@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
+import { useI18n } from '@/hooks/useI18n'
 import { clientFetch } from '@/lib/client-fetch'
 import { DeleteAccountDialog } from './DeleteAccountDialog'
 
@@ -15,6 +16,7 @@ function exportFileName(contentDisposition: string | null): string {
 // Droits d'accès, de portabilité et d'effacement, exercés en un clic : sur le
 // profil, et sur l'écran de consentement pour qui refuse.
 export function AccountDataActions() {
+  const { t } = useI18n()
   const [exportState, setExportState] = useState<ExportState>('idle')
   const [deleteOpen, setDeleteOpen] = useState(false)
 
@@ -44,19 +46,16 @@ export function AccountDataActions() {
     <div>
       <div className="flex flex-wrap gap-2">
         <Button variant="secondary" onClick={downloadData} disabled={exportState === 'exporting'}>
-          {exportState === 'exporting' ? 'Preparing your data…' : 'Download my data'}
+          {exportState === 'exporting' ? t.accountData.preparing : t.accountData.download}
         </Button>
         <Button variant="danger" onClick={() => setDeleteOpen(true)}>
-          Delete my account
+          {t.accountData.deleteAccount}
         </Button>
       </div>
-      <p className="text-[13px] text-text/70 mt-2 max-w-[60ch]">
-        The download is a JSON file with your account, profile, plans, activities, GPS tracks and original .fit and
-        .gpx files.
-      </p>
+      <p className="text-[13px] text-text/70 mt-2 max-w-[60ch]">{t.accountData.downloadHint}</p>
       {exportState === 'error' && (
         <p role="alert" className="text-sm text-danger mt-2">
-          Couldn&apos;t prepare your data. Try again.
+          {t.accountData.exportFailed}
         </p>
       )}
       {deleteOpen && <DeleteAccountDialog onClose={() => setDeleteOpen(false)} />}

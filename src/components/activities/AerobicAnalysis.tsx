@@ -3,36 +3,19 @@
 import { useEffect, useState } from 'react'
 import { Stat } from '@/components/ui/Stat'
 import { thClass, tdClass } from '@/components/ui/table'
+import { useI18n } from '@/hooks/useI18n'
 import { clientFetch } from '@/lib/client-fetch'
-import { formatDuration, formatPace } from '@/lib/utils'
-import type { AerobicAnalysis as Analysis, AerobicRejection, DecouplingRating } from '@/lib/types'
+import { formatDecimal, formatDuration, formatPace } from '@/lib/utils'
+import type { AerobicAnalysis as Analysis, DecouplingRating } from '@/lib/types'
 
-// Pourquoi il n'y a rien à calculer. Affiché, et pas tu : un athlète qui ne
-// voit jamais l'analyse sur ses séances doit pouvoir comprendre que c'est
-// normal, et à quelle condition elle apparaîtra.
-const REJECTIONS: Record<AerobicRejection, string> = {
-  NO_HEART_RATE: 'no usable heart-rate trace on this activity',
-  NO_SPEED: 'no speed data on this activity',
-  TOO_SHORT: 'too short — it needs 20 minutes of steady running once the warm-up is cut',
-  VARIABLE_EFFORT: 'the effort is not steady — drift only means something on a continuous run',
-}
-
-const RATINGS: Record<DecouplingRating, { label: string; tone: string; hint: string }> = {
-  GOOD: {
-    label: 'Solid',
-    tone: 'text-success',
-    hint: 'Pace and heart rate held together — your aerobic base carried this effort.',
-  },
-  MODERATE: {
-    label: 'Some drift',
-    tone: 'text-warning',
-    hint: 'Heart rate climbed relative to pace in the back half — normal on a hard or long day.',
-  },
-  HIGH: {
-    label: 'Heavy drift',
-    tone: 'text-danger',
-    hint: 'The second half cost noticeably more for the same pace — heat, fatigue, fuelling, or an effort above your current base.',
-  },
+// Couleur de chaque verdict ; libellé et explication : t.aerobic.ratings. Les
+// raisons d'une analyse impossible (t.aerobic.rejections) sont affichées, et
+// pas tues : un athlète qui ne voit jamais l'analyse sur ses séances doit
+// pouvoir comprendre que c'est normal, et à quelle condition elle apparaîtra.
+const RATING_TONES: Record<DecouplingRating, string> = {
+  GOOD: 'text-success',
+  MODERATE: 'text-warning',
+  HIGH: 'text-danger',
 }
 
 /**
@@ -42,6 +25,7 @@ const RATINGS: Record<DecouplingRating, { label: string; tone: string; hint: str
  * calcul relit toute la trace seconde par seconde.
  */
 export function AerobicAnalysis({ activityId }: { activityId: string }) {
+  const { locale, t } = useI18n()
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
 
   useEffect(() => {
@@ -67,35 +51,32 @@ export function AerobicAnalysis({ activityId }: { activityId: string }) {
 
   if (!analysis.eligible) {
     return (
-      <p className="text-[12px] text-text/60 mb-7">
-        No aerobic analysis for this session — {REJECTIONS[analysis.reason]}.
-      </p>
+      <p className="text-[12px] text-text/60 mb-7">{t.aerobic.noAnalysis(t.aerobic.rejections[analysis.reason])}</p>
     )
   }
 
-  const rating = RATINGS[analysis.rating]
+  const rating = t.aerobic.ratings[analysis.rating]
   const halves = [
-    { label: 'First half', ...analysis.first },
-    { label: 'Second half', ...analysis.second },
+    { key: 'first', label: t.aerobic.firstHalf, ...analysis.first },
+    { key: 'second', label: t.aerobic.secondHalf, ...analysis.second },
   ]
 
   return (
     <section className="mb-7">
-      <h2 className="section-title mb-3">Aerobic response</h2>
+      <h2 className="section-title mb-3">{t.aerobic.title}</h2>
       <div className="panel rounded-lg px-6 py-5">
         <div className="flex gap-10 flex-wrap mb-5">
-          <Stat label="Efficiency factor" value={analysis.efficiencyFactor.toFixed(2)} />
+          <Stat label={t.aerobic.efficiencyFactor} value={formatDecimal(analysis.efficiencyFactor, 2, locale)} />
           <div>
-            <div className="text-[10px] uppercase tracking-[0.11em] text-text/60">Decoupling</div>
+            <div className="text-[10px] uppercase tracking-[0.11em] text-text/60">{t.aerobic.decoupling}</div>
             <div className="metric mt-1.5 font-semibold leading-none text-[26px]">
-              {analysis.decouplingPct > 0 ? '+' : ''}
-              {analysis.decouplingPct.toFixed(1)} %
+              {formatDecimal(analysis.decouplingPct, 1, locale, { signed: true })} %
             </div>
             {/* La couleur double le libellé, elle ne le remplace pas. */}
-            <div className={`text-[11px] mt-1.5 ${rating.tone}`}>{rating.label}</div>
+            <div className={`text-[11px] mt-1.5 ${RATING_TONES[analysis.rating]}`}>{rating.label}</div>
           </div>
           <Stat
-            label="Analysed"
+            label={t.aerobic.analysed}
             value={formatDuration(Math.round(analysis.analyzedDurationSec))}
             size="sm"
           />
@@ -104,36 +85,27 @@ export function AerobicAnalysis({ activityId }: { activityId: string }) {
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr>
-              <th className={thClass}>Split</th>
-              <th className={`${thClass} text-right`}>Pace</th>
-              <th className={`${thClass} text-right`}>Heart rate</th>
-              <th className={`${thClass} text-right`}>EF</th>
+              <th className={thClass}>{t.aerobic.split}</th>
+              <th className={`${thClass} text-right`}>{t.stats.pace}</th>
+              <th className={`${thClass} text-right`}>{t.stats.heartRate}</th>
+              <th className={`${thClass} text-right`}>{t.aerobic.ef}</th>
             </tr>
           </thead>
           <tbody>
             {halves.map((half) => (
-              <tr key={half.label}>
+              <tr key={half.key}>
                 <td className={`${tdClass} text-text/60`}>{half.label}</td>
-                <td className={`${tdClass} metric text-right`}>
-                  {formatPace(half.avgPaceSecPerKm)}
-                </td>
-                <td className={`${tdClass} metric text-right`}>
-                  {Math.round(half.avgHeartRate)} bpm
-                </td>
-                <td className={`${tdClass} metric text-right`}>
-                  {half.efficiencyFactor.toFixed(2)}
-                </td>
+                <td className={`${tdClass} metric text-right`}>{formatPace(half.avgPaceSecPerKm)}</td>
+                <td className={`${tdClass} metric text-right`}>{Math.round(half.avgHeartRate)} bpm</td>
+                <td className={`${tdClass} metric text-right`}>{formatDecimal(half.efficiencyFactor, 2, locale)}</td>
               </tr>
             ))}
           </tbody>
         </table>
 
         <p className="text-[12px] text-text/60 mt-4 max-w-[64ch]">
-          {rating.hint} Efficiency factor is metres covered per minute per heartbeat — it rises as
-          you get faster at the same heart rate. The first{' '}
-          {formatDuration(Math.round(analysis.analyzedFromSec))} are excluded as warm-up.
-          {!analysis.terrainReliable &&
-            ` This run climbs about ${Math.round(analysis.elevationGainMPerKm ?? 0)} m per km, so raw pace no longer reflects the effort — read the drift with caution until pace is grade-adjusted.`}
+          {rating.hint} {t.aerobic.explanation(formatDuration(Math.round(analysis.analyzedFromSec)))}
+          {!analysis.terrainReliable && t.aerobic.hillyTerrain(Math.round(analysis.elevationGainMPerKm ?? 0))}
         </p>
       </div>
     </section>

@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
-import { expect, signInAs, test } from './fixtures'
+import type { Page } from '@playwright/test'
+import { chooseLocale, expect, signInAs, test } from './fixtures'
 import { ATHLETE_ACTIVITY_ID, USERS } from './mock-api/server'
 
 // as : compte qui ouvre la page, quand l'écran audité en dépend (par défaut,
@@ -22,6 +23,13 @@ const PAGES: Array<{ path: string; authenticated: boolean; as?: 'legacyAudit' }>
 // mesurerait le contraste d'un texte à moitié transparent.
 test.use({ contextOptions: { reducedMotion: 'reduce' } })
 
+async function blockingViolations(page: Page) {
+  const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
+  return results.violations
+    .filter((v) => v.impact === 'serious' || v.impact === 'critical')
+    .map((v) => ({ rule: v.id, impact: v.impact, help: v.help, targets: v.nodes.map((n) => n.target.join(' ')) }))
+}
+
 // L'interface est dessinée en sombre, le clair en est la traduction : les deux
 // thèmes sont audités.
 for (const colorScheme of ['dark', 'light'] as const) {
@@ -34,16 +42,30 @@ for (const colorScheme of ['dark', 'light'] as const) {
         await page.goto(path)
         await page.waitForLoadState('networkidle')
 
-        const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
-        const blocking = results.violations
-          .filter((v) => v.impact === 'serious' || v.impact === 'critical')
-          .map((v) => ({ rule: v.id, impact: v.impact, help: v.help, targets: v.nodes.map((n) => n.target.join(' ')) }))
-
-        expect(blocking).toEqual([])
+        expect(await blockingViolations(page)).toEqual([])
       })
     }
   })
 }
+
+// Les textes français sont un autre contenu : d'autres longueurs, d'autres
+// noms accessibles, et la langue de la page à déclarer (RGAA 8.3). Thème
+// sombre seulement : le contraste ne dépend pas de la langue.
+test.describe('T34 — accessibilité en français', () => {
+  test.use({ colorScheme: 'dark' })
+
+  for (const { path, authenticated, as } of PAGES) {
+    test(`${path}${as ? ` (${as})` : ''} : aucune violation axe « serious » ou « critical »`, async ({ page, context }) => {
+      await chooseLocale(context, 'fr')
+      if (authenticated) await signInAs(context, USERS[as ?? 'athlete'])
+      await page.goto(path)
+      await page.waitForLoadState('networkidle')
+
+      await expect(page.locator('html')).toHaveAttribute('lang', 'fr-FR')
+      expect(await blockingViolations(page)).toEqual([])
+    })
+  }
+})
 
 test.describe('T29 — navigation au clavier et titres de page (RGAA 8.6, 12.7)', () => {
   test('chaque page a son propre titre', async ({ page, context }) => {

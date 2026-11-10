@@ -1,9 +1,11 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useI18n } from '@/hooks/useI18n'
 
 export function BackLink({ fallbackHref }: { fallbackHref: string }) {
   const router = useRouter()
+  const { t } = useI18n()
   return (
     <a
       href={fallbackHref}
@@ -17,7 +19,7 @@ export function BackLink({ fallbackHref }: { fallbackHref: string }) {
       <span className="transition-transform duration-200 ease-out-3d group-hover:-translate-x-0.5">
         ←
       </span>
-      Back
+      {t.common.back}
     </a>
   )
 }

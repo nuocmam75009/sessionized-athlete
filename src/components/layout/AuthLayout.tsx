@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { LegalLinks } from '@/components/layout/LegalLinks'
+import { LanguageToggle } from '@/components/ui/LanguageToggle'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 
 interface AuthLayoutProps {
@@ -67,8 +68,9 @@ export function AuthLayout({ eyebrow, title, description, children }: AuthLayout
   return (
     <div className="relative grid md:grid-cols-[1.05fr_0.95fr] min-h-screen">
       {/* L'écran d'auth n'a pas de sidebar : sans ce rappel, on ne pourrait pas
-          changer de thème avant d'être connecté. */}
-      <div className="absolute right-4 top-4 z-10">
+          changer de langue ni de thème avant d'être connecté. */}
+      <div className="absolute right-4 top-4 z-10 flex items-center gap-2">
+        <LanguageToggle />
         <ThemeToggle />
       </div>
       <div className="relative overflow-hidden px-8 md:px-16 py-16 flex flex-col justify-center">

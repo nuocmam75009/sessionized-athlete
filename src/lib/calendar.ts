@@ -1,14 +1,17 @@
+import { intlLocale, type Locale } from './i18n/config'
 import { findLinkedActivityId } from './plan-format'
-import { sportKindLabel, toSportKind, type SportKind } from './sport'
-import { APP_LOCALE, formatDateLabel, isSameCalendarDay } from './utils'
+import { toSportKind, type SportKind } from './sport'
+import { capitalizeFirst, isSameCalendarDay } from './utils'
 import type { Activity, Workout } from './types'
 
 export type DayStatus = 'upcoming' | 'pending' | 'missed' | 'done' | 'unplanned' | 'empty'
 
+// Les structures du calendrier ne portent aucun libellé : calculées par le
+// serveur, elles sont affichées par des composants client qui formatent dates
+// et noms dans la langue courante (formatDayLabel, formatWeekRangeLabel…). Un
+// libellé figé au calcul resterait dans l'ancienne langue après un changement.
 export interface DayEntry {
   dateParam: string
-  dateLabel: string
-  weekdayLabel: string
   dayNumber: number
   isToday: boolean
   isInCurrentMonth: boolean
@@ -59,8 +62,12 @@ export function getMonthGridDays(monthStart: Date): Date[] {
   return days
 }
 
-export function formatMonthLabel(monthStart: Date): string {
-  return new Intl.DateTimeFormat(APP_LOCALE, { month: 'long', year: 'numeric' }).format(monthStart)
+// "August 2026" / "Août 2026"
+export function formatMonthLabel(monthStart: Date, locale: Locale): string {
+  return capitalizeFirst(
+    new Intl.DateTimeFormat(intlLocale(locale), { month: 'long', year: 'numeric' }).format(monthStart),
+    locale,
+  )
 }
 
 export function toDateParam(date: Date): string {
@@ -138,8 +145,6 @@ function buildDayEntry(date: Date, workouts: Workout[], activities: Activity[], 
 
   return {
     dateParam: toDateParam(date),
-    dateLabel: formatDateLabel(date.toISOString()),
-    weekdayLabel: new Intl.DateTimeFormat(APP_LOCALE, { weekday: 'short' }).format(date),
     dayNumber: date.getDate(),
     isToday,
     isInCurrentMonth: date.getMonth() === monthStart.getMonth() && date.getFullYear() === monthStart.getFullYear(),
@@ -170,7 +175,6 @@ export function buildMonthEntries(
 // sinon pour deux sports.
 export interface SportBreakdown {
   kind: SportKind
-  label: string
   activityCount: number
   distanceM: number
   durationSec: number
@@ -199,9 +203,6 @@ export interface WeekEntry {
   days: DayEntry[]
   startDateParam: string
   endDateParam: string
-  label: string
-  // Version compacte pour la case de la grille, où la place est comptée.
-  shortLabel: string
   containsToday: boolean
   summary: WeekSummary
 }
@@ -212,7 +213,6 @@ function buildSportBreakdown(activities: Activity[]): SportBreakdown[] {
     const kind = toSportKind(activity.sport)
     const current = bySport.get(kind) ?? {
       kind,
-      label: sportKindLabel(kind),
       activityCount: 0,
       distanceM: 0,
       durationSec: 0,
@@ -261,20 +261,43 @@ function buildWeekSummary(days: DayEntry[]): WeekSummary {
   }
 }
 
-// "Aug 4 – Aug 10" — libellé de la semaine, titre de son récapitulatif.
-export function formatWeekRangeLabel(startDateParam: string, endDateParam: string): string {
-  const formatter = new Intl.DateTimeFormat(APP_LOCALE, { month: 'short', day: 'numeric' })
+// "Tue, Aug 4" / "Mar. 4 août" — date d'une case, en-tête de sa modale.
+export function formatDayLabel(dateParam: string, locale: Locale): string {
+  const label = new Intl.DateTimeFormat(intlLocale(locale), { weekday: 'short', month: 'short', day: 'numeric' }).format(
+    fromDateParam(dateParam),
+  )
+  return capitalizeFirst(label, locale)
+}
+
+// "Tue" / "Mar." — jour de la semaine, dans le détail jour par jour.
+export function formatWeekdayLabel(dateParam: string, locale: Locale): string {
+  return capitalizeFirst(
+    new Intl.DateTimeFormat(intlLocale(locale), { weekday: 'short' }).format(fromDateParam(dateParam)),
+    locale,
+  )
+}
+
+// "Aug 4 – Aug 10" / "4 août – 10 août" — libellé de la semaine, titre de son
+// récapitulatif.
+export function formatWeekRangeLabel(startDateParam: string, endDateParam: string, locale: Locale): string {
+  const formatter = new Intl.DateTimeFormat(intlLocale(locale), { month: 'short', day: 'numeric' })
   return `${formatter.format(fromDateParam(startDateParam))} – ${formatter.format(fromDateParam(endDateParam))}`
 }
 
-// "Aug 4–10", ou "Aug 30–Sep 5" à cheval sur deux mois — le mois n'est répété
-// que lorsqu'il change.
-export function formatWeekShortLabel(startDateParam: string, endDateParam: string): string {
+// "Aug 4–10" / "4–10 août", ou "Aug 30–Sep 5" à cheval sur deux mois : le mois
+// n'est répété que lorsqu'il change. Version compacte pour la case de la
+// grille, où la place est comptée. Le jour de fin s'accole au jour de début, à
+// sa place dans la date formatée : le mois précède le jour en anglais, il le
+// suit en français.
+export function formatWeekShortLabel(startDateParam: string, endDateParam: string, locale: Locale): string {
   const start = fromDateParam(startDateParam)
   const end = fromDateParam(endDateParam)
-  const formatter = new Intl.DateTimeFormat(APP_LOCALE, { month: 'short', day: 'numeric' })
-  if (start.getMonth() === end.getMonth()) return `${formatter.format(start)}–${end.getDate()}`
-  return `${formatter.format(start)}–${formatter.format(end)}`
+  const formatter = new Intl.DateTimeFormat(intlLocale(locale), { month: 'short', day: 'numeric' })
+  if (start.getMonth() !== end.getMonth()) return `${formatter.format(start)}–${formatter.format(end)}`
+  return formatter
+    .formatToParts(start)
+    .map((part) => (part.type === 'day' ? `${part.value}–${end.getDate()}` : part.value))
+    .join('')
 }
 
 // Découpe la grille (toujours un multiple de 7, voir getMonthGridDays) en
@@ -291,8 +314,6 @@ export function buildWeekEntries(entries: DayEntry[]): WeekEntry[] {
       days,
       startDateParam,
       endDateParam,
-      label: formatWeekRangeLabel(startDateParam, endDateParam),
-      shortLabel: formatWeekShortLabel(startDateParam, endDateParam),
       containsToday: days.some((d) => d.isToday),
       summary: buildWeekSummary(days),
     })
@@ -327,11 +348,12 @@ export function buildMonthSummary(entries: DayEntry[]): MonthSummary {
   }
 }
 
+// Habillage d'un statut. Son libellé vient du dictionnaire (t.calendar.status),
+// sauf pour 'empty', qui n'affiche rien.
 export function dayStatusStyles(status: DayStatus): {
   dotClass: string
   bgClass: string
   borderClass: string
-  label: string
 } {
   // Sur fond noir, un statut se dit par un voile teinté très faible (7-10 %) et
   // par la couleur du liseré — un aplat franc à la valeur d'un thème clair
@@ -342,38 +364,33 @@ export function dayStatusStyles(status: DayStatus): {
         dotClass: 'bg-success shadow-[0_0_8px_0_var(--color-success)]',
         bgClass: 'bg-success/[0.07]',
         borderClass: 'border-success/25',
-        label: 'Done',
       }
     case 'missed':
       return {
         dotClass: 'bg-danger',
         bgClass: 'bg-danger/[0.06]',
         borderClass: 'border-danger/25',
-        label: 'Missed',
       }
     case 'pending':
       return {
         dotClass: 'bg-accent shadow-[0_0_8px_0_var(--color-accent)]',
         bgClass: 'bg-accent/[0.09]',
         borderClass: 'border-accent/35',
-        label: 'Today',
       }
     case 'upcoming':
       return {
         dotClass: 'bg-accent-400',
         bgClass: 'bg-surface/50',
         borderClass: 'border-divider',
-        label: 'Upcoming',
       }
     case 'unplanned':
       return {
         dotClass: 'bg-neutral-500',
         bgClass: 'bg-surface/50',
         borderClass: 'border-divider',
-        label: 'Unplanned',
       }
     case 'empty':
-      return { dotClass: '', bgClass: 'bg-transparent', borderClass: 'border-dashed border-divider/50', label: '' }
+      return { dotClass: '', bgClass: 'bg-transparent', borderClass: 'border-dashed border-divider/50' }
   }
 }
 

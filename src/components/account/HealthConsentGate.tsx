@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { CheckboxField } from '@/components/ui/Field'
+import { useI18n } from '@/hooks/useI18n'
 import { clientFetch } from '@/lib/client-fetch'
 import { AccountDataActions } from './AccountDataActions'
 import { HealthConsentLabel } from './HealthConsentLabel'
@@ -15,20 +16,23 @@ const CONSENT_ID = 'sn-gate-consent'
 // Il consent, ou il récupère ses données et supprime son compte.
 export function HealthConsentGate() {
   const router = useRouter()
+  const { t } = useI18n()
   const [consent, setConsent] = useState(false)
-  const [consentError, setConsentError] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  // Drapeaux plutôt que messages : le texte est rédigé à l'affichage, dans la
+  // langue courante.
+  const [consentMissing, setConsentMissing] = useState(false)
+  const [saveFailed, setSaveFailed] = useState(false)
   const [saving, setSaving] = useState(false)
 
   async function submit(e: FormEvent) {
     e.preventDefault()
-    setError(null)
+    setSaveFailed(false)
     if (!consent) {
-      setConsentError('Tick this box to keep using Sessionized.')
+      setConsentMissing(true)
       document.getElementById(CONSENT_ID)?.focus()
       return
     }
-    setConsentError(null)
+    setConsentMissing(false)
     setSaving(true)
     try {
       const res = await clientFetch('/api/users/me/health-consent', {
@@ -40,7 +44,7 @@ export function HealthConsentGate() {
       // Le layout relit le profil : l'accord daté, il rend la page demandée.
       router.refresh()
     } catch {
-      setError("Couldn't save your answer. Try again.")
+      setSaveFailed(true)
       setSaving(false)
     }
   }
@@ -48,35 +52,33 @@ export function HealthConsentGate() {
   return (
     <div className="max-w-[560px]">
       <div className="font-heading font-semibold text-[10px] tracking-[0.18em] uppercase text-accent mb-2.5">
-        Privacy
+        {t.consent.gate.eyebrow}
       </div>
-      <h1>Your health data</h1>
-      <p className="text-text/80 mt-4">
-        Sessionized uses your heart rate, weight and training activities to plan and analyse your workouts. These are
-        health data, and the law requires your explicit consent to process them.
-      </p>
-      <p className="text-text/80 mt-3">
-        Your account was created before we asked for it. Answer once to get back to your training.
-      </p>
+      <h1>{t.consent.gate.title}</h1>
+      <p className="text-text/80 mt-4">{t.consent.gate.intro}</p>
+      <p className="text-text/80 mt-3">{t.consent.gate.whyNow}</p>
       <form onSubmit={submit} noValidate className="grid gap-4 mt-6">
-        <CheckboxField id={CONSENT_ID} required checked={consent} onChange={setConsent} error={consentError}>
+        <CheckboxField
+          id={CONSENT_ID}
+          required
+          checked={consent}
+          onChange={setConsent}
+          error={consentMissing ? t.consent.gate.required : null}
+        >
           <HealthConsentLabel />
         </CheckboxField>
-        {error && (
+        {saveFailed && (
           <p role="alert" className="text-sm text-danger">
-            {error}
+            {t.consent.gate.saveFailed}
           </p>
         )}
         <Button type="submit" className="w-fit" disabled={saving}>
-          {saving ? 'Saving…' : 'Continue'}
+          {saving ? t.common.saving : t.consent.gate.continue}
         </Button>
       </form>
       <section className="mt-10 border-t border-divider pt-6">
-        <h2 className="text-base mb-2">You don&apos;t agree?</h2>
-        <p className="text-sm text-text/80 mb-4">
-          Sessionized can&apos;t work without these data. You can download a copy of everything we hold about you,
-          then delete your account.
-        </p>
+        <h2 className="text-base mb-2">{t.consent.gate.disagreeTitle}</h2>
+        <p className="text-sm text-text/80 mb-4">{t.consent.gate.disagreeBody}</p>
         <AccountDataActions />
       </section>
     </div>

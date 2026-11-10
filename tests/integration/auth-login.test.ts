@@ -3,16 +3,17 @@ import { NextRequest } from 'next/server'
 import { describe, expect, it, vi } from 'vitest'
 import { POST } from '@/app/api/auth/login/route'
 import { SESSION_COOKIE_NAME } from '@/lib/auth-cookie'
+import { LOCALE_COOKIE_NAME } from '@/lib/i18n/config'
 import { API_URL, backend, makeJwt, validToken } from './support/backend'
 import { cookieJar } from './support/cookies'
 
 const credentials = { email: 'athlete@test.dev', password: 'Passw0rd!' }
 const user = { sub: 'u1', email: credentials.email, role: 'ATHLETE' }
 
-function loginRequest(body: unknown) {
+function loginRequest(body: unknown, headers: Record<string, string> = {}) {
   return new NextRequest('http://localhost:3000/api/auth/login', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(body),
   })
 }
@@ -103,5 +104,39 @@ describe('POST /api/auth/login', () => {
     expect(res.status).toBe(429)
     expect(await res.json()).toEqual({ message: 'Too many attempts. Try again in 14 min.' })
     expect(cookieJar.get(SESSION_COOKIE_NAME)).toBeUndefined()
+  })
+
+  describe('T34 — message dans la langue de l’athlète', () => {
+    function rejectCredentials() {
+      backend.use(
+        http.post(`${API_URL}/auth/login`, () =>
+          HttpResponse.json({ statusCode: 401, message: 'Identifiants invalides' }, { status: 401 }),
+        ),
+      )
+    }
+
+    it('langue choisie (cookie), même si le navigateur en préfère une autre', async () => {
+      rejectCredentials()
+      const res = await POST(
+        loginRequest(credentials, { cookie: `${LOCALE_COOKIE_NAME}=fr`, 'accept-language': 'en-US,en;q=0.9' }),
+      )
+      expect(await res.json()).toEqual({ message: 'Identifiants invalides' })
+    })
+
+    it('à défaut, langue du navigateur', async () => {
+      rejectCredentials()
+      const res = await POST(loginRequest(credentials, { 'accept-language': 'fr-FR,fr;q=0.9' }))
+      expect(await res.json()).toEqual({ message: 'Identifiants invalides' })
+    })
+
+    it('délai de verrouillage rédigé en français', async () => {
+      backend.use(
+        http.post(`${API_URL}/auth/login`, () =>
+          HttpResponse.json({ statusCode: 429, message: 'Trop de tentatives.', retryAfterSec: 812 }, { status: 429 }),
+        ),
+      )
+      const res = await POST(loginRequest(credentials, { cookie: `${LOCALE_COOKIE_NAME}=fr` }))
+      expect(await res.json()).toEqual({ message: 'Trop de tentatives. Réessayez dans 14 min.' })
+    })
   })
 })

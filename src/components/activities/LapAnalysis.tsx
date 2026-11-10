@@ -5,6 +5,7 @@ import { PaceChart } from '@/components/charts/PaceChart'
 import { Button } from '@/components/ui/Button'
 import { Stat } from '@/components/ui/Stat'
 import { thClass, tdClass } from '@/components/ui/table'
+import { useI18n } from '@/hooks/useI18n'
 import { lapIntensityStyle } from '@/lib/activity-format'
 import { lapSpans, paceSeries, sortLaps, summarizeLaps, workLapIds } from '@/lib/pace-chart'
 import { formatDistance, formatDuration, formatPace } from '@/lib/utils'
@@ -27,6 +28,7 @@ export function LapAnalysis({
   // Laps Strava sans .fit : leur durée ne compte que le temps en mouvement.
   lapTimesExcludePauses: boolean
 }) {
+  const { locale, t } = useI18n()
   const laps = useMemo(() => sortLaps(unsortedLaps), [unsortedLaps])
   const { spans, exact } = useMemo(() => lapSpans(laps), [laps])
   const samples = useMemo(() => (trackPoints ? paceSeries(trackPoints) : []), [trackPoints])
@@ -55,16 +57,12 @@ export function LapAnalysis({
     <>
       {samples.length > 0 && (
         <>
-          <h2 className="section-title mb-3">Pace</h2>
+          <h2 className="section-title mb-3">{t.laps.paceTitle}</h2>
           <figure className="mb-7">
             <PaceChart samples={samples} spans={spans} selectedIds={selectedIds} onLapClick={toggle} />
             <figcaption className="mt-2 text-xs text-text/60">
-              {laps.length > 0
-                ? 'Select laps in the table below, or click the chart, to highlight them. Drag the strip under the chart to zoom.'
-                : 'Drag the strip under the chart to zoom.'}
-              {!exact && lapTimesExcludePauses && laps.length > 0 && (
-                <> Lap positions are estimated: this activity was imported before they were recorded.</>
-              )}
+              {laps.length > 0 ? t.laps.captionWithLaps : t.laps.captionNoLaps}
+              {!exact && lapTimesExcludePauses && laps.length > 0 && t.laps.estimatedPositions}
             </figcaption>
           </figure>
         </>
@@ -73,16 +71,16 @@ export function LapAnalysis({
       {laps.length > 0 && (
         <>
           <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
-            <h2 className="section-title mb-0">Laps</h2>
+            <h2 className="section-title mb-0">{t.laps.title}</h2>
             <div className="flex gap-1">
               {workIds.length > 0 && !allWorkSelected && (
                 <Button variant="ghost" onClick={() => setSelectedIds(new Set(workIds))}>
-                  Select work laps
+                  {t.laps.selectWork}
                 </Button>
               )}
               {selectedIds.size > 0 && (
                 <Button variant="ghost" onClick={() => setSelectedIds(new Set())}>
-                  Clear selection
+                  {t.laps.clearSelection}
                 </Button>
               )}
             </div>
@@ -94,28 +92,28 @@ export function LapAnalysis({
             {summary ? (
               <div className="flex gap-x-8 gap-y-3 flex-wrap items-end">
                 <div className="text-xs text-text/60 self-center">
-                  {summary.count} {summary.count === 1 ? 'lap' : 'laps'} selected
+                  {t.laps.selectedCount(summary.count)}
                 </div>
-                <Stat size="sm" label="Distance" value={formatDistance(summary.distanceM)} />
-                <Stat size="sm" label="Duration" value={formatDuration(Math.round(summary.durationSec))} />
+                <Stat size="sm" label={t.stats.distance} value={formatDistance(summary.distanceM, locale)} />
+                <Stat size="sm" label={t.stats.duration} value={formatDuration(Math.round(summary.durationSec))} />
                 <Stat
                   size="sm"
-                  label="Avg pace"
+                  label={t.stats.avgPace}
                   value={summary.paceSecPerKm != null ? formatPace(summary.paceSecPerKm) : '—'}
                 />
                 <Stat
                   size="sm"
-                  label="Avg HR"
+                  label={t.stats.avgHr}
                   value={summary.avgHeartRate != null ? `${summary.avgHeartRate}bpm` : '—'}
                 />
                 <Stat
                   size="sm"
-                  label="Max HR"
+                  label={t.stats.maxHr}
                   value={summary.maxHeartRate != null ? `${summary.maxHeartRate}bpm` : '—'}
                 />
               </div>
             ) : (
-              <p className="text-xs text-text/60 m-0">Select laps to see their combined totals.</p>
+              <p className="text-xs text-text/60 m-0">{t.laps.selectHint}</p>
             )}
           </div>
 
@@ -126,15 +124,15 @@ export function LapAnalysis({
               <thead>
                 <tr>
                   <th className={`${thClass} w-8`}>
-                    <span className="sr-only">Selected</span>
+                    <span className="sr-only">{t.laps.selectedColumn}</span>
                   </th>
-                  <th className={thClass}>Lap</th>
-                  {showIntensity && <th className={thClass}>Type</th>}
-                  <th className={thClass}>Distance</th>
-                  <th className={thClass}>Duration</th>
-                  <th className={thClass}>Pace</th>
-                  <th className={thClass}>Avg HR</th>
-                  <th className={thClass}>Max HR</th>
+                  <th className={thClass}>{t.laps.lap}</th>
+                  {showIntensity && <th className={thClass}>{t.laps.type}</th>}
+                  <th className={thClass}>{t.stats.distance}</th>
+                  <th className={thClass}>{t.stats.duration}</th>
+                  <th className={thClass}>{t.stats.pace}</th>
+                  <th className={thClass}>{t.stats.avgHr}</th>
+                  <th className={thClass}>{t.stats.maxHr}</th>
                 </tr>
               </thead>
               <tbody>
@@ -158,7 +156,7 @@ export function LapAnalysis({
                           checked={selected}
                           onChange={() => toggle(lap.id)}
                           onClick={(event) => event.stopPropagation()}
-                          aria-label={`Select lap ${number}`}
+                          aria-label={t.laps.selectLap(number)}
                           className="accent-accent w-4 h-4 cursor-pointer align-middle"
                         />
                       </td>
@@ -169,13 +167,13 @@ export function LapAnalysis({
                             <span className="inline-flex items-center gap-1.5">
                               <span className={`w-1.5 h-1.5 rounded-full ${intensity.dotClass}`} />
                               <span className="text-[9px] uppercase tracking-widest text-text/60">
-                                {intensity.label}
+                                {t.laps.intensity[intensity.kind]}
                               </span>
                             </span>
                           )}
                         </td>
                       )}
-                      <td className={`${tdClass} metric`}>{formatDistance(lap.distanceM)}</td>
+                      <td className={`${tdClass} metric`}>{formatDistance(lap.distanceM, locale)}</td>
                       <td className={`${tdClass} metric`}>{formatDuration(Math.round(lap.durationSec))}</td>
                       <td className={`${tdClass} metric text-text/60`}>
                         {/* Pas d'allure sur une récupération : trente mètres en

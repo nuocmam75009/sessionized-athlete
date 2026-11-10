@@ -2,6 +2,7 @@
 
 import { useRef, useState, type ChangeEvent } from 'react'
 import { Button } from '@/components/ui/Button'
+import { useI18n } from '@/hooks/useI18n'
 import { clientFetch } from '@/lib/client-fetch'
 import type { RoutePoint } from '@/components/ui/RouteMap'
 
@@ -15,9 +16,10 @@ interface GpxRouteUploadProps {
 // d'une activité déjà créée via POST /activities/:id/gpx (les laps/physio
 // restent sur le .fit, ce endpoint ne gère que la trace GPS).
 export function GpxRouteUpload({ activityId, hasRoute, onUploaded }: GpxRouteUploadProps) {
+  const { t } = useI18n()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [failed, setFailed] = useState(false)
 
   async function onFileSelected(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -25,7 +27,7 @@ export function GpxRouteUpload({ activityId, hasRoute, onUploaded }: GpxRouteUpl
     if (!file) return
 
     setUploading(true)
-    setError(null)
+    setFailed(false)
     try {
       const formData = new FormData()
       formData.append('file', file)
@@ -36,7 +38,7 @@ export function GpxRouteUpload({ activityId, hasRoute, onUploaded }: GpxRouteUpl
       if (!routeRes.ok) throw new Error('route fetch failed')
       onUploaded(await routeRes.json())
     } catch {
-      setError("Couldn't upload the .gpx route. Try again.")
+      setFailed(true)
     } finally {
       setUploading(false)
     }
@@ -46,11 +48,11 @@ export function GpxRouteUpload({ activityId, hasRoute, onUploaded }: GpxRouteUpl
     <div className="mb-6">
       <input ref={fileInputRef} type="file" accept=".gpx" className="hidden" onChange={onFileSelected} />
       <Button variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-        {uploading ? 'Uploading…' : hasRoute ? 'Replace .gpx route' : 'Attach .gpx route'}
+        {uploading ? t.common.uploading : hasRoute ? t.gpxAttach.replace : t.gpxAttach.attach}
       </Button>
-      {error && (
+      {failed && (
         <p role="alert" className="text-sm text-danger mt-2">
-          {error}
+          {t.gpxAttach.failed}
         </p>
       )}
     </div>

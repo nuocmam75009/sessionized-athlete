@@ -18,6 +18,11 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${APP_PORT}`,
     trace: 'retain-on-failure',
+    // L'app suit l'Accept-Language du navigateur, que Playwright tire par
+    // défaut de la langue du système : sur un poste francophone, toute la
+    // suite passerait en français. Fixée ici, elle vaut partout ; les tests de
+    // langue (i18n.spec.ts) la changent explicitement.
+    locale: 'en-US',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [

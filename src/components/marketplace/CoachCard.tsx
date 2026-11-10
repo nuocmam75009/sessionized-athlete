@@ -1,7 +1,8 @@
 import { Avatar } from '@/components/ui/Avatar'
 import { Tilt } from '@/components/ui/Tilt'
+import { getI18n } from '@/lib/i18n/server'
 import type { CoachAssignment } from '@/lib/types'
-import { APP_LOCALE } from '@/lib/utils'
+import { formatMonthYear } from '@/lib/utils'
 
 function coachDisplayName(coach: CoachAssignment) {
   const { firstName, lastName, email } = coach.user
@@ -9,15 +10,12 @@ function coachDisplayName(coach: CoachAssignment) {
   return name || email
 }
 
-function memberSince(createdAt: string) {
-  return new Intl.DateTimeFormat(APP_LOCALE, { month: 'short', year: 'numeric' }).format(new Date(createdAt))
-}
-
 // La grille de coachs est le seul endroit où l'inclinaison au pointeur est
 // justifiée : on parcourt des cartes côte à côte pour comparer, et le relief
 // dit laquelle on survole mieux qu'un changement de teinte. Amplitude réduite :
 // la carte ne doit pas fuir sous le curseur.
-export function CoachCard({ coach }: { coach: CoachAssignment }) {
+export async function CoachCard({ coach }: { coach: CoachAssignment }) {
+  const { locale, t } = await getI18n()
   const name = coachDisplayName(coach)
 
   return (
@@ -31,7 +29,7 @@ export function CoachCard({ coach }: { coach: CoachAssignment }) {
           </div>
         </div>
 
-        <div className="flex-1 text-sm text-text/60">Coach since {memberSince(coach.createdAt)}</div>
+        <div className="flex-1 text-sm text-text/60">{t.coaches.coachSince(formatMonthYear(coach.createdAt, locale))}</div>
       </div>
     </Tilt>
   )

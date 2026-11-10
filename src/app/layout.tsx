@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { AmbientBackdrop } from "@/components/layout/AmbientBackdrop";
+import { I18nProvider } from "@/components/layout/I18nProvider";
 import { MotionProvider } from "@/components/layout/MotionProvider";
+import { intlLocale } from "@/lib/i18n/config";
+import { getI18n, getLocale } from "@/lib/i18n/server";
 import { NONCE_HEADER } from "@/lib/security-headers";
 import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme";
-import { APP_LOCALE } from "@/lib/utils";
 import "./globals.css";
 
 // Une grotesque neutre pour toute l'interface : sur un thème sombre aux traits
@@ -23,12 +25,15 @@ const monoUi = JetBrains_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  // Chaque page déclare son propre titre (« Profile · Sessionized ») : c'est
-  // la première chose qu'annonce un lecteur d'écran (RGAA 8.5, 8.6).
-  title: { default: "Sessionized", template: "%s · Sessionized" },
-  description: "Your plan, from your coach, every day.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return {
+    // Chaque page déclare son propre titre (« Profile · Sessionized ») : c'est
+    // la première chose qu'annonce un lecteur d'écran (RGAA 8.5, 8.6).
+    title: { default: "Sessionized", template: "%s · Sessionized" },
+    description: t.meta.description,
+  };
+}
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   // Nonce de la Content-Security-Policy, tiré par le proxy pour cette requête :
@@ -36,12 +41,18 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   // Lire les en-têtes rend chaque page dynamique : une page prérendue au build
   // porterait un nonce figé, donc connu de tous.
   const nonce = (await headers()).get(NONCE_HEADER) ?? undefined
+  // Langue choisie (cookie) ou, à défaut, celle du navigateur : résolue ici,
+  // elle est connue dès le HTML. Rien à corriger après l'hydratation, au
+  // contraire du thème.
+  const locale = await getLocale()
   return (
     // suppressHydrationWarning : le script ci-dessous pose data-theme sur <html>
     // avant que React n'hydrate, donc l'attribut diffère forcément du HTML rendu
     // par le serveur — qui, lui, ne peut pas connaître le choix du visiteur.
+    // lang suit la langue de l'interface (RGAA 8.3) : un lecteur d'écran
+    // prononcerait sinon un texte français avec les règles de l'anglais.
     <html
-      lang={APP_LOCALE}
+      lang={intlLocale(locale)}
       suppressHydrationWarning
       className={`${sansUi.variable} ${monoUi.variable} h-full antialiased`}
     >
@@ -52,10 +63,12 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         {/* Premier nœud du body pour s'exécuter avant toute peinture : c'est ce
             qui évite le flash de thème au chargement. Voir lib/theme.ts. */}
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
-        <MotionProvider>
-          <AmbientBackdrop />
-          {children}
-        </MotionProvider>
+        <I18nProvider locale={locale}>
+          <MotionProvider>
+            <AmbientBackdrop />
+            {children}
+          </MotionProvider>
+        </I18nProvider>
       </body>
     </html>
   );

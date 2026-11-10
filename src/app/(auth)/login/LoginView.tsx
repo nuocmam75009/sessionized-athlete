@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/Button'
 import { CheckboxField, Field, fieldErrorProps, Input } from '@/components/ui/Field'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { useHydrated } from '@/hooks/useHydrated'
+import { useI18n } from '@/hooks/useI18n'
 import type { AuthFailure } from '@/lib/auth-errors'
+import type { Dictionary } from '@/lib/i18n/dictionaries'
 import { safeRedirectTarget } from '@/lib/redirect'
 import type { AuthUser } from '@/lib/types'
 
@@ -19,11 +21,22 @@ type Mode = 'login' | 'register'
 // dont les raisons de refus s'affichent sur le champ.
 const MIN_PASSWORD_LENGTH = 8
 
+// Les erreurs sont gardées sous forme de codes et traduites à l'affichage :
+// un message déjà rédigé resterait dans l'ancienne langue si l'athlète en
+// change pendant qu'il est affiché.
+type FieldErrorCode = 'enterEmail' | 'enterPassword' | 'passwordTooShort' | 'consentRequired'
+
 interface FieldErrors {
-  email?: string
-  password?: string
-  consent?: string
+  email?: FieldErrorCode
+  // Raisons du refus de l'API, déjà rédigées par la route /api/auth/register.
+  password?: FieldErrorCode | { reasons: string[] }
+  consent?: FieldErrorCode
 }
+
+type FormError =
+  | { kind: 'coachAppMissing' | 'loginFailed' | 'registerFailed' }
+  // Message de la route /api/auth/* (compte ou IP bloqués), déjà traduit.
+  | { kind: 'server'; message: string }
 
 // Ordre du formulaire : le focus va au premier champ en erreur dans cet ordre.
 const FIELD_IDS: Record<keyof FieldErrors, string> = {
@@ -34,22 +47,38 @@ const FIELD_IDS: Record<keyof FieldErrors, string> = {
 
 function validate(mode: Mode, email: string, password: string, healthConsent: boolean): FieldErrors {
   const errors: FieldErrors = {}
-  if (!email.trim()) errors.email = 'Enter your email.'
-  if (!password) errors.password = 'Enter your password.'
-  else if (mode === 'register' && password.length < MIN_PASSWORD_LENGTH) {
-    errors.password = `Use at least ${MIN_PASSWORD_LENGTH} characters.`
-  }
+  if (!email.trim()) errors.email = 'enterEmail'
+  if (!password) errors.password = 'enterPassword'
+  else if (mode === 'register' && password.length < MIN_PASSWORD_LENGTH) errors.password = 'passwordTooShort'
   // Fréquence cardiaque, poids, séances : des données de santé (art. 9 du
   // RGPD), traitées sur la base d'un consentement explicite.
-  if (mode === 'register' && !healthConsent) {
-    errors.consent = 'Tick this box to create your account: Sessionized needs your health data to work.'
-  }
+  if (mode === 'register' && !healthConsent) errors.consent = 'consentRequired'
   return errors
+}
+
+function fieldErrorText(error: FieldErrors[keyof FieldErrors], t: Dictionary): string | undefined {
+  if (!error) return undefined
+  if (typeof error === 'object') return error.reasons.join(' ')
+  switch (error) {
+    case 'enterEmail':
+      return t.auth.errors.enterEmail
+    case 'enterPassword':
+      return t.common.enterPassword
+    case 'passwordTooShort':
+      return t.auth.errors.passwordTooShort(MIN_PASSWORD_LENGTH)
+    case 'consentRequired':
+      return t.auth.errors.consentRequired
+  }
+}
+
+function formErrorText(error: FormError, t: Dictionary): string {
+  return error.kind === 'server' ? error.message : t.auth.errors[error.kind]
 }
 
 export default function LoginView() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { t } = useI18n()
   const redirectTo = safeRedirectTarget(searchParams.get('redirect'))
   // Posé par le proxy ou par une page dont l'appel à l'API a reçu un 401.
   const sessionExpired = searchParams.get('reason') === 'expired'
@@ -62,9 +91,13 @@ export default function LoginView() {
   const [invite, setInvite] = useState('')
   const [healthConsent, setHealthConsent] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<FormError | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const hydrated = useHydrated()
+
+  const emailError = fieldErrorText(fieldErrors.email, t)
+  const passwordError = fieldErrorText(fieldErrors.password, t)
+  const consentError = fieldErrorText(fieldErrors.consent, t)
 
   // Les règles changent d'un mode à l'autre (longueur du mot de passe) : les
   // erreurs affichées pour l'autre mode ne valent plus.
@@ -120,12 +153,12 @@ export default function LoginView() {
         // Compte ou IP temporairement bloqués : le délai est dit, sans rien
         // révéler sur l'existence du compte (même réponse pour tous).
         if (res.status === 429 && failure?.message) {
-          setError(failure.message)
+          setError({ kind: 'server', message: failure.message })
           return
         }
         // Mot de passe refusé à l'inscription : chaque raison, sur le champ.
         if (mode === 'register' && failure?.reasons?.length) {
-          setFieldErrors({ password: failure.reasons.join(' ') })
+          setFieldErrors({ password: { reasons: failure.reasons } })
           document.getElementById(FIELD_IDS.password)?.focus()
           return
         }
@@ -139,7 +172,7 @@ export default function LoginView() {
       if (user.role === 'COACH') {
         const coachAppUrl = process.env.NEXT_PUBLIC_COACH_APP_URL
         if (!coachAppUrl) {
-          setError("The coach app isn't configured in this environment.")
+          setError({ kind: 'coachAppMissing' })
           return
         }
         // Autre application, sur une autre origine : navigation complète, que
@@ -152,41 +185,33 @@ export default function LoginView() {
     } catch {
       // Générique dans les deux cas : préciser « e-mail inconnu » ou « déjà
       // utilisé » dirait à un tiers quels comptes existent.
-      setError(
-        mode === 'login'
-          ? "Couldn't log in. Check your email and password."
-          : "Couldn't create your account. Check your details and try again.",
-      )
+      setError({ kind: mode === 'login' ? 'loginFailed' : 'registerFailed' })
     } finally {
       setSubmitting(false)
     }
   }
 
   return (
-    <AuthLayout
-      eyebrow="Sessionized"
-      title="Your workouts plan and data, in one place."
-      description=" "
-    >
+    <AuthLayout eyebrow="Sessionized" title={t.auth.tagline} description=" ">
       {sessionExpired && (
         <p role="status" className="panel-flat rounded-md px-3.5 py-2.5 mb-5 text-sm text-text/80">
-          Your session has expired. Log in again to pick up where you left off.
+          {t.auth.sessionExpired}
         </p>
       )}
       {accountDeleted && (
         <p role="status" className="panel-flat rounded-md px-3.5 py-2.5 mb-5 text-sm text-text/80">
-          Your account and all its data have been deleted.
+          {t.auth.accountDeleted}
         </p>
       )}
       <div className="mb-6">
         <SegmentedControl
           name="authmode"
-          ariaLabel="Login or register"
+          ariaLabel={t.auth.modeLabel}
           value={mode}
           onChange={(v) => switchMode(v as Mode)}
           options={[
-            { value: 'login', label: 'Log in' },
-            { value: 'register', label: 'Register' },
+            { value: 'login', label: t.auth.logIn },
+            { value: 'register', label: t.auth.register },
           ]}
         />
       </div>
@@ -202,29 +227,29 @@ export default function LoginView() {
         className="grid gap-3"
       >
         {mode === 'register' && (
-          <Field label="Full name (optional)" htmlFor="sn-name">
+          <Field label={t.auth.fullName} htmlFor="sn-name">
             <Input
               id="sn-name"
               autoComplete="name"
-              placeholder="Jakob Ingebrigsten"
+              placeholder={t.auth.namePlaceholder}
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
           </Field>
         )}
-        <Field label="Email" htmlFor="sn-email" error={fieldErrors.email}>
+        <Field label={t.common.email} htmlFor="sn-email" error={emailError}>
           <Input
             id="sn-email"
             type="email"
             required
             autoComplete="email"
-            placeholder="you@example.com"
+            placeholder={t.auth.emailPlaceholder}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            {...fieldErrorProps('sn-email', fieldErrors.email)}
+            {...fieldErrorProps('sn-email', emailError)}
           />
         </Field>
-        <Field label="Password" htmlFor="sn-pw" error={fieldErrors.password}>
+        <Field label={t.common.password} htmlFor="sn-pw" error={passwordError}>
           <Input
             id="sn-pw"
             type="password"
@@ -234,14 +259,14 @@ export default function LoginView() {
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            {...fieldErrorProps('sn-pw', fieldErrors.password)}
+            {...fieldErrorProps('sn-pw', passwordError)}
           />
         </Field>
         {mode === 'register' && (
-          <Field label="Coach invite code (optional)" htmlFor="sn-invite">
+          <Field label={t.auth.inviteCode} htmlFor="sn-invite">
             <Input
               id="sn-invite"
-              placeholder="e.g. RUN-2C4F"
+              placeholder={t.auth.invitePlaceholder}
               value={invite}
               onChange={(e) => setInvite(e.target.value)}
             />
@@ -255,29 +280,29 @@ export default function LoginView() {
             required
             checked={healthConsent}
             onChange={setHealthConsent}
-            error={fieldErrors.consent}
+            error={consentError}
           >
             <HealthConsentLabel />
           </CheckboxField>
         )}
         {error && (
           <p role="alert" className="text-sm text-danger">
-            {error}
+            {formErrorText(error, t)}
           </p>
         )}
         <Button type="submit" block disabled={submitting || !hydrated}>
-          {submitting ? '…' : mode === 'login' ? 'Log in' : 'Create account'}
+          {submitting ? '…' : mode === 'login' ? t.auth.logIn : t.auth.createAccount}
         </Button>
       </form>
       <p className="text-[13px] mt-5 text-text/60">
-        {mode === 'login' ? 'New here?' : 'Already have an account?'}{' '}
+        {mode === 'login' ? t.auth.newHere : t.auth.alreadyHaveAccount}{' '}
         {/* Un bouton et non un lien : il change de mode sans quitter la page. */}
         <button
           type="button"
           onClick={() => switchMode(mode === 'login' ? 'register' : 'login')}
           className="text-accent hover:text-accent-700 cursor-pointer"
         >
-          {mode === 'login' ? 'Create an account' : 'Log in'}
+          {mode === 'login' ? t.auth.createAnAccount : t.auth.logIn}
         </button>
       </p>
     </AuthLayout>

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { LegalLinks } from '@/components/layout/LegalLinks'
+import { LanguageToggle } from '@/components/ui/LanguageToggle'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 
 // Pages lisibles sans compte (on les consulte avant de s'inscrire) : hors de
@@ -12,7 +13,10 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
           <Link href="/" className="font-heading font-semibold tracking-[-0.01em]">
             Sessionized
           </Link>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <LanguageToggle />
+            <ThemeToggle />
+          </div>
         </header>
         <main>{children}</main>
         <footer className="mt-16 border-t border-divider pt-4">

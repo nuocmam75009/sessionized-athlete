@@ -7,19 +7,26 @@ import { Button } from '@/components/ui/Button'
 import { Field, fieldErrorProps, inputClassName, Select, Textarea } from '@/components/ui/Field'
 import { RouteMap } from '@/components/ui/RouteMap'
 import { useHydrated } from '@/hooks/useHydrated'
+import { useI18n } from '@/hooks/useI18n'
 import { clientFetch } from '@/lib/client-fetch'
+import type { Dictionary } from '@/lib/i18n/dictionaries'
 import { formatDateLabel } from '@/lib/utils'
 import type { UploadedActivity, Workout } from '@/lib/types'
 
 type Stage = 'idle' | 'parsed'
 
-// Message choisi d'après le statut plutôt que repris de l'API : ses textes sont
-// en français, l'interface en anglais. Le statut suffit à distinguer les refus
-// où « réessaie » serait faux — un doublon échouerait à nouveau.
-function uploadErrorMessage(status: number): string {
-  if (status === 409) return 'This activity has already been uploaded.'
-  if (status === 400) return 'This .fit file is invalid or corrupted.'
-  return 'Upload failed. Try again.'
+// Clé du message dans t.upload.errors : rédigé à l'affichage, il suit la
+// langue si l'athlète en change pendant qu'il est affiché.
+type UploadError = keyof Dictionary['upload']['errors']
+
+// Message choisi d'après le statut plutôt que repris de l'API, dont les textes
+// sont en français quelle que soit la langue de l'interface. Le statut suffit à
+// distinguer les refus où « réessaie » serait faux — un doublon échouerait à
+// nouveau.
+function uploadErrorFor(status: number): UploadError {
+  if (status === 409) return 'duplicate'
+  if (status === 400) return 'invalidFit'
+  return 'failed'
 }
 
 async function attachGpx(activityId: string, file: File): Promise<boolean> {
@@ -37,13 +44,15 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const hydrated = useHydrated()
+  const { locale, t } = useI18n()
   const [stage, setStage] = useState<Stage>('idle')
   const [selectedFitFile, setSelectedFitFile] = useState<File | null>(null)
   const [selectedGpxFile, setSelectedGpxFile] = useState<File | null>(null)
   const [gpxData, setGpxData] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
-  const [uploadError, setUploadError] = useState<string | null>(null)
-  const [difficultyError, setDifficultyError] = useState<string | null>(null)
+  const [uploadError, setUploadError] = useState<UploadError | null>(null)
+  const [difficultyInvalid, setDifficultyInvalid] = useState(false)
+  const difficultyError = difficultyInvalid ? t.note.difficultyInvalid : null
   // Activité créée, mais tracé .gpx refusé : identifiant de l'activité, pour
   // renvoyer vers sa page plutôt que vers un second envoi du .fit.
   const [savedWithoutRoute, setSavedWithoutRoute] = useState<string | null>(null)
@@ -64,7 +73,7 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
     setSelectedGpxFile(null)
     setGpxData(null)
     setUploadError(null)
-    setDifficultyError(null)
+    setDifficultyInvalid(false)
     setSavedWithoutRoute(null)
     setAthleteNote('')
     setDifficultyNote('')
@@ -83,7 +92,7 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
     resetSelection()
 
     if (list.length > 2) {
-      setUploadError('Drop at most two files: one .fit and one .gpx.')
+      setUploadError('tooManyFiles')
       return
     }
 
@@ -93,24 +102,24 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
       const name = file.name.toLowerCase()
       if (name.endsWith('.fit')) {
         if (fitFile) {
-          setUploadError('Only one .fit file at a time.')
+          setUploadError('oneFit')
           return
         }
         fitFile = file
       } else if (name.endsWith('.gpx')) {
         if (gpxFile) {
-          setUploadError('Only one .gpx file at a time.')
+          setUploadError('oneGpx')
           return
         }
         gpxFile = file
       } else {
-        setUploadError('Accepted formats: .fit and .gpx.')
+        setUploadError('format')
         return
       }
     }
 
     if (!fitFile && gpxFile) {
-      setUploadError('A .fit file is required to create the activity — a .gpx alone is not enough here.')
+      setUploadError('gpxAlone')
       return
     }
 
@@ -153,14 +162,14 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
     const trimmedNote = athleteNote.trim()
     const difficultyValue = difficultyNote.trim() ? Number(difficultyNote) : null
     if (difficultyValue !== null && (!Number.isInteger(difficultyValue) || difficultyValue < 1 || difficultyValue > 10)) {
-      setDifficultyError('Difficulty must be a whole number from 1 to 10.')
+      setDifficultyInvalid(true)
       document.getElementById('sn-difficulty-note')?.focus()
       return
     }
 
     setUploading(true)
     setUploadError(null)
-    setDifficultyError(null)
+    setDifficultyInvalid(false)
     try {
       const formData = new FormData()
       formData.append('file', selectedFitFile)
@@ -169,7 +178,7 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
       if (difficultyValue !== null) formData.append('difficultyNote', String(difficultyValue))
       const res = await clientFetch('/api/activities/upload', { method: 'POST', body: formData })
       if (!res.ok) {
-        setUploadError(uploadErrorMessage(res.status))
+        setUploadError(uploadErrorFor(res.status))
         return
       }
       const activity: UploadedActivity = await res.json()
@@ -183,7 +192,7 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
 
       router.push('/dashboard')
     } catch {
-      setUploadError('Upload failed. Try again.')
+      setUploadError('failed')
     } finally {
       setUploading(false)
     }
@@ -191,9 +200,9 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
 
   return (
     <div>
-      <h1>Upload activity</h1>
+      <h1>{t.upload.title}</h1>
       <p className="text-text/60 mt-2 mb-8 max-w-[56ch]">
-        Attach the .fit file from your watch, and optionally a .gpx for the route — drop both at once.
+        {t.upload.intro}
       </p>
 
       <input
@@ -228,14 +237,14 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
               />
               <path d="M92.69,84.69,120,57.37V152a8,8,0,0,0,16,0V57.37l27.31,27.32a8,8,0,0,0,11.32-11.32l-40-40a8,8,0,0,0-11.32,0l-40,40A8,8,0,0,0,92.69,84.69ZM224,144v64a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V144a16,16,0,0,1,32,0v56H208V144a16,16,0,0,1,16,0Z" />
             </svg>
-            <div className="font-semibold">Drag your .fit and .gpx files here, or click to browse</div>
+            <div className="font-semibold">{t.upload.dropTitle}</div>
             <div className="text-text/60 text-[13px] mt-1.5 max-w-[46ch] mx-auto">
-              Drop the .fit and .gpx together to attach the route, or the .fit on its own.
+              {t.upload.dropHint}
             </div>
           </div>
           {uploadError && (
             <p role="alert" className="text-sm text-danger mt-3 max-w-[600px]">
-              {uploadError}
+              {t.upload.errors[uploadError]}
             </p>
           )}
         </>
@@ -256,7 +265,7 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
                   <path d="M128,8A96.11,96.11,0,0,0,32,104c0,43.13,26.36,74.34,52.29,99.28A280.34,280.34,0,0,0,123.3,235a8,8,0,0,0,9.4,0,280.34,280.34,0,0,0,39-31.72C199.64,178.34,226,147.13,226,104A96.11,96.11,0,0,0,128,8Zm0,208.32C112,203,48,150.72,48,104a80,80,0,0,1,160,0C208,150.72,144,203,128,216.32ZM128,64a40,40,0,1,0,40,40A40,40,0,0,0,128,64Zm0,64a24,24,0,1,1,24-24A24,24,0,0,1,128,128Z" />
                 </svg>
                 <div className="text-text/60 text-[13px] max-w-[36ch] text-center">
-                  Add a .gpx to preview the route — otherwise the map is built after upload.
+                  {t.upload.previewHint}
                 </div>
               </div>
             )}
@@ -269,20 +278,20 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
                 {' '}+ <span className="font-semibold">{selectedGpxFile.name}</span>
               </>
             )}{' '}
-            ready to upload. Distance, duration, heart rate and elevation are calculated by the server once uploaded.
+            {t.upload.ready}
           </p>
 
           <div className="grid gap-3 max-w-[420px] mb-5">
-            <Field label="Athlete note (optional)" htmlFor="sn-athlete-note">
+            <Field label={t.upload.athleteNote} htmlFor="sn-athlete-note">
               <Textarea
                 id="sn-athlete-note"
                 maxLength={2000}
-                placeholder="Heavy legs, but felt good…"
+                placeholder={t.upload.notePlaceholder}
                 value={athleteNote}
                 onChange={(e) => setAthleteNote(e.target.value)}
               />
             </Field>
-            <Field label="Difficulty (1–10, optional)" htmlFor="sn-difficulty-note" error={difficultyError}>
+            <Field label={t.upload.difficulty} htmlFor="sn-difficulty-note" error={difficultyError}>
               <input
                 id="sn-difficulty-note"
                 type="number"
@@ -293,7 +302,7 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
                 value={difficultyNote}
                 onChange={(e) => {
                   setDifficultyNote(e.target.value)
-                  setDifficultyError(null)
+                  setDifficultyInvalid(false)
                 }}
                 {...fieldErrorProps('sn-difficulty-note', difficultyError)}
               />
@@ -301,12 +310,12 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
           </div>
 
           <div className="max-w-[340px] mb-5">
-            <Field label="Match to planned workout" htmlFor="sn-match">
+            <Field label={t.upload.match} htmlFor="sn-match">
               <Select id="sn-match" value={workoutId} onChange={(e) => setWorkoutId(e.target.value)}>
-                <option value="none">No match — log as unplanned</option>
+                <option value="none">{t.upload.noMatch}</option>
                 {workouts.map((w) => (
                   <option key={w.id} value={w.id}>
-                    {formatDateLabel(w.scheduledDate)} · {w.title}
+                    {formatDateLabel(w.scheduledDate, locale)} · {w.title}
                   </option>
                 ))}
               </Select>
@@ -314,22 +323,22 @@ export function UploadView({ initialWorkoutId }: { initialWorkoutId?: string }) 
           </div>
           {savedWithoutRoute ? (
             <p role="alert" className="text-sm text-danger">
-              Activity saved, but the .gpx route couldn&apos;t be attached.{' '}
+              {t.upload.savedWithoutRoute}{' '}
               <Link href={`/activities/${savedWithoutRoute}`} className="text-accent underline underline-offset-2 hover:text-accent-700">
-                Add it from the activity page →
+                {t.upload.addFromActivity}
               </Link>
             </p>
           ) : (
             <div className="flex gap-3 items-center">
               <Button onClick={confirm} disabled={uploading}>
-                {uploading ? 'Uploading…' : 'Confirm & save'}
+                {uploading ? t.common.uploading : t.upload.confirm}
               </Button>
               <Button variant="ghost" onClick={discard} disabled={uploading}>
-                Discard
+                {t.upload.discard}
               </Button>
               {uploadError && (
                 <span role="alert" className="text-sm text-danger">
-                  {uploadError}
+                  {t.upload.errors[uploadError]}
                 </span>
               )}
             </div>

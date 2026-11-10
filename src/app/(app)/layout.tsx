@@ -1,6 +1,7 @@
 import { HealthConsentGate } from '@/components/account/HealthConsentGate'
 import { AthleteSidebar } from '@/components/layout/AthleteSidebar'
 import { LegalLinks } from '@/components/layout/LegalLinks'
+import { getI18n } from '@/lib/i18n/server'
 import { serverApiFetch } from '@/lib/server-api'
 import type { UserProfile } from '@/lib/types'
 
@@ -9,7 +10,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // en base sans accord daté. Aucune page ne s'affiche avant sa réponse.
   // null strict : une API qui ne renvoie pas encore le champ (undefined), ou
   // injoignable, ne bloque personne.
-  const user = await serverApiFetch<UserProfile>('/users/me')
+  const [user, { t }] = await Promise.all([serverApiFetch<UserProfile>('/users/me'), getI18n()])
   const needsHealthConsent = user?.role === 'ATHLETE' && user.healthDataConsentAt === null
 
   return (
@@ -20,7 +21,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-surface focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-text focus:ring-2 focus:ring-accent"
       >
-        Skip to content
+        {t.nav.skipToContent}
       </a>
       <AthleteSidebar />
       {/* Les pages sont cadrées à 920px par défaut (confort de lecture d'une

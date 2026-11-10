@@ -3,31 +3,36 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Field, fieldErrorProps, inputClassName, Textarea } from '@/components/ui/Field'
+import { useI18n } from '@/hooks/useI18n'
 import { clientFetch } from '@/lib/client-fetch'
 import type { Activity } from '@/lib/types'
 
 export function ActivityNoteEditor({ activity, onSaved }: { activity: Activity; onSaved: (activity: Activity) => void }) {
+  const { t } = useI18n()
   const [editing, setEditing] = useState(false)
   const [athleteNote, setAthleteNote] = useState(activity.athleteNote ?? '')
   const [difficultyNote, setDifficultyNote] = useState(
     activity.difficultyNote != null ? String(activity.difficultyNote) : ''
   )
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [difficultyError, setDifficultyError] = useState<string | null>(null)
+  // Drapeaux plutôt que messages : le texte est rédigé à l'affichage, dans la
+  // langue courante.
+  const [saveFailed, setSaveFailed] = useState(false)
+  const [difficultyInvalid, setDifficultyInvalid] = useState(false)
+  const difficultyError = difficultyInvalid ? t.note.difficultyInvalid : null
 
   async function save() {
     const trimmedNote = athleteNote.trim()
     const difficultyValue = difficultyNote.trim() ? Number(difficultyNote) : null
     if (difficultyValue !== null && (!Number.isInteger(difficultyValue) || difficultyValue < 1 || difficultyValue > 10)) {
-      setDifficultyError('Difficulty must be a whole number from 1 to 10.')
+      setDifficultyInvalid(true)
       document.getElementById('sn-edit-difficulty-note')?.focus()
       return
     }
 
     setSaving(true)
-    setError(null)
-    setDifficultyError(null)
+    setSaveFailed(false)
+    setDifficultyInvalid(false)
     try {
       const body: Record<string, string | number> = { athleteNote: trimmedNote }
       if (difficultyValue !== null) body.difficultyNote = difficultyValue
@@ -43,7 +48,7 @@ export function ActivityNoteEditor({ activity, onSaved }: { activity: Activity; 
       onSaved(updated)
       setEditing(false)
     } catch {
-      setError("Couldn't save your note. Try again.")
+      setSaveFailed(true)
     } finally {
       setSaving(false)
     }
@@ -52,17 +57,17 @@ export function ActivityNoteEditor({ activity, onSaved }: { activity: Activity; 
   if (!editing) {
     return (
       <div className="mb-6">
-        <h2 className="section-title mb-3">Your note</h2>
+        <h2 className="section-title mb-3">{t.note.title}</h2>
         <p className="text-sm mb-1">
-          <span className="text-text/60">Difficulty: </span>
+          <span className="text-text/60">{t.note.difficulty}</span>
           {activity.difficultyNote != null ? `${activity.difficultyNote}/10` : '—'}
         </p>
         <p className="text-sm mb-3">
-          <span className="text-text/60">Note: </span>
+          <span className="text-text/60">{t.note.note}</span>
           {activity.athleteNote || '—'}
         </p>
         <Button variant="secondary" onClick={() => setEditing(true)}>
-          Edit note
+          {t.note.edit}
         </Button>
       </div>
     )
@@ -70,9 +75,9 @@ export function ActivityNoteEditor({ activity, onSaved }: { activity: Activity; 
 
   return (
     <div className="mb-6 max-w-[420px]">
-      <h2 className="section-title mb-3">Your note</h2>
+      <h2 className="section-title mb-3">{t.note.title}</h2>
       <div className="grid gap-3">
-        <Field label="Athlete note" htmlFor="sn-edit-athlete-note">
+        <Field label={t.note.athleteNote} htmlFor="sn-edit-athlete-note">
           <Textarea
             id="sn-edit-athlete-note"
             maxLength={2000}
@@ -80,7 +85,7 @@ export function ActivityNoteEditor({ activity, onSaved }: { activity: Activity; 
             onChange={(e) => setAthleteNote(e.target.value)}
           />
         </Field>
-        <Field label="Difficulty (1–10)" htmlFor="sn-edit-difficulty-note" error={difficultyError}>
+        <Field label={t.note.difficultyField} htmlFor="sn-edit-difficulty-note" error={difficultyError}>
           <input
             id="sn-edit-difficulty-note"
             type="number"
@@ -91,7 +96,7 @@ export function ActivityNoteEditor({ activity, onSaved }: { activity: Activity; 
             value={difficultyNote}
             onChange={(e) => {
               setDifficultyNote(e.target.value)
-              setDifficultyError(null)
+              setDifficultyInvalid(false)
             }}
             {...fieldErrorProps('sn-edit-difficulty-note', difficultyError)}
           />
@@ -99,14 +104,14 @@ export function ActivityNoteEditor({ activity, onSaved }: { activity: Activity; 
       </div>
       <div className="flex gap-3 items-center mt-3">
         <Button onClick={save} disabled={saving}>
-          {saving ? 'Saving…' : 'Save'}
+          {saving ? t.common.saving : t.common.save}
         </Button>
         <Button variant="ghost" onClick={() => setEditing(false)} disabled={saving}>
-          Cancel
+          {t.common.cancel}
         </Button>
-        {error && (
+        {saveFailed && (
           <span role="alert" className="text-sm text-danger">
-            {error}
+            {t.note.saveFailed}
           </span>
         )}
       </div>
