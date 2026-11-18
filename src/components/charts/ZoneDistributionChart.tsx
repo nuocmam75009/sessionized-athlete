@@ -29,11 +29,16 @@ interface ZoneRow {
   color: string
 }
 
+// Espaces insécables : Recharts borne la largeur d'un label à la place qui
+// reste à droite de sa barre et le coupe aux espaces ordinaires — sur la zone
+// la plus longue, « 1h50' · 83 % » renvoyait « % » à la ligne.
+const NBSP = ' '
+
 function formatShare(seconds: number, totalSeconds: number): string {
-  if (totalSeconds <= 0) return '0 %'
+  if (totalSeconds <= 0) return `0${NBSP}%`
   const share = (seconds / totalSeconds) * 100
   // Une zone effleurée ne doit pas s'afficher "0 %" alors qu'elle a du temps.
-  return `${share > 0 && share < 1 ? '<1' : Math.round(share)} %`
+  return `${share > 0 && share < 1 ? '<1' : Math.round(share)}${NBSP}%`
 }
 
 // Graphe générique de répartition du temps par zone : ne connaît ni la FC ni
@@ -56,7 +61,7 @@ export function ZoneDistributionChart({
       seconds: zone.seconds,
       range: formatRange(zone.min, zone.max),
       shareLabel,
-      valueLabel: zone.seconds > 0 ? `${formatDuration(zone.seconds)} · ${shareLabel}` : '',
+      valueLabel: zone.seconds > 0 ? `${formatDuration(zone.seconds)}${NBSP}·${NBSP}${shareLabel}` : '',
       color: ZONE_COLORS[Math.min(zone.index - 1, ZONE_COLORS.length - 1)],
     }
   })

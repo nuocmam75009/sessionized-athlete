@@ -23,6 +23,13 @@ import type { Activity } from '@/lib/types'
 
 type SportFilter = SportKind | 'all'
 
+// Grilles de stats calées sur la largeur du panneau (le <aside> est un
+// container), pas sur l'écran : sur téléphone, une valeur comme 5'21"/km ou
+// une étiquette comme « Réalisées » débordait sur sa voisine. Seuils mesurés
+// sur la plus longue valeur (~86px) et la plus longue étiquette (~75px).
+const STATS_GRID_3 = 'grid grid-cols-2 @min-[280px]:grid-cols-3 gap-x-3 gap-y-4'
+const STATS_GRID_4 = 'grid grid-cols-2 @min-[340px]:grid-cols-4 gap-x-3 gap-y-4'
+
 // Récapitulatif de la semaine sélectionnée dans le calendrier, affiché en
 // permanence à côté de celui-ci (la semaine du jour au chargement). Tout est
 // calculé à partir des activités déjà chargées, sauf la répartition par zone
@@ -43,7 +50,7 @@ export function WeekSummary({ week, className = '' }: { week: WeekEntry; classNa
   const totals = activeSport === 'all' ? summary : summarizeWeekActivities(week.days, activeSport)
 
   return (
-    <aside className={`panel rounded-lg p-6 ${className}`}>
+    <aside className={`@container panel rounded-lg p-6 ${className}`}>
       <div className="flex items-baseline justify-between gap-3 mb-1.5">
         <div className="font-heading font-semibold text-[10px] tracking-[0.16em] uppercase text-accent">
           {t.weekSummary.eyebrow}
@@ -84,7 +91,7 @@ export function WeekSummary({ week, className = '' }: { week: WeekEntry; classNa
           )}
 
           <Section title={t.weekSummary.volume}>
-            <div className="grid grid-cols-3 gap-x-3 gap-y-4">
+            <div className={STATS_GRID_3}>
               {/* « — » plutôt que « 0.0 km » : une semaine de renforcement n'a
                   pas de distance, elle n'en a pas une nulle. */}
               <Stat
@@ -113,7 +120,7 @@ export function WeekSummary({ week, className = '' }: { week: WeekEntry; classNa
           </Section>
 
           <Section title={t.weekSummary.physio}>
-            <div className="grid grid-cols-3 gap-x-3 gap-y-4">
+            <div className={STATS_GRID_3}>
               <Stat
                 size="sm"
                 label={t.stats.avgHr}
@@ -145,7 +152,7 @@ export function WeekSummary({ week, className = '' }: { week: WeekEntry; classNa
           )}
 
           <Section title={t.weekSummary.plan}>
-            <div className="grid grid-cols-4 gap-x-3 gap-y-4">
+            <div className={STATS_GRID_4}>
               <Stat size="sm" label={t.weekSummary.planned} value={String(summary.plannedCount)} />
               <Stat size="sm" label={t.weekSummary.done} value={String(summary.doneCount)} />
               <Stat size="sm" label={t.weekSummary.missed} value={String(summary.missedCount)} />
@@ -164,7 +171,10 @@ export function WeekSummary({ week, className = '' }: { week: WeekEntry; classNa
 
           {detailedDays.length > 0 && (
             <Section title={t.weekSummary.dayByDay}>
-              <div className="grid gap-2">
+              {/* grid-cols-1 = minmax(0, 1fr) : sans lui, la colonne implicite
+                  prenait la largeur de la ligne d'activité la plus longue
+                  (nowrap) et les cartes sortaient du panneau sur téléphone. */}
+              <div className="grid grid-cols-1 gap-2">
                 {detailedDays.map((day) => (
                   <DayRow key={day.dateParam} day={day} />
                 ))}
@@ -238,7 +248,7 @@ function DayRow({ day }: { day: DayEntry }) {
       {day.activities.length === 0 ? (
         <div className="text-sm text-text/60">{t.weekSummary.noActivity}</div>
       ) : (
-        <div className="grid gap-1">
+        <div className="grid grid-cols-1 gap-1">
           {day.activities.map((activity) => (
             <ActivityRow key={activity.id} activity={activity} />
           ))}

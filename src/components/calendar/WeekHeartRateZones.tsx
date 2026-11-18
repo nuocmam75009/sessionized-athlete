@@ -71,7 +71,9 @@ export function WeekHeartRateZones({ week }: { week: WeekEntry }) {
     <>
       {zones.length >= 3 && (
         <div className="flex items-baseline gap-2.5 mb-4">
-          <span className="metric font-semibold text-[26px] leading-none">{easyShare} %</span>
+          {/* Insécable : sur téléphone, le texte d'à côté écrasait le chiffre et
+              renvoyait « % » à la ligne. */}
+          <span className="metric font-semibold text-[26px] leading-none shrink-0 whitespace-nowrap">{easyShare} %</span>
           <span className="text-sm text-text/60">{t.heartRateZones.easyShare(formatDuration(totalSeconds))}</span>
         </div>
       )}

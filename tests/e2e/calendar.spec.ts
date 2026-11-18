@@ -92,4 +92,24 @@ test.describe('Calendrier', () => {
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(currentMonthLabel())
     await expect(page.getByRole('button', { name: 'Sync Strava' })).toHaveCount(0)
   })
+
+  // Régression : la grille de 720px ne montrait que du lundi au jeudi, et un
+  // libellé sr-only sorti de son conteneur élargissait la page à 705px — le
+  // navigateur mobile dézoomait alors tout le tableau de bord.
+  for (const width of [320, 390]) {
+    test(`téléphone ${width}px : la semaine entière tient à l’écran, sans défilement horizontal`, async ({
+      page,
+      context,
+    }) => {
+      await page.setViewportSize({ width, height: 800 })
+      await signInAs(context, USERS.athlete)
+      await page.goto('/dashboard')
+
+      const sunday = page.getByText('Sun', { exact: true })
+      await expect(sunday).toBeInViewport({ ratio: 1 })
+      const box = await sunday.boundingBox()
+      expect(box!.x + box!.width).toBeLessThanOrEqual(width)
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
+    })
+  }
 })

@@ -123,7 +123,7 @@ export default async function DashboardPage({
       )}
       <MonthCalendar entries={entries} />
 
-      <div className="panel rounded-lg mt-6 px-6 py-5 flex gap-10 flex-wrap">
+      <div className="panel rounded-lg mt-6 px-6 py-5 flex gap-x-10 gap-y-5 flex-wrap">
         <Stat label={t.stats.distance} value={formatDistance(summary.distanceM, locale)} />
         <Stat label={t.stats.time} value={formatDuration(summary.durationSec)} />
         <Stat label={t.stats.activities} value={String(summary.activityCount)} />
