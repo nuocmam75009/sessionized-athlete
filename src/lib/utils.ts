@@ -48,6 +48,12 @@ export function formatDistance(meters: number, locale: Locale): string {
   return `${formatDecimal(meters / 1000, 1, locale)} km`
 }
 
+// Part entre 0 et 1 en pourcentage entier : "25%" en anglais, "25 %" en
+// français (espace insécable fine, posée par Intl).
+export function formatPercent(ratio: number, locale: Locale): string {
+  return new Intl.NumberFormat(intlLocale(locale), { style: 'percent', maximumFractionDigits: 0 }).format(ratio)
+}
+
 // Couleur du delta allure
 export function paceColor(delta: number): string {
   if (delta < -10) return 'text-danger'
@@ -79,6 +85,14 @@ export function formatDateLabel(iso: string, locale: Locale): string {
     new Date(iso),
   )
   return capitalizeFirst(label, locale)
+}
+
+// Convertit un ISO datetime en "Aug 4, 2026" / "4 août 2026" : l'année compte
+// dans une liste qui peut couvrir tout l'historique (séances de qualité).
+export function formatShortDate(iso: string, locale: Locale): string {
+  return new Intl.DateTimeFormat(intlLocale(locale), { day: 'numeric', month: 'short', year: 'numeric' }).format(
+    new Date(iso),
+  )
 }
 
 // Convertit un ISO datetime en "Aug 2026" / "août 2026" (ancienneté d'un coach).

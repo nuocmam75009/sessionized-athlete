@@ -34,6 +34,7 @@ function workout(id: string, title: string, day: number): Workout {
     targetDistanceM: null,
     targetDurationSec: null,
     targetHeartRateZone: null,
+    training: false,
     laps: [],
     createdAt: '2026-09-25T00:00:00.000Z',
     updatedAt: '2026-09-25T00:00:00.000Z',
@@ -61,6 +62,7 @@ function activity(overrides: Partial<Activity> & Pick<Activity, 'id' | 'startedA
     hasFitFile: false,
     hasGpxFile: false,
     labels: [],
+    training: false,
     laps: [],
     ...overrides,
   }

@@ -17,6 +17,7 @@ const en = {
     login: 'Log in',
     calendar: 'Calendar',
     activity: 'Activity',
+    trainings: 'Quality sessions',
     upload: 'Upload activity',
     athleteData: 'Athlete data',
     profile: 'Profile',
@@ -54,6 +55,7 @@ const en = {
 
   nav: {
     calendar: 'Calendar',
+    trainings: 'Quality sessions',
     athleteData: 'Athlete Data',
     profile: 'Profile',
     uploadActivity: 'Upload activity',
@@ -260,6 +262,63 @@ const en = {
     row: 'Rowing',
     ski: 'Ski',
     other: 'Other',
+  },
+
+  training: {
+    toggle: 'Quality session',
+    toggleHint: 'Intervals, threshold or hills: compared with your other quality sessions.',
+    toggleFailed: "Couldn't update this activity. Try again.",
+    prescribedByCoach: 'Planned as a quality session by your coach.',
+    seeAnalysis: 'See the analysis',
+    badge: 'Quality',
+  },
+
+  trainingAnalysis: {
+    eyebrow: 'Analysis',
+    title: 'Quality sessions',
+    intro:
+      'Intervals, threshold, hills: the sessions you mark as quality, side by side. Mark a session from its page.',
+    period: 'Period',
+    periods: { '12w': '12 weeks', '6m': '6 months', all: 'All time' },
+    loadFailed: "Couldn't load your activities. Try again in a moment.",
+    empty:
+      'No quality session in this period. Open an activity and switch on “Quality session” to see it here.',
+    sessions: 'Sessions',
+    perWeek: 'Per week',
+    timeInReps: 'Time in reps',
+    share: 'Share of activities',
+    shareDetail: (count: number) => `out of ${count} activit${count === 1 ? 'y' : 'ies'}`,
+    progression: 'Rep pace',
+    group: 'Compare',
+    formats: { short: 'Short reps', medium: 'Medium reps', long: 'Long reps' },
+    formatsHint:
+      'Only sessions of the same sport and rep format are compared: short reps last under 2 min, medium 2 to 6 min, long 6 min or more.',
+    lastSession: 'Last session',
+    repHeartRate: 'Rep heart rate',
+    paceVsPrevious: (delta: number, average: string) =>
+      delta === 0
+        ? `Same as the average of earlier sessions (${average})`
+        : `${Math.abs(delta)}"/km ${delta < 0 ? 'faster' : 'slower'} than the average of earlier sessions (${average})`,
+    heartRateVsPrevious: (delta: number, average: string) =>
+      delta === 0
+        ? `Same as the average of earlier sessions (${average})`
+        : `${Math.abs(delta)} bpm ${delta < 0 ? 'lower' : 'higher'} than the average of earlier sessions (${average})`,
+    firstOfFormat: 'First session in this format.',
+    singleSession: 'The chart appears from the second session in this format.',
+    list: 'All sessions',
+    date: 'Date',
+    session: 'Session',
+    reps: 'Reps',
+    repPace: 'Rep pace',
+    change: 'Change',
+    repHr: 'Rep HR',
+    effort: 'Effort',
+    paceChange: (delta: number) =>
+      delta === 0
+        ? 'Same pace as the previous one'
+        : `${Math.abs(delta)} s/km ${delta < 0 ? 'faster' : 'slower'} than the previous one`,
+    noStructure: (count: number) =>
+      `${count} session${count === 1 ? '' : 's'} without a lap structure (warm-up, reps, recoveries): reps can't be measured.`,
   },
 
   trainingLoad: {

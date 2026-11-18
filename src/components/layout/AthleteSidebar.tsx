@@ -32,6 +32,16 @@ function HeartPulseIcon({ className }: SidebarIconProps) {
   )
 }
 
+// Barres d'effort alternées, comme les répétitions d'un fractionné.
+function IntervalsIcon({ className }: SidebarIconProps) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M2 17h16" />
+      <path d="M4 14v-3M8 14V5M12 14v-3M16 14V5" />
+    </svg>
+  )
+}
+
 function UploadIcon({ className }: SidebarIconProps) {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -57,6 +67,7 @@ export function AthleteSidebar() {
 
   const navItems: SidebarNavItem[] = [
     { href: '/dashboard', label: t.nav.calendar, icon: CalendarIcon },
+    { href: '/trainings', label: t.nav.trainings, icon: IntervalsIcon },
     { href: '/athlete-data', label: t.nav.athleteData, icon: HeartPulseIcon },
     { href: '/profile', label: t.nav.profile, icon: ProfileIcon },
   ]

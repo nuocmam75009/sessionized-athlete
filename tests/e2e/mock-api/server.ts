@@ -98,6 +98,7 @@ interface Activity {
   hasFitFile: boolean
   hasGpxFile: boolean
   labels: string[]
+  training: boolean
   laps: unknown[]
 }
 
@@ -110,6 +111,7 @@ interface Workout {
   targetDistanceM: number | null
   targetDurationSec: number | null
   targetHeartRateZone: string | null
+  training: boolean
   laps: unknown[]
   createdAt: string
   updatedAt: string
@@ -143,6 +145,7 @@ function makeActivity(overrides: Partial<Activity> & Pick<Activity, 'id' | 'athl
     hasFitFile: true,
     hasGpxFile: false,
     labels: [],
+    training: false,
     laps: [],
     ...overrides,
   }
@@ -215,6 +218,8 @@ const activities: Activity[] = [
     athleteId: USERS.athlete.id,
     startedAt: todayAt(8, 0, -2),
     laps: referenceLaps(),
+    // Fractionné : séance de qualité, analysée sur /trainings.
+    training: true,
   }),
   makeActivity({ id: OTHER_ATHLETE_ACTIVITY_ID, athleteId: USERS.other.id, athleteNote: 'Note privée de Otto' }),
 ]
@@ -231,6 +236,7 @@ const workoutsByAthlete: Record<string, Workout[]> = {
       targetDistanceM: 10000,
       targetDurationSec: null,
       targetHeartRateZone: 'Z2',
+      training: false,
       laps: [],
       createdAt: todayAt(0, 0, -7),
       updatedAt: todayAt(0, 0, -7),

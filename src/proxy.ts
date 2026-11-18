@@ -6,7 +6,7 @@ import { loginPath, REQUEST_PATH_HEADER } from '@/lib/session'
 
 // Pages réservées à un athlète connecté. Les autres pages (connexion, pages
 // légales) passent aussi par le proxy, pour leur Content-Security-Policy.
-export const PROTECTED_PREFIXES = ['/dashboard', '/activities', '/profile', '/coaches', '/athlete-data']
+export const PROTECTED_PREFIXES = ['/dashboard', '/activities', '/trainings', '/profile', '/coaches', '/athlete-data']
 
 function isProtected(pathname: string): boolean {
   return PROTECTED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))

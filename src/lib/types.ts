@@ -104,6 +104,12 @@ export interface Activity {
   hasFitFile: boolean
   hasGpxFile: boolean
   labels: ActivityLabel[]
+  // Séance de qualité (fractionné, seuil, côtes) : isolée dans /trainings pour
+  // être comparée aux autres. À la création, l'API la déduit du workout lié ou
+  // du libellé WORKOUT de Strava ; ensuite, c'est l'athlète qui tranche
+  // (PATCH /activities/:id). Contrairement à `labels`, ce n'est pas un reflet
+  // de Strava.
+  training: boolean
   laps: Lap[]
 }
 
@@ -136,11 +142,12 @@ export interface Lap {
 // endpoints activités).
 export type UploadedActivity = Activity & { trackPointsCount: number }
 
-// Corps accepté par PATCH /activities/:id — les deux champs sont
-// indépendants, n'envoyer que celui qu'on modifie.
+// Corps accepté par PATCH /activities/:id — les champs sont indépendants,
+// n'envoyer que celui qu'on modifie.
 export interface ActivityNoteUpdate {
   athleteNote?: string
   difficultyNote?: number
+  training?: boolean
 }
 
 // Réponse de GET /activities/:id/track — un point par seconde, chargé à
@@ -220,6 +227,9 @@ export interface Workout {
   targetDistanceM: number | null
   targetDurationSec: number | null
   targetHeartRateZone: HeartRateZone | null
+  // Séance de qualité prescrite par le coach, seul à pouvoir la changer
+  // (PATCH /workouts/:id est réservé au coach). L'activité liée en hérite.
+  training: boolean
   laps: WorkoutLap[]
   createdAt: string
   updatedAt: string
