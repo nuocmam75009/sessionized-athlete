@@ -19,7 +19,7 @@ function redirectTarget(response: Response) {
 }
 
 describe('proxy — périmètre', () => {
-  it.each(['/dashboard', '/activities/upload', '/activities/abc', '/profile', '/coaches', '/athlete-data'])(
+  it.each(['/dashboard', '/activities/upload', '/activities/abc', '/trainings', '/profile', '/coaches', '/athlete-data'])(
     'protège %s',
     (url) => {
       expect(unstable_doesMiddlewareMatch({ config, nextConfig, url })).toBe(true)

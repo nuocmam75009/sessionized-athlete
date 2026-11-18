@@ -1,17 +1,20 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { motion } from 'motion/react'
 
-interface Option {
-  value: string
+interface Option<T extends string> {
+  value: T
   label: string
+  // Icône décorative placée devant le libellé ; elle suit la couleur du texte.
+  icon?: ReactNode
 }
 
-interface SegmentedControlProps {
+interface SegmentedControlProps<T extends string> {
   name: string
-  options: [Option, Option]
-  value: string
-  onChange: (value: string) => void
+  options: readonly Option<T>[]
+  value: T
+  onChange: (value: T) => void
   ariaLabel?: string
   ariaLabelledBy?: string
 }
@@ -20,20 +23,31 @@ interface SegmentedControlProps {
 // mouvement porte l'information (« tu viens de passer de gauche à droite »).
 // layoutId est dérivé de `name` — deux contrôles sur une même page partageraient
 // sinon la même pastille et se la voleraient en s'animant l'un vers l'autre.
-export function SegmentedControl({ name, options, value, onChange, ariaLabel, ariaLabelledBy }: SegmentedControlProps) {
+// Au-delà de deux options (filtre par sport du récapitulatif), les options
+// passent à la ligne plutôt que de déborder d'un panneau étroit.
+export function SegmentedControl<T extends string>({
+  name,
+  options,
+  value,
+  onChange,
+  ariaLabel,
+  ariaLabelledBy,
+}: SegmentedControlProps<T>) {
   return (
     <div
       role="radiogroup"
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledBy}
-      className="inline-flex p-1 gap-1 rounded-md border border-divider bg-surface/60 shadow-[inset_0_1px_2px_rgb(0_0_0/0.3)]"
+      className="inline-flex flex-wrap p-1 gap-1 rounded-md border border-divider bg-surface/60 shadow-[inset_0_1px_2px_rgb(0_0_0/0.3)]"
     >
       {options.map((opt) => {
         const checked = opt.value === value
         return (
           <label
             key={opt.value}
-            className={`relative inline-flex items-center justify-center px-3.5 py-1.5 text-[13px] rounded-sm cursor-pointer transition-colors duration-200 ${
+            // La radio est masquée (sr-only) : son contour de focus serait
+            // invisible, c'est l'option entière qui le porte au clavier.
+            className={`relative inline-flex items-center justify-center px-3.5 py-1.5 text-[13px] rounded-sm cursor-pointer transition-colors duration-200 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent ${
               checked ? 'text-bg' : 'text-text/60 hover:text-text'
             }`}
           >
@@ -51,7 +65,10 @@ export function SegmentedControl({ name, options, value, onChange, ariaLabel, ar
               checked={checked}
               onChange={() => onChange(opt.value)}
             />
-            <span className="relative z-10 font-medium">{opt.label}</span>
+            <span className="relative z-10 inline-flex items-center gap-1.5 font-medium">
+              {opt.icon}
+              {opt.label}
+            </span>
           </label>
         )
       })}

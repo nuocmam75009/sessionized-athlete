@@ -12,6 +12,7 @@ const PAGES: Array<{ path: string; authenticated: boolean; as?: 'legacyAudit' }>
   { path: '/dashboard', authenticated: true },
   { path: '/activities/upload', authenticated: true },
   { path: `/activities/${ATHLETE_ACTIVITY_ID}`, authenticated: true },
+  { path: '/trainings', authenticated: true },
   { path: '/profile', authenticated: true },
   { path: '/athlete-data', authenticated: true },
   { path: '/coaches', authenticated: true },
@@ -78,6 +79,7 @@ test.describe('T29 — navigation au clavier et titres de page (RGAA 8.6, 12.7)'
     const titles: Record<string, string> = {
       '/dashboard': 'Calendar · Sessionized',
       '/activities/upload': 'Upload activity · Sessionized',
+      '/trainings': 'Quality sessions · Sessionized',
       '/profile': 'Profile · Sessionized',
       '/athlete-data': 'Athlete data · Sessionized',
       '/legal': 'Legal notice · Sessionized',

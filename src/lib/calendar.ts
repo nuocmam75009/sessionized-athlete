@@ -1,6 +1,6 @@
 import { intlLocale, type Locale } from './i18n/config'
 import { findLinkedActivityId } from './plan-format'
-import { toSportKind, type SportKind } from './sport'
+import { isFootSport, toSportKind, type SportKind } from './sport'
 import { capitalizeFirst, isSameCalendarDay } from './utils'
 import type { Activity, Workout } from './types'
 
@@ -180,17 +180,22 @@ export interface SportBreakdown {
   durationSec: number
 }
 
-export interface WeekSummary {
+// Volume et physio d'un ensemble d'activités : toute la semaine, ou un seul
+// sport quand le récapitulatif est filtré (voir summarizeWeekActivities).
+export interface ActivityTotals {
   distanceM: number
   durationSec: number
   elevationGainM: number
   activityCount: number
-  activeDays: number
   longestActivityM: number
   avgPaceSecPerKm: number | null
   avgHeartRate: number | null
   maxHeartRate: number | null
   totalCalories: number | null
+}
+
+export interface WeekSummary extends ActivityTotals {
+  activeDays: number
   plannedCount: number
   doneCount: number
   missedCount: number
@@ -227,10 +232,21 @@ function buildSportBreakdown(activities: Activity[]): SportBreakdown[] {
   return [...bySport.values()].sort((a, b) => b.distanceM - a.distanceM || b.durationSec - a.durationSec)
 }
 
-function buildWeekSummary(days: DayEntry[]): WeekSummary {
-  const activities = days.flatMap((d) => d.activities)
+// Totaux des activités de la semaine, tous sports confondus (kind null) ou
+// pour un seul sport : sans ce filtre, les kilomètres d'une sortie vélo
+// gonflent le volume d'une semaine de course.
+export function summarizeWeekActivities(days: DayEntry[], kind: SportKind | null = null): ActivityTotals {
+  const activities = days
+    .flatMap((d) => d.activities)
+    .filter((a) => kind == null || toSportKind(a.sport) === kind)
   const distanceM = activities.reduce((sum, a) => sum + a.totalDistanceM, 0)
   const durationSec = activities.reduce((sum, a) => sum + a.totalDurationSec, 0)
+
+  // L'allure ne se calcule que sur les sorties à pied qui ont une distance :
+  // une heure de vélo ou de renforcement la fausserait (voir isFootSport).
+  const pacedActivities = activities.filter((a) => isFootSport(toSportKind(a.sport)) && a.totalDistanceM > 0)
+  const pacedDistanceM = pacedActivities.reduce((sum, a) => sum + a.totalDistanceM, 0)
+  const pacedDurationSec = pacedActivities.reduce((sum, a) => sum + a.totalDurationSec, 0)
 
   // FC moyenne pondérée par la durée : une sortie longue doit peser plus dans
   // la moyenne de la semaine qu'un footing de vingt minutes.
@@ -246,12 +262,20 @@ function buildWeekSummary(days: DayEntry[]): WeekSummary {
     durationSec,
     elevationGainM: activities.reduce((sum, a) => sum + (a.elevationGainM ?? 0), 0),
     activityCount: activities.length,
-    activeDays: days.filter((d) => d.activities.length > 0).length,
     longestActivityM: activities.reduce((max, a) => Math.max(max, a.totalDistanceM), 0),
-    avgPaceSecPerKm: distanceM > 0 && durationSec > 0 ? Math.round(durationSec / (distanceM / 1000)) : null,
+    avgPaceSecPerKm: pacedDurationSec > 0 ? Math.round(pacedDurationSec / (pacedDistanceM / 1000)) : null,
     avgHeartRate: hrDurationSec > 0 ? Math.round(hrWeightedSum / hrDurationSec) : null,
     maxHeartRate: maxHeartRates.length > 0 ? Math.max(...maxHeartRates) : null,
     totalCalories: calories.length > 0 ? Math.round(calories.reduce((sum, c) => sum + c, 0)) : null,
+  }
+}
+
+function buildWeekSummary(days: DayEntry[]): WeekSummary {
+  const activities = days.flatMap((d) => d.activities)
+
+  return {
+    ...summarizeWeekActivities(days),
+    activeDays: days.filter((d) => d.activities.length > 0).length,
     plannedCount: days.filter((d) => d.workout != null).length,
     doneCount: days.filter((d) => d.status === 'done').length,
     missedCount: days.filter((d) => d.status === 'missed').length,

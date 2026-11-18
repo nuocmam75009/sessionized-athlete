@@ -16,6 +16,7 @@ const fr: Dictionary = {
     login: 'Connexion',
     calendar: 'Calendrier',
     activity: 'Activité',
+    trainings: 'Séances de qualité',
     upload: 'Importer une activité',
     athleteData: 'Données athlète',
     profile: 'Profil',
@@ -53,6 +54,7 @@ const fr: Dictionary = {
 
   nav: {
     calendar: 'Calendrier',
+    trainings: 'Séances de qualité',
     athleteData: 'Données athlète',
     profile: 'Profil',
     uploadActivity: 'Importer une activité',
@@ -209,6 +211,9 @@ const fr: Dictionary = {
     activeDays: (count: number) =>
       `${count} jour${count > 1 ? 's' : ''} actif${count > 1 ? 's' : ''} sur 7`,
     empty: 'Aucune séance ni activité cette semaine.',
+    sportFilter: 'Filtrer par sport',
+    allSports: 'Tous',
+    zonesAllSports: 'Tous sports confondus : les zones ne sont pas réparties par sport.',
     volume: 'Volume',
     physio: 'Physio',
     heartRateZones: 'Zones de fréquence cardiaque',
@@ -256,6 +261,63 @@ const fr: Dictionary = {
     row: 'Aviron',
     ski: 'Ski',
     other: 'Autre',
+  },
+
+  training: {
+    toggle: 'Séance de qualité',
+    toggleHint: 'Fractionné, seuil ou côtes : comparée à vos autres séances de qualité.',
+    toggleFailed: 'Impossible de modifier cette activité. Réessayez.',
+    prescribedByCoach: 'Séance de qualité prescrite par votre coach.',
+    seeAnalysis: 'Voir l’analyse',
+    badge: 'Qualité',
+  },
+
+  trainingAnalysis: {
+    eyebrow: 'Analyse',
+    title: 'Séances de qualité',
+    intro:
+      'Fractionné, seuil, côtes : les séances que vous marquez en qualité, comparées entre elles. Marquez une séance depuis sa page.',
+    period: 'Période',
+    periods: { '12w': '12 semaines', '6m': '6 mois', all: 'Tout' },
+    loadFailed: 'Impossible de charger vos activités. Réessayez dans un instant.',
+    empty:
+      'Aucune séance de qualité sur cette période. Ouvrez une activité et activez « Séance de qualité » pour la retrouver ici.',
+    sessions: 'Séances',
+    perWeek: 'Par semaine',
+    timeInReps: 'Temps en répétitions',
+    share: 'Part des activités',
+    shareDetail: (count: number) => `sur ${count} activité${count > 1 ? 's' : ''}`,
+    progression: 'Allure des répétitions',
+    group: 'Comparer',
+    formats: { short: 'Répétitions courtes', medium: 'Répétitions moyennes', long: 'Répétitions longues' },
+    formatsHint:
+      'Seules les séances du même sport et du même format sont comparées : répétitions courtes sous 2 min, moyennes de 2 à 6 min, longues à partir de 6 min.',
+    lastSession: 'Dernière séance',
+    repHeartRate: 'FC des répétitions',
+    paceVsPrevious: (delta: number, average: string) =>
+      delta === 0
+        ? `Identique à la moyenne des séances précédentes (${average})`
+        : `${Math.abs(delta)}"/km plus ${delta < 0 ? 'rapide' : 'lent'} que la moyenne des séances précédentes (${average})`,
+    heartRateVsPrevious: (delta: number, average: string) =>
+      delta === 0
+        ? `Identique à la moyenne des séances précédentes (${average})`
+        : `${Math.abs(delta)} bpm de ${delta < 0 ? 'moins' : 'plus'} que la moyenne des séances précédentes (${average})`,
+    firstOfFormat: 'Première séance de ce format.',
+    singleSession: 'Le graphe apparaît à partir de la deuxième séance de ce format.',
+    list: 'Toutes les séances',
+    date: 'Date',
+    session: 'Séance',
+    reps: 'Répétitions',
+    repPace: 'Allure',
+    change: 'Évolution',
+    repHr: 'FC',
+    effort: 'Ressenti',
+    paceChange: (delta: number) =>
+      delta === 0
+        ? 'Même allure que la précédente'
+        : `${Math.abs(delta)} s/km plus ${delta < 0 ? 'rapide' : 'lent'} que la précédente`,
+    noStructure: (count: number) =>
+      `${count} séance${count > 1 ? 's' : ''} sans structure de laps (échauffement, répétitions, récupérations) : répétitions non mesurables.`,
   },
 
   trainingLoad: {

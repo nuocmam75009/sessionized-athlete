@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { AssignStravaActivity } from '@/components/activities/AssignStravaActivity'
 import { ImportActions } from '@/components/activities/ImportActions'
 import { PlannedVsActualTable } from '@/components/activities/PlannedVsActualTable'
+import { Badge } from '@/components/ui/Badge'
 import { buttonClassName } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { useI18n } from '@/hooks/useI18n'
@@ -27,7 +28,12 @@ export function WorkoutModal({
     <Modal label={dateLabel} eyebrow={dateLabel} onClose={onClose}>
       {workout && (
         <>
-          <h3 className="mb-2">{workout.title}</h3>
+          <div className="flex items-baseline gap-3 flex-wrap mb-2">
+            <h3 className="mb-0">{workout.title}</h3>
+            {/* Choix du coach, en lecture seule : l'athlète ne peut marquer que
+                ses activités (voir TrainingToggle). */}
+            {workout.training && <Badge variant="accent">{t.training.badge}</Badge>}
+          </div>
           {workout.coachNote && (
             <blockquote className="mb-4 pl-4 border-l-2 border-accent/45 text-[15px] leading-relaxed text-text/80 max-w-[48ch]">
               “{workout.coachNote}”

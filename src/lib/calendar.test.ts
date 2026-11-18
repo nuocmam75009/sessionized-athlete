@@ -11,6 +11,7 @@ import {
   getMonthGridDays,
   getWeekStart,
   parseMonthParam,
+  summarizeWeekActivities,
   toDateParam,
   toIsoDateTimeWithOffset,
   toMonthParam,
@@ -40,6 +41,7 @@ function activity(overrides: Partial<Activity>): Activity {
     hasFitFile: true,
     hasGpxFile: false,
     labels: [],
+    training: false,
     laps: [],
     ...overrides,
   }
@@ -55,6 +57,7 @@ function workout(overrides: Partial<Workout>): Workout {
     targetDistanceM: null,
     targetDurationSec: null,
     targetHeartRateZone: null,
+    training: false,
     laps: [],
     createdAt: '2026-08-01T00:00:00.000Z',
     updatedAt: '2026-08-01T00:00:00.000Z',
@@ -225,6 +228,68 @@ describe('récapitulatifs', () => {
     const bySport = buildMonthSummary(entries).bySport
     expect(bySport).toHaveLength(1)
     expect(bySport[0]).toMatchObject({ kind: 'run', activityCount: 2 })
+  })
+
+  describe('totaux de la semaine filtrés par sport', () => {
+    // Semaine du 3 au 9 août : deux courses (une .fit, une Strava), une sortie
+    // vélo et une séance de renforcement sans distance.
+    const days = buildMonthEntries(
+      monthStart,
+      [],
+      [
+        activity({ id: 'run-fit', sport: 'running', startedAt: new Date(2026, 7, 4, 8).toISOString(), totalDistanceM: 10000, totalDurationSec: 3000, avgHeartRate: 150, maxHeartRate: 170, elevationGainM: 80 }),
+        activity({ id: 'run-strava', source: 'STRAVA', sport: 'Run', startedAt: new Date(2026, 7, 6, 8).toISOString(), totalDistanceM: 5000, totalDurationSec: 1800, avgHeartRate: 140, maxHeartRate: 160 }),
+        activity({ id: 'ride', source: 'STRAVA', sport: 'Ride', startedAt: new Date(2026, 7, 8, 9).toISOString(), totalDistanceM: 60000, totalDurationSec: 7200, avgHeartRate: 125, maxHeartRate: 175, elevationGainM: 600 }),
+        activity({ id: 'gym', source: 'STRAVA', sport: 'WeightTraining', startedAt: new Date(2026, 7, 9, 18).toISOString(), totalDistanceM: 0, totalDurationSec: 2700 }),
+      ],
+      now,
+    ).filter((d) => d.dateParam >= '2026-08-03' && d.dateParam <= '2026-08-09')
+
+    it('le vélo ne compte pas dans le volume de course', () => {
+      const run = summarizeWeekActivities(days, 'run')
+      expect(run).toMatchObject({
+        distanceM: 15000,
+        durationSec: 4800,
+        activityCount: 2,
+        longestActivityM: 10000,
+        elevationGainM: 80,
+        maxHeartRate: 170,
+        // 4800 s / 15 km = 320 s/km, soit 5'20"/km.
+        avgPaceSecPerKm: 320,
+      })
+      // (150 × 3000 + 140 × 1800) / 4800 = 146,25.
+      expect(run.avgHeartRate).toBe(146)
+    })
+
+    it('sans filtre, toutes les activités comptent', () => {
+      expect(summarizeWeekActivities(days)).toMatchObject({
+        distanceM: 75000,
+        durationSec: 14700,
+        activityCount: 4,
+        longestActivityM: 60000,
+      })
+    })
+
+    it('l’allure ne se calcule que sur les sorties à pied', () => {
+      // Tous sports : l'allure reste celle des deux courses, ni le vélo ni la
+      // séance de renforcement ne la faussent.
+      expect(summarizeWeekActivities(days).avgPaceSecPerKm).toBe(320)
+      expect(summarizeWeekActivities(days, 'ride').avgPaceSecPerKm).toBeNull()
+      expect(summarizeWeekActivities(days, 'strength')).toMatchObject({
+        distanceM: 0,
+        durationSec: 2700,
+        activityCount: 1,
+        avgPaceSecPerKm: null,
+      })
+    })
+
+    it('le récapitulatif de la semaine reprend les totaux tous sports', () => {
+      const week = buildWeekEntries(
+        buildMonthEntries(monthStart, [], days.flatMap((d) => d.activities), now),
+      ).find((w) => w.startDateParam === '2026-08-03')
+      expect(week?.summary).toMatchObject(summarizeWeekActivities(days))
+      expect(week?.summary.bySport.map((s) => s.kind)).toEqual(['ride', 'run', 'strength'])
+    })
   })
 })
 

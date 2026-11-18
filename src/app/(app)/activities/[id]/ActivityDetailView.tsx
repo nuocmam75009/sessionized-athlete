@@ -7,6 +7,7 @@ import { FitFileUpload } from '@/components/activities/FitFileUpload'
 import { GpxRouteUpload } from '@/components/activities/GpxRouteUpload'
 import { LapAnalysis } from '@/components/activities/LapAnalysis'
 import { PlannedVsActualTable } from '@/components/activities/PlannedVsActualTable'
+import { TrainingToggle } from '@/components/activities/TrainingToggle'
 import { Badge } from '@/components/ui/Badge'
 import { BackLink } from '@/components/ui/BackLink'
 import { RouteMap, type RoutePoint } from '@/components/ui/RouteMap'
@@ -94,6 +95,7 @@ export function ActivityDetailView({
           </Badge>
         ))}
       </div>
+      <TrainingToggle activity={activity} prescribedByCoach={workout?.training === true} onSaved={setActivity} />
       <div className="panel rounded-lg my-7 px-6 py-5 flex gap-10 flex-wrap">
         <Stat label={t.stats.distance} value={actual.distance} />
         <Stat label={t.stats.duration} value={actual.duration} />

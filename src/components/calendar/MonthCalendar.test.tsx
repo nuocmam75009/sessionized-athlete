@@ -34,6 +34,7 @@ function workout(id: string, title: string, day: number): Workout {
     targetDistanceM: null,
     targetDurationSec: null,
     targetHeartRateZone: null,
+    training: false,
     laps: [],
     createdAt: '2026-09-25T00:00:00.000Z',
     updatedAt: '2026-09-25T00:00:00.000Z',
@@ -61,6 +62,7 @@ function activity(overrides: Partial<Activity> & Pick<Activity, 'id' | 'startedA
     hasFitFile: false,
     hasGpxFile: false,
     labels: [],
+    training: false,
     laps: [],
     ...overrides,
   }
@@ -246,5 +248,71 @@ describe('Jeu d’essai — calendrier du mois', () => {
     // un samedi et compte 31 jours.
     expect(getMonthGridDays(new Date(2027, 1, 1))).toHaveLength(28)
     expect(getMonthGridDays(new Date(2026, 7, 1))).toHaveLength(42)
+  })
+})
+
+// Le récapitulatif filtre son volume et sa physio par sport : la semaine du 5
+// au 11 mêle deux courses (14,2 km) et une sortie vélo (40 km).
+describe('Récapitulatif de semaine — filtre par sport', () => {
+  function selectWeek(index: number) {
+    const { weeks } = renderCalendar()
+    fireEvent.click(weeks[index])
+    return { weeks, panel: screen.getByRole('complementary') }
+  }
+
+  it('propose « Tous » puis les sports détectés dans la semaine, « Tous » sélectionné', () => {
+    const { panel } = selectWeek(1)
+    const filter = within(panel).getByRole('radiogroup', { name: 'Filter by sport' })
+
+    expect(within(filter).getAllByRole('radio').map((r) => r.closest('label')?.textContent)).toEqual([
+      'All',
+      'Ride',
+      'Run',
+    ])
+    expect(within(filter).getByRole('radio', { name: 'All' })).toBeChecked()
+    expect(stat(panel, 'Distance')).toBe('54.2 km')
+    expect(panel).not.toHaveTextContent('zones are not split by sport')
+  })
+
+  it('« Run » isole les deux courses du vélo, sans toucher au suivi du plan', () => {
+    const { panel } = selectWeek(1)
+    fireEvent.click(within(panel).getByRole('radio', { name: 'Run' }))
+
+    expect(stat(panel, 'Distance')).toBe('14.2 km')
+    expect(stat(panel, 'Time')).toBe("1h10'")
+    expect(stat(panel, 'Activities')).toBe('2')
+    expect(stat(panel, 'Longest')).toBe('9.2 km')
+    // 4200 s / 14,2 km = 295,8 s/km.
+    expect(stat(panel, 'Avg pace')).toBe(`4'56"/km`)
+    // (142 × 2700 + 150 × 1500) / 4200 = 144,9.
+    expect(stat(panel, 'Avg HR')).toBe('145 bpm')
+    expect(stat(panel, 'Max HR')).toBe('172 bpm')
+    // Les séances prescrites n'ont pas de sport : le plan reste celui de la semaine.
+    expect(stat(panel, 'Planned')).toBe('3')
+    // Les zones FC viennent d'une agrégation serveur, tous sports confondus.
+    expect(panel).toHaveTextContent('All sports combined — zones are not split by sport.')
+  })
+
+  it('« Ride » n’affiche pas d’allure, et « Tous » ne mêle pas le vélo à l’allure', () => {
+    const { panel } = selectWeek(1)
+    expect(stat(panel, 'Avg pace')).toBe(`4'56"/km`)
+
+    fireEvent.click(within(panel).getByRole('radio', { name: 'Ride' }))
+    expect(stat(panel, 'Distance')).toBe('40.0 km')
+    expect(stat(panel, 'Avg pace')).toBe('—')
+  })
+
+  it('le sport choisi est gardé d’une semaine à l’autre, sans filtre sur une semaine d’un seul sport', () => {
+    const { weeks, panel } = selectWeek(1)
+    fireEvent.click(within(panel).getByRole('radio', { name: 'Run' }))
+
+    // Semaine du 12 : une seule course, le filtre n'apporterait rien.
+    fireEvent.click(weeks[2])
+    expect(within(panel).queryByRole('radiogroup')).not.toBeInTheDocument()
+    expect(stat(panel, 'Distance')).toBe('6.0 km')
+
+    fireEvent.click(weeks[1])
+    expect(within(panel).getByRole('radio', { name: 'Run' })).toBeChecked()
+    expect(stat(panel, 'Distance')).toBe('14.2 km')
   })
 })

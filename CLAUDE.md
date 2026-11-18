@@ -52,7 +52,7 @@ Pattern BFF : le JWT reste dans un cookie `HttpOnly` (`sessionized_athlete_token
 
 ## Sécurité
 
-- `src/proxy.ts` : session exigée sur `/dashboard`, `/activities`, `/profile`, `/coaches` et `/athlete-data` (JWT absent ou expiré → `/login`). Une Content-Security-Policy avec nonce est posée sur toutes les pages.
+- `src/proxy.ts` : session exigée sur `/dashboard`, `/activities`, `/trainings`, `/profile`, `/coaches` et `/athlete-data` (JWT absent ou expiré → `/login`). Une Content-Security-Policy avec nonce est posée sur toutes les pages.
 - `lib/security-headers.ts` : la CSP et les en-têtes fixes (posés par `next.config.ts`). **Une nouvelle origine externe doit y être ajoutée et justifiée.**
 - Le layout racine applique le nonce (en-tête `x-nonce`) à son script de thème. Tout nouveau `<script>` inline doit porter ce nonce.
 - La déconnexion (`/api/auth/logout`) fait révoquer le jeton par l'API avant d'effacer le cookie.
@@ -67,6 +67,7 @@ src/
 │   │   ├── dashboard/         calendrier du mois, récapitulatif de semaine, charge d'entraînement
 │   │   ├── activities/[id]/   détail d'une activité (laps, carte, zones FC, réponse aérobie)
 │   │   ├── activities/upload/ import .fit / .gpx, rattachement à une séance
+│   │   ├── trainings/         analyse des séances de qualité (activités marquées `training`)
 │   │   ├── athlete-data/      zones et données physiologiques
 │   │   ├── profile/           compte, Strava, export et suppression des données
 │   │   └── coaches/           coach suivi
