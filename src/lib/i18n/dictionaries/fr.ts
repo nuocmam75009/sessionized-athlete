@@ -209,6 +209,9 @@ const fr: Dictionary = {
     activeDays: (count: number) =>
       `${count} jour${count > 1 ? 's' : ''} actif${count > 1 ? 's' : ''} sur 7`,
     empty: 'Aucune séance ni activité cette semaine.',
+    sportFilter: 'Filtrer par sport',
+    allSports: 'Tous',
+    zonesAllSports: 'Tous sports confondus : les zones ne sont pas réparties par sport.',
     volume: 'Volume',
     physio: 'Physio',
     heartRateZones: 'Zones de fréquence cardiaque',

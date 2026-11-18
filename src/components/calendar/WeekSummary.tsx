@@ -1,17 +1,27 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import Link from 'next/link'
+import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { SportIcon } from '@/components/ui/SportIcon'
 import { Stat } from '@/components/ui/Stat'
 import { SportBreakdownTable } from './SportBreakdownTable'
 import { WeekHeartRateZones } from './WeekHeartRateZones'
 import { useI18n } from '@/hooks/useI18n'
 import { formatActivity } from '@/lib/activity-format'
-import { dayStatusStyles, formatWeekdayLabel, formatWeekRangeLabel, type DayEntry, type WeekEntry } from '@/lib/calendar'
-import { isFootSport, sportColor, toSportKind } from '@/lib/sport'
+import {
+  dayStatusStyles,
+  formatWeekdayLabel,
+  formatWeekRangeLabel,
+  summarizeWeekActivities,
+  type DayEntry,
+  type WeekEntry,
+} from '@/lib/calendar'
+import { isFootSport, sportColor, toSportKind, type SportKind } from '@/lib/sport'
 import { formatDistance, formatDuration, formatPace } from '@/lib/utils'
 import type { Activity } from '@/lib/types'
+
+type SportFilter = SportKind | 'all'
 
 // Récapitulatif de la semaine sélectionnée dans le calendrier, affiché en
 // permanence à côté de celui-ci (la semaine du jour au chargement). Tout est
@@ -21,6 +31,16 @@ export function WeekSummary({ week, className = '' }: { week: WeekEntry; classNa
   const { locale, t } = useI18n()
   const { summary } = week
   const detailedDays = week.days.filter((d) => d.activities.length > 0 || d.workout != null)
+
+  // Filtre par sport des sections Volume et Physio, proposé dès que la semaine
+  // mélange deux sports. Le choix survit au changement de semaine (le panneau
+  // n'est pas remonté), pour suivre la course d'une semaine à l'autre ; une
+  // semaine qui ne compte pas ce sport retombe sur « Tous » sans l'oublier.
+  const [sportFilter, setSportFilter] = useState<SportFilter>('all')
+  const showSportFilter = summary.bySport.length > 1
+  const activeSport: SportFilter =
+    showSportFilter && summary.bySport.some((s) => s.kind === sportFilter) ? sportFilter : 'all'
+  const totals = activeSport === 'all' ? summary : summarizeWeekActivities(week.days, activeSport)
 
   return (
     <aside className={`panel rounded-lg p-6 ${className}`}>
@@ -44,25 +64,50 @@ export function WeekSummary({ week, className = '' }: { week: WeekEntry; classNa
         <p className="text-text/60 text-sm">{t.weekSummary.empty}</p>
       ) : (
         <>
+          {showSportFilter && (
+            <div className="mb-6">
+              <SegmentedControl
+                name="week-sport"
+                ariaLabel={t.weekSummary.sportFilter}
+                value={activeSport}
+                onChange={setSportFilter}
+                options={[
+                  { value: 'all', label: t.weekSummary.allSports },
+                  ...summary.bySport.map((s) => ({
+                    value: s.kind,
+                    label: t.sports[s.kind],
+                    icon: <SportIcon kind={s.kind} size={14} className="shrink-0" />,
+                  })),
+                ]}
+              />
+            </div>
+          )}
+
           <Section title={t.weekSummary.volume}>
             <div className="grid grid-cols-3 gap-x-3 gap-y-4">
-              <Stat size="sm" label={t.stats.distance} value={formatDistance(summary.distanceM, locale)} />
-              <Stat size="sm" label={t.stats.time} value={formatDuration(Math.round(summary.durationSec))} />
-              <Stat size="sm" label={t.stats.activities} value={String(summary.activityCount)} />
+              {/* « — » plutôt que « 0.0 km » : une semaine de renforcement n'a
+                  pas de distance, elle n'en a pas une nulle. */}
+              <Stat
+                size="sm"
+                label={t.stats.distance}
+                value={totals.distanceM > 0 ? formatDistance(totals.distanceM, locale) : '—'}
+              />
+              <Stat size="sm" label={t.stats.time} value={formatDuration(Math.round(totals.durationSec))} />
+              <Stat size="sm" label={t.stats.activities} value={String(totals.activityCount)} />
               <Stat
                 size="sm"
                 label={t.stats.avgPace}
-                value={summary.avgPaceSecPerKm != null ? formatPace(summary.avgPaceSecPerKm) : '—'}
+                value={totals.avgPaceSecPerKm != null ? formatPace(totals.avgPaceSecPerKm) : '—'}
               />
               <Stat
                 size="sm"
                 label={t.stats.longest}
-                value={summary.longestActivityM > 0 ? formatDistance(summary.longestActivityM, locale) : '—'}
+                value={totals.longestActivityM > 0 ? formatDistance(totals.longestActivityM, locale) : '—'}
               />
               <Stat
                 size="sm"
                 label={t.stats.elevation}
-                value={summary.elevationGainM > 0 ? `${Math.round(summary.elevationGainM)} m` : '—'}
+                value={totals.elevationGainM > 0 ? `${Math.round(totals.elevationGainM)} m` : '—'}
               />
             </div>
           </Section>
@@ -72,23 +117,27 @@ export function WeekSummary({ week, className = '' }: { week: WeekEntry; classNa
               <Stat
                 size="sm"
                 label={t.stats.avgHr}
-                value={summary.avgHeartRate != null ? `${summary.avgHeartRate} bpm` : '—'}
+                value={totals.avgHeartRate != null ? `${totals.avgHeartRate} bpm` : '—'}
               />
               <Stat
                 size="sm"
                 label={t.stats.maxHr}
-                value={summary.maxHeartRate != null ? `${summary.maxHeartRate} bpm` : '—'}
+                value={totals.maxHeartRate != null ? `${totals.maxHeartRate} bpm` : '—'}
               />
               <Stat
                 size="sm"
                 label={t.stats.calories}
-                value={summary.totalCalories != null ? `${summary.totalCalories} kcal` : '—'}
+                value={totals.totalCalories != null ? `${totals.totalCalories} kcal` : '—'}
               />
             </div>
           </Section>
 
           {summary.activityCount > 0 && (
             <Section title={t.weekSummary.heartRateZones}>
+              {/* L'agrégation serveur ne connaît pas nos catégories de sport
+                  (normalisées côté front, voir toSportKind) : elle reste sur
+                  toute la semaine, et le dit quand un sport est sélectionné. */}
+              {activeSport !== 'all' && <p className="text-xs text-text/60 mb-3">{t.weekSummary.zonesAllSports}</p>}
               {/* Remonté par période : la key force un composant neuf par
                   semaine plutôt qu'un refetch sur une instance vivante. */}
               <WeekHeartRateZones key={week.startDateParam} week={week} />
