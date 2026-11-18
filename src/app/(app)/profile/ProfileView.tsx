@@ -8,15 +8,11 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Field, Input } from '@/components/ui/Field'
 import { LanguageToggle } from '@/components/ui/LanguageToggle'
-import { RadioOption } from '@/components/ui/RadioOption'
-import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { useI18n } from '@/hooks/useI18n'
 import { clientFetch } from '@/lib/client-fetch'
-import { setUnit, useSessionState } from '@/lib/session-store'
 import { formatLegalDate, formatMonthYear } from '@/lib/utils'
 import type { CoachAssignment, UserProfile } from '@/lib/types'
 
-type NotifyPref = 'new-plan' | 'weekly' | 'none'
 type SaveState = 'idle' | 'saving' | 'saved' | 'error'
 type StravaSyncState = 'idle' | 'syncing' | 'done' | 'error'
 // Échec d'une action Strava ; le message est rédigé à l'affichage.
@@ -42,8 +38,6 @@ export function ProfileView({
   stravaBanner: 'connected' | 'error' | 'reconnect' | null
 }) {
   const { locale, t } = useI18n()
-  const session = useSessionState()
-  const [notify, setNotify] = useState<NotifyPref>('new-plan')
   const [firstName, setFirstName] = useState(user?.firstName ?? '')
   const [lastName, setLastName] = useState(user?.lastName ?? '')
   const [email, setEmail] = useState(user?.email ?? '')
@@ -176,7 +170,7 @@ export function ProfileView({
           {/* Même bascule que dans la barre latérale : c'est aussi dans les
               préférences qu'on cherche la langue. Le groupe porte son propre
               nom accessible, l'intitulé visible ne fait que le doubler. */}
-          <div className="grid gap-1.5 mb-3">
+          <div className="grid gap-1.5">
             <span aria-hidden className="block text-[11px] uppercase tracking-[0.08em] text-text/60">
               {t.profile.language}
             </span>
@@ -184,29 +178,10 @@ export function ProfileView({
               <LanguageToggle />
             </div>
           </div>
-          <Field label={t.profile.units} htmlFor="sn-unit">
-            <SegmentedControl
-              name="unit"
-              ariaLabel={t.profile.units}
-              value={session.unit}
-              onChange={(v) => setUnit(v as 'km' | 'mi')}
-              options={[
-                { value: 'km', label: t.profile.kilometers },
-                { value: 'mi', label: t.profile.miles },
-              ]}
-            />
-          </Field>
-          <div className="grid gap-1.5 mt-3">
-            <RadioOption name="notify" checked={notify === 'new-plan'} onChange={() => setNotify('new-plan')}>
-              {t.profile.notifyNewPlan}
-            </RadioOption>
-            <RadioOption name="notify" checked={notify === 'weekly'} onChange={() => setNotify('weekly')}>
-              {t.profile.notifyWeekly}
-            </RadioOption>
-            <RadioOption name="notify" checked={notify === 'none'} onChange={() => setNotify('none')}>
-              {t.profile.notifyNone}
-            </RadioOption>
-          </div>
+          {/* Unité de distance et notifications masquées : aucune n'avait
+              d'effet (distances toujours en km, choix de notification jamais
+              envoyé à l'API). À réafficher une fois branchées ; leurs textes
+              sont restés dans les dictionnaires et l'unité dans session-store. */}
         </section>
 
         <section>
